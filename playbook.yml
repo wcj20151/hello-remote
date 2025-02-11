@@ -116,7 +116,7 @@
       community.general.git_config:
         name: credential.helper
         scope: global
-        value: cache timeout=3600
+        value: 'cache --timeout=10800'
 
     - name: Ensure lab timings cronjob is enabled
       ansible.builtin.cron:
