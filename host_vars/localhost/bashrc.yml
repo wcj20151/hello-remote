@@ -198,3 +198,17 @@ my_bashrc: |
     echo 'Q=$RHT_OCP4_QUAY_USER' # your quay.io account (not for >= OCP4.12)
 
   }
+
+
+  # OpenShift Tools
+if command -v oc &> /dev/null; then
+    source <(oc completion bash)
+fi
+
+if command -v kubectl &> /dev/null; then
+    source <(kubectl completion bash)
+fi
+
+if command -v virtctl &> /dev/null; then
+    source <(virtctl completion bash)
+fi

@@ -4,10 +4,12 @@ my_sshconfig: |
     IdentityFile ~/.ssh/lab_rsa
     User cloud-user
     StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
 
   Host vm/*
     ProxyCommand virtctl port-forward --stdio=true %h %p
     IdentityFile ~/.ssh/lab_rsa
     User cloud-user
     StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
 
