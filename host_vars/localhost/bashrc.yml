@@ -1,214 +1,121 @@
 my_bashrc: |
-
   # ===============================
   # General environment variables
   # ===============================
 
-  # Set editor for oc commands
   export EDITOR=/usr/bin/vim
-
-  # Set bash history size
   export HISTSIZE=10000
-
-  # Set bash history timestamps
   export HISTTIMEFORMAT="%F %T "
-
-  # Set pager not to clear on exit
   export LESS='-X'
-
-  # Append to .bash_history
-  PROMPT_COMMAND="$PROMPT_COMMAND; history -a; history -n"
+  PROMPT_COMMAND="$$PROMPT_COMMAND; history -a; history -n"
 
   # =========================================
   # OpenShift Training environment variables
   # =========================================
 
-  # Source variables on new shell
-  if [ -e /usr/local/etc/ocp4.config ]
-    then
-      source /usr/local/etc/ocp4.config
-      # Set simpler variables for OCP classes
-      M=$RHT_OCP4_MASTER_API
-      WC=$RHT_OCP4_WILDCARD_DOMAIN
-      NS=$RHT_OCP4_NEXUS_SERVER
-      U=$RHT_OCP4_DEV_USER
-      P=$RHT_OCP4_DEV_PASSWORD
-      G=$RHT_OCP4_GITHUB_USER
-      Q=$RHT_OCP4_QUAY_USER
-    else
-      # Still set the variables, but in a way that newer OCP classes can use them 
-      M=https://api.ocp4.example.com:6443
-
-      WC=apps.ocp4.example.com
-      NS=nexus.nexus-common.apps.ocp4.example.com
-      U=developer
-      P=developer
+  if [ -e /usr/local/etc/ocp4.config ]; then
+    source /usr/local/etc/ocp4.config
+    M=$$RHT_OCP4_MASTER_API
+    WC=$$RHT_OCP4_WILDCARD_DOMAIN
+    NS=$$RHT_OCP4_NEXUS_SERVER
+    U=$$RHT_OCP4_DEV_USER
+    P=$$RHT_OCP4_DEV_PASSWORD
+    G=$$RHT_OCP4_GITHUB_USER
+    Q=$$RHT_OCP4_QUAY_USER
+  else
+    M=https://api.ocp4.example.com:6443
+    WC=apps.ocp4.example.com
+    NS=nexus.nexus-common.apps.ocp4.example.com
+    U=developer
+    P=developer
   fi
 
-  # Set login aliases for OCP classes
   alias lcl="oc login -u admin -p redhat https://api.ocp4.example.com:6443"
   alias mcl="oc login -u admin -p redhat https://api.ocp4-mng.example.com:6443"
   alias dl="oc login -u developer -p developer https://api.ocp4.example.com:6443"
   alias al="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
-
-  # Set clustercheck alias for OCP classes
   alias clustercheck="ssh lab@utility ./wait.sh"
-
-  # Set monitoring  aliases
-  alias events='oc get events --sort-by=".lastTimestamp" -n $1'
-  alias podsw='oc get pods -o wide -n $1'
-
-  # Set velero alias
+  alias events='oc get events --sort-by=".lastTimestamp" -n $$1'
+  alias podsw='oc get pods -o wide -n $$1'
   alias velero='oc -n openshift-adp exec deployment/velero -c velero -it -- ./velero'
 
-  # OpenShift functions
-    whohas() {
-      local role="$1"
-      if [[ -z "$role" ]]; then
-         echo "Usage: whohas <role>"
-         return 1
-      fi
-
-      oc get clusterrolebindings -o json | jq -r ".items[] | select(.roleRef.name == \"$role\" and .subjects != null) | .subjects[] | \"\(.kind) \(.name)\"" || {
-         echo "Error: Could not find role $role."
-         return 1
-           }
+  whohas() {
+    local role="$$1"
+    if [[ -z "$$role" ]]; then
+      echo "Usage: whohas <role>"
+      return 1
+    fi
+    oc get clusterrolebindings -o json | jq -r ".items[] | select(.roleRef.name == \"$$role\" and .subjects != null) | .subjects[] | \"$$(.kind) $$(.name)\"" || {
+      echo "Error: Could not find role $$role."
+      return 1
     }
+  }
 
-    whomembers() {
-      local group="$1"
-      oc get group "$group" -o json | jq -r '.users[]'
-    }
-
-  # ===============================
-  # Git bash environment variables
-  # ===============================
-
-  #source /usr/share/git-core/contrib/completion/git-prompt.sh
-  #export GIT_PS1_SHOWDIRTYSTATE=true
-  #export GIT_PS1_SHOWUNTRACKEDFILES=true
-
-  #git_ps1() {
-  #  local git_status="$(git status 2> /dev/null)"
-
-  #  if [[ $? -ne 0 ]]
-  #    then
-  #      echo ""
-  #      return
-  #  elif [[ $git_status =~ "nothing to commit" ]]
-  #    then
-  #      echo -e "\[\033[0;32m\]\$(__git_ps1 '(%s)')\[\033[0m\]"
-  #    else
-  #      echo -e "\[\033[0;31m\]\$(__git_ps1 '(%s)')\[\033[0m\]"
-  #  fi
-  #}
-
-  #export PROMPT_COMMAND='PS1="[\u@\h \W]$(git_ps1)\\\$ "'
+  whomembers() {
+    local group="$$1"
+    oc get group "$$group" -o json | jq -r '.users[]'
+  }
 
   export GIT_PAGER=/usr/bin/cat
-
-  # ===============================
-  # Ansible aliases (ansible-core)
-  # ===============================
-
   alias ap="ansible-playbook"
   alias apsc="ansible-playbook --syntax-check"
   alias acd="ansible-config dump"
   alias av="ansible --version"
   alias aig="ansible-inventory --graph"
-
-  # =====================================
-  # Ansible aliases (ansible-navigator)
-  # =====================================
-
   alias anr="ansible-navigator run -m stdout"
   alias ansc="ansible-navigator run -m stdout --syntax-check"
   alias anch="ansible-navigator run -m stdout --check"
   alias ancd="ansible-navigator config dump -m stdout"
   alias anv="ansible-navigator --version"
   alias anig="ansible-navigator inventory --graph"
-
-  # ============
-  # Git aliases
-  # ============
-
   alias gc="git commit -m"
-
-  # ================
-  # General aliases
-  # ================
-
-  # strip comments inside file (assume # is comment character)
-  alias decomment='egrep -v "^[[:space:]]*((#|;|//).*)?$" '
-
-  # stop using scp
+  alias decomment='egrep -v "^[[:space:]]*((#|;|//).*)?$$" '
   alias scp='echo -e "\nStop using scp\n\nSee https://www.redhat.com/en/blog/openssh-scp-deprecation-rhel-9-what-you-need-know"'
-
-  # python virtual environments
-
-  # Create virtual environment
   alias ve='python3 -m venv ./venv'
-
-  # Activate virtual environment
   alias va='source ./venv/bin/activate'
-  
-  # Display all aliases
   alias showaliases="awk '/^alias/ {sub(/^alias[ \t]*/, \"\"); print}' /etc/bashrc"
 
-  # ==========
-  # functions
-  # ==========
-
-  # pastebin / glab snippets
   pastebin (){
-    local filename="$1"
-    if [[ -z  "$filename" ]]; then
+    local filename="$$1"
+    if [[ -z  "$$filename" ]]; then
         echo "Usage: pastebin /path/to/file"
         return 1
     fi
-
-    glab snippet create -pv public --filename $filename --title $filename
+    glab snippet create -pv public --filename $$filename --title $$filename
   }
 
-  # make and change to directory
   mcd (){
-    mkdir -pv "$1"
-    cd "$1" || return
+    mkdir -pv "$$1"
+    cd "$$1" || return
   }
 
-  # Show which block devices are mounted
   mnt (){
-    mount | awk '$1 ~ /\/dev/ { print $1,$3; }' | column -t | sort ;
+    mount | awk '$$1 ~ /\/dev/ { print $$1,$$3; }' | column -t | sort
   }
 
-  # create, switch to, push new git branch
   gnb (){
-    git checkout -b "$1"
-    git push -u origin "$1"
+    git checkout -b "$$1"
+    git push -u origin "$$1"
   }
 
   my_ocp (){
-
-    echo 'M=$RHT_OCP4_MASTER_API' # api server
-    echo 'WC=$RHT_OCP4_WILDCARD_DOMAIN' # wildcard domain
-    echo 'NS=$RHT_OCP4_NEXUS_SERVER' # nexus server
-    echo 'U=$RHT_OCP4_DEV_USER' # developer user
-    echo 'P=$RHT_OCP4_DEV_PASSWORD' # developer password
-    echo 'G=$RHT_OCP4_GITHUB_USER' # your github account (not for >= OCP4.12)
-    echo 'Q=$RHT_OCP4_QUAY_USER' # your quay.io account (not for >= OCP4.12)
-
+    echo 'M=$$RHT_OCP4_MASTER_API'
+    echo 'WC=$$RHT_OCP4_WILDCARD_DOMAIN'
+    echo 'NS=$$RHT_OCP4_NEXUS_SERVER'
+    echo 'U=$$RHT_OCP4_DEV_USER'
+    echo 'P=$$RHT_OCP4_DEV_PASSWORD'
+    echo 'G=$$RHT_OCP4_GITHUB_USER'
+    echo 'Q=$$RHT_OCP4_QUAY_USER'
   }
 
-
-  # OpenShift Tools
-if command -v oc &> /dev/null; then
+  if command -v oc &> /dev/null; then
     source <(oc completion bash)
-fi
+  fi
 
-if command -v kubectl &> /dev/null; then
+  if command -v kubectl &> /dev/null; then
     source <(kubectl completion bash)
-fi
+  fi
 
-if command -v virtctl &> /dev/null; then
+  if command -v virtctl &> /dev/null; then
     source <(virtctl completion bash)
-fi
+  fi
