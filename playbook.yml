@@ -140,7 +140,7 @@
 
     - name: Ensure firefox configuration tasks are included
       ansible.builtin.include_tasks:
-        file: firefox.yml
+        file: tasks/firefox.yml
 
     - name: Create an Alt + Tab alternative with Alt + q
       ansible.builtin.shell: >
