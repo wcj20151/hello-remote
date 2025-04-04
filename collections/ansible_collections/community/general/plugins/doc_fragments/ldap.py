@@ -12,18 +12,40 @@ __metaclass__ = type
 
 class ModuleDocFragment(object):
     # Standard LDAP documentation fragment
-    DOCUMENTATION = r'''
+    DOCUMENTATION = r"""
+notes:
+  - The default authentication settings will attempt to use a SASL EXTERNAL bind over a UNIX domain socket. This works well
+    with the default Ubuntu install for example, which includes a C(cn=peercred,cn=external,cn=auth) ACL rule allowing root
+    to modify the server configuration. If you need to use a simple bind to access your server, pass the credentials in O(bind_dn)
+    and O(bind_pw).
 options:
   bind_dn:
     description:
-      - A DN to bind with. If this is omitted, we'll try a SASL bind with the EXTERNAL mechanism as default.
-      - If this is blank, we'll use an anonymous bind.
+      - A DN to bind with. Try to use a SASL bind with the EXTERNAL mechanism as default when this parameter is omitted.
+      - Use an anonymous bind if the parameter is blank.
     type: str
   bind_pw:
     description:
-      - The password to use with I(bind_dn).
+      - The password to use with O(bind_dn).
     type: str
     default: ''
+  ca_path:
+    description:
+      - Set the path to PEM file with CA certs.
+    type: path
+    version_added: "6.5.0"
+  client_cert:
+    type: path
+    description:
+      - PEM formatted certificate chain file to be used for SSL client authentication.
+      - Required if O(client_key) is defined.
+    version_added: "7.1.0"
+  client_key:
+    type: path
+    description:
+      - PEM formatted file that contains your private key to be used for SSL client authentication.
+      - Required if O(client_cert) is defined.
+    version_added: "7.1.0"
   dn:
     required: true
     description:
@@ -35,12 +57,13 @@ options:
     type: str
     description:
       - Set the referrals chasing behavior.
-      - C(anonymous) follow referrals anonymously. This is the default behavior.
-      - C(disabled) disable referrals chasing. This sets C(OPT_REFERRALS) to off.
+      - V(anonymous) follow referrals anonymously. This is the default behavior.
+      - V(disabled) disable referrals chasing. This sets C(OPT_REFERRALS) to off.
     version_added: 2.0.0
   server_uri:
     description:
-      - The I(server_uri) parameter may be a comma- or whitespace-separated list of URIs containing only the schema, the host, and the port fields.
+      - The O(server_uri) parameter may be a comma- or whitespace-separated list of URIs containing only the schema, the host,
+        and the port fields.
       - The default value lets the underlying LDAP client library look for a UNIX domain socket in its default location.
       - Note that when using multiple URIs you cannot determine to which URI your client gets connected.
       - For URIs containing additional fields, particularly when using commas, behavior is undefined.
@@ -48,21 +71,30 @@ options:
     default: ldapi:///
   start_tls:
     description:
-      - If true, we'll use the START_TLS LDAP extension.
+      - Use the START_TLS LDAP extension if set to V(true).
     type: bool
     default: false
   validate_certs:
     description:
-      - If set to C(false), SSL certificates will not be validated.
+      - If set to V(false), SSL certificates will not be validated.
       - This should only be used on sites using self-signed certificates.
     type: bool
     default: true
   sasl_class:
     description:
       - The class to use for SASL authentication.
-      - possible choices are C(external), C(gssapi).
     type: str
     choices: ['external', 'gssapi']
     default: external
     version_added: "2.0.0"
-'''
+  xorder_discovery:
+    description:
+      - Set the behavior on how to process Xordered DNs.
+      - V(enable) will perform a C(ONELEVEL) search below the superior RDN to find the matching DN.
+      - V(disable) will always use the DN unmodified (as passed by the O(dn) parameter).
+      - V(auto) will only perform a search if the first RDN does not contain an index number (C({x})).
+    type: str
+    choices: ['enable', 'auto', 'disable']
+    default: auto
+    version_added: "6.4.0"
+"""

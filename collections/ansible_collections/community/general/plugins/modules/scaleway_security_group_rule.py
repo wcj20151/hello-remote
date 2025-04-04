@@ -12,18 +12,21 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: scaleway_security_group_rule
 short_description: Scaleway Security Group Rule management module
 author: Antoine Barbare (@abarbare)
 description:
-  - This module manages Security Group Rule on Scaleway account
-    U(https://developer.scaleway.com)
+  - This module manages Security Group Rule on Scaleway account U(https://developer.scaleway.com).
 extends_documentation_fragment:
   - community.general.scaleway
-requirements:
-  - ipaddress
+  - community.general.attributes
+
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 
 options:
   state:
@@ -38,7 +41,7 @@ options:
   region:
     type: str
     description:
-      - Scaleway region to use (for example C(par1)).
+      - Scaleway region to use (for example V(par1)).
     required: true
     choices:
       - ams1
@@ -53,7 +56,7 @@ options:
   protocol:
     type: str
     description:
-      - Network protocol to use
+      - Network protocol to use.
     choices:
       - TCP
       - UDP
@@ -62,20 +65,20 @@ options:
 
   port:
     description:
-      - Port related to the rule, null value for all the ports
+      - Port related to the rule, null value for all the ports.
     required: true
     type: int
 
   ip_range:
     type: str
     description:
-      - IPV4 CIDR notation to apply to the rule
+      - IPV4 CIDR notation to apply to the rule.
     default: 0.0.0.0/0
 
   direction:
     type: str
     description:
-      - Rule direction
+      - Rule direction.
     choices:
       - inbound
       - outbound
@@ -84,7 +87,7 @@ options:
   action:
     type: str
     description:
-      - Rule action
+      - Rule action.
     choices:
       - accept
       - drop
@@ -93,28 +96,28 @@ options:
   security_group:
     type: str
     description:
-      - Security Group unique identifier
+      - Security Group unique identifier.
     required: true
-'''
+"""
 
-EXAMPLES = '''
-  - name: Create a Security Group Rule
-    community.general.scaleway_security_group_rule:
-      state: present
-      region: par1
-      protocol: TCP
-      port: 80
-      ip_range: 0.0.0.0/0
-      direction: inbound
-      action: accept
-      security_group: b57210ee-1281-4820-a6db-329f78596ecb
-    register: security_group_rule_creation_task
-'''
+EXAMPLES = r"""
+- name: Create a Security Group Rule
+  community.general.scaleway_security_group_rule:
+    state: present
+    region: par1
+    protocol: TCP
+    port: 80
+    ip_range: 0.0.0.0/0
+    direction: inbound
+    action: accept
+    security_group: b57210ee-1281-4820-a6db-329f78596ecb
+  register: security_group_rule_creation_task
+"""
 
-RETURN = '''
+RETURN = r"""
 data:
-    description: This is only present when C(state=present)
-    returned: when C(state=present)
+    description: This is only present when O(state=present).
+    returned: when O(state=present)
     type: dict
     sample: {
         "scaleway_security_group_rule": {
@@ -129,22 +132,10 @@ data:
             "id": "10cb0b9a-80f6-4830-abd7-a31cd828b5e9"
         }
     }
-'''
-
-import traceback
+"""
 
 from ansible_collections.community.general.plugins.module_utils.scaleway import SCALEWAY_LOCATION, scaleway_argument_spec, Scaleway, payload_from_object
-from ansible.module_utils.common.text.converters import to_text
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-
-try:
-    from ipaddress import ip_network
-except ImportError:
-    IPADDRESS_IMP_ERR = traceback.format_exc()
-    HAS_IPADDRESS = False
-else:
-    IPADDRESS_IMP_ERR = None
-    HAS_IPADDRESS = True
+from ansible.module_utils.basic import AnsibleModule
 
 
 def get_sgr_from_api(security_group_rules, security_group_rule):
@@ -267,8 +258,6 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
     )
-    if not HAS_IPADDRESS:
-        module.fail_json(msg=missing_required_lib('ipaddress'), exception=IPADDRESS_IMP_ERR)
 
     core(module)
 

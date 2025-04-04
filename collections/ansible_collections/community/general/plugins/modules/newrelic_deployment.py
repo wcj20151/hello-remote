@@ -9,13 +9,19 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: newrelic_deployment
 author: "Matt Coddington (@mcodd)"
 short_description: Notify New Relic about app deployments
 description:
-  - Notify New Relic about app deployments (see https://docs.newrelic.com/docs/apm/new-relic-apm/maintenance/record-monitor-deployments/)
+  - Notify New Relic about app deployments (see U(https://docs.newrelic.com/docs/apm/new-relic-apm/maintenance/record-monitor-deployments/)).
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   token:
     type: str
@@ -25,65 +31,61 @@ options:
   app_name:
     type: str
     description:
-      - The value of app_name in the newrelic.yml file used by the application.
-      - One of I(app_name) or I(application_id) is required.
+      - The value of C(app_name) in the C(newrelic.yml) file used by the application.
+      - One of O(app_name) or O(application_id) is required.
     required: false
   application_id:
     type: str
     description:
       - The application ID found in the metadata of the application in APM.
-      - One of I(app_name) or I(application_id) is required.
+      - One of O(app_name) or O(application_id) is required.
     required: false
   changelog:
     type: str
     description:
-      - A list of changes for this deployment
+      - A list of changes for this deployment.
     required: false
   description:
     type: str
     description:
-      - Text annotation for the deployment - notes for you
+      - Text annotation for the deployment - notes for you.
     required: false
   revision:
     type: str
     description:
-      - A revision number (e.g., git commit SHA)
+      - A revision number (for example, git commit SHA).
     required: true
   user:
     type: str
     description:
-      - The name of the user/process that triggered this deployment
-    required: false
-  appname:
-    type: str
-    description:
-      - Name of the application.
-      - This option has been deprecated and will be removed in community.general 7.0.0. Please do not use.
-    required: false
-  environment:
-    type: str
-    description:
-      - The environment for this deployment.
-      - This option has been deprecated and will be removed community.general 7.0.0. Please do not use.
+      - The name of the user/process that triggered this deployment.
     required: false
   validate_certs:
     description:
-      - If C(false), SSL certificates will not be validated. This should only be used
-        on personally controlled sites using self-signed certificates.
+      - If V(false), SSL certificates will not be validated. This should only be used on personally controlled sites using
+        self-signed certificates.
     required: false
     default: true
     type: bool
+  app_name_exact_match:
+    type: bool
+    description:
+      - If this flag is set to V(true) then the application ID lookup by name would only work for an exact match. If set to
+        V(false) it returns the first result.
+    required: false
+    default: false
+    version_added: 7.5.0
 requirements: []
-'''
+"""
 
-EXAMPLES = '''
-- name:  Notify New Relic about an app deployment
+EXAMPLES = r"""
+- name: Notify New Relic about an app deployment
   community.general.newrelic_deployment:
     token: AAAAAA
     app_name: myapp
     user: ansible deployment
     revision: '1.0'
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import fetch_url
@@ -106,11 +108,11 @@ def main():
             description=dict(required=False),
             revision=dict(required=True),
             user=dict(required=False),
-            appname=dict(required=False, removed_in_version='7.0.0', removed_from_collection='community.general'),
-            environment=dict(required=False, removed_in_version='7.0.0', removed_from_collection='community.general'),
             validate_certs=dict(default=True, type='bool'),
+            app_name_exact_match=dict(required=False, type='bool', default=False),
         ),
         required_one_of=[['app_name', 'application_id']],
+        required_if=[('app_name_exact_match', True, ['app_name'])],
         supports_check_mode=True
     )
 
@@ -118,7 +120,6 @@ def main():
     params = {}
     if module.params["app_name"] and module.params["application_id"]:
         module.fail_json(msg="only one of 'app_name' or 'application_id' can be set")
-
     app_id = None
     if module.params["app_name"]:
         app_id = get_application_id(module)
@@ -157,6 +158,7 @@ def main():
 def get_application_id(module):
     url = "https://api.newrelic.com/v2/applications.json"
     data = "filter[name]=%s" % module.params["app_name"]
+    application_id = None
     headers = {
         'Api-Key': module.params["token"],
     }
@@ -168,7 +170,17 @@ def get_application_id(module):
     if result is None or len(result.get("applications", "")) == 0:
         module.fail_json(msg='No application found with name "%s"' % module.params["app_name"])
 
-    return result["applications"][0]["id"]
+    if module.params["app_name_exact_match"]:
+        for item in result["applications"]:
+            if item["name"] == module.params["app_name"]:
+                application_id = item["id"]
+                break
+        if application_id is None:
+            module.fail_json(msg='No application found with exact name "%s"' % module.params["app_name"])
+    else:
+        application_id = result["applications"][0]["id"]
+
+    return application_id
 
 
 if __name__ == '__main__':

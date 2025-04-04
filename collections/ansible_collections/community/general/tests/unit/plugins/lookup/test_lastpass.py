@@ -8,13 +8,13 @@ __metaclass__ = type
 
 from argparse import ArgumentParser
 
-from ansible_collections.community.general.tests.unit.compat import unittest
-from ansible_collections.community.general.tests.unit.compat.mock import patch
+from ansible_collections.community.internal_test_tools.tests.unit.compat import unittest
+from ansible_collections.community.internal_test_tools.tests.unit.compat.mock import patch
 
 from ansible.errors import AnsibleError
 from ansible.module_utils import six
 from ansible.plugins.loader import lookup_loader
-from ansible_collections.community.general.plugins.lookup.lastpass import LookupModule, LPass, LPassException
+from ansible_collections.community.general.plugins.lookup.lastpass import LPass, LPassException
 
 
 MOCK_ENTRIES = [{'username': 'user',

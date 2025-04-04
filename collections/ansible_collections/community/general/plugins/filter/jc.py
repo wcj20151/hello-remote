@@ -5,44 +5,43 @@
 #
 # contributed by Kelly Brazil <kellyjonbrazil@gmail.com>
 
-from __future__ import (absolute_import, division, print_function)
-__metaclass__ = type
+from __future__ import annotations
 
-DOCUMENTATION = '''
-  name: jc
-  short_description: Convert output of many shell commands and file-types to JSON
-  version_added: 1.1.0
-  author: Kelly Brazil (@kellyjonbrazil)
-  description:
-    - Convert output of many shell commands and file-types to JSON.
-    - Uses the L(jc library,https://github.com/kellyjonbrazil/jc).
-  positional: parser
-  options:
-    _input:
-      description: The data to convert.
-      type: string
-      required: true
-    parser:
-      description:
-        - The correct parser for the input data.
-        - For example C(ifconfig).
-        - "Note: use underscores instead of dashes (if any) in the parser module name."
-        - See U(https://github.com/kellyjonbrazil/jc#parsers) for the latest list of parsers.
-      type: string
-      required: true
-    quiet:
-      description: Set to C(false) to not suppress warnings.
-      type: boolean
-      default: true
-    raw:
-      description: Set to C(true) to return pre-processed JSON.
-      type: boolean
-      default: false
-  requirements:
-    - jc installed as a Python library (U(https://pypi.org/project/jc/))
-'''
+DOCUMENTATION = r"""
+name: jc
+short_description: Convert output of many shell commands and file-types to JSON
+version_added: 1.1.0
+author: Kelly Brazil (@kellyjonbrazil)
+description:
+  - Convert output of many shell commands and file-types to JSON.
+  - Uses the L(jc library,https://github.com/kellyjonbrazil/jc).
+positional: parser
+options:
+  _input:
+    description: The data to convert.
+    type: string
+    required: true
+  parser:
+    description:
+      - The correct parser for the input data.
+      - For example V(ifconfig).
+      - 'Note: use underscores instead of dashes (if any) in the parser module name.'
+      - See U(https://github.com/kellyjonbrazil/jc#parsers) for the latest list of parsers.
+    type: string
+    required: true
+  quiet:
+    description: Set to V(false) to not suppress warnings.
+    type: boolean
+    default: true
+  raw:
+    description: Set to V(true) to return pre-processed JSON.
+    type: boolean
+    default: false
+requirements:
+  - jc installed as a Python library (U(https://pypi.org/project/jc/))
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Install the prereqs of the jc filter (jc Python package) on the Ansible controller
   delegate_to: localhost
   ansible.builtin.pip:
@@ -68,25 +67,25 @@ EXAMPLES = '''
   #   "operating_system": "GNU/Linux",
   #   "processor": "x86_64"
   # }
-'''
+"""
 
-RETURN = '''
-  _value:
-    description: The processed output.
-    type: any
-'''
+RETURN = r"""
+_value:
+  description: The processed output.
+  type: any
+"""
 
 from ansible.errors import AnsibleError, AnsibleFilterError
 import importlib
 
 try:
-    import jc
+    import jc  # noqa: F401, pylint: disable=unused-import
     HAS_LIB = True
 except ImportError:
     HAS_LIB = False
 
 
-def jc(data, parser, quiet=True, raw=False):
+def jc_filter(data, parser, quiet=True, raw=False):
     """Convert returned command output to JSON using the JC library
 
     Arguments:
@@ -138,8 +137,14 @@ def jc(data, parser, quiet=True, raw=False):
         raise AnsibleError('You need to install "jc" as a Python library on the Ansible controller prior to running jc filter')
 
     try:
-        jc_parser = importlib.import_module('jc.parsers.' + parser)
-        return jc_parser.parse(data, quiet=quiet, raw=raw)
+        # new API (jc v1.18.0 and higher) allows use of plugin parsers
+        if hasattr(jc, 'parse'):
+            return jc.parse(parser, data, quiet=quiet, raw=raw)
+
+        # old API (jc v1.17.7 and lower)
+        else:
+            jc_parser = importlib.import_module('jc.parsers.' + parser)
+            return jc_parser.parse(data, quiet=quiet, raw=raw)
 
     except Exception as e:
         raise AnsibleFilterError('Error in jc filter plugin:  %s' % e)
@@ -150,5 +155,5 @@ class FilterModule(object):
 
     def filters(self):
         return {
-            'jc': jc
+            'jc': jc_filter,
         }

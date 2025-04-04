@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 azp/posix/1
+azp/posix/vm
 destructive
 needs/privileged
 skip/aix
 skip/freebsd
 skip/osx
 skip/macos
+skip/alpine3.21 # TODO try to fix

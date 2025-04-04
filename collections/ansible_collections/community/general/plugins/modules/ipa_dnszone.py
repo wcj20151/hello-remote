@@ -8,21 +8,25 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: ipa_dnszone
 author: Fran Fitzpatrick (@fxfitz)
 short_description: Manage FreeIPA DNS Zones
 description:
-- Add and delete an IPA DNS Zones using IPA API
+  - Add and delete an IPA DNS Zones using IPA API.
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   zone_name:
     description:
-    - The DNS zone name to which needs to be managed.
+      - The DNS zone name to which needs to be managed.
     required: true
     type: str
   state:
-    description: State to ensure
+    description: State to ensure.
     required: false
     default: present
     choices: ["absent", "present"]
@@ -37,11 +41,11 @@ options:
     type: bool
     version_added: 4.3.0
 extends_documentation_fragment:
-- community.general.ipa.documentation
+  - community.general.ipa.documentation
+  - community.general.attributes
+"""
 
-'''
-
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Ensure dns zone is present
   community.general.ipa_dnszone:
     ipa_host: spider.example.com
@@ -72,14 +76,14 @@ EXAMPLES = r'''
     state: present
     zone_name: example.com
     allowsyncptr: true
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 zone:
   description: DNS zone as returned by IPA API.
   returned: always
   type: dict
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.general.plugins.module_utils.ipa import IPAClient, ipa_argument_spec
@@ -146,7 +150,8 @@ def ensure(module, client):
             changed = True
             if not module.check_mode:
                 client.dnszone_add(zone_name=zone_name, details={'idnsallowdynupdate': dynamicupdate, 'idnsallowsyncptr': allowsyncptr})
-        elif ipa_dnszone['idnsallowdynupdate'][0] != str(dynamicupdate).upper() or ipa_dnszone['idnsallowsyncptr'][0] != str(allowsyncptr).upper():
+        elif ipa_dnszone['idnsallowdynupdate'][0] != str(dynamicupdate).upper() or \
+                ipa_dnszone.get('idnsallowsyncptr') and ipa_dnszone['idnsallowsyncptr'][0] != str(allowsyncptr).upper():
             changed = True
             if not module.check_mode:
                 client.dnszone_mod(zone_name=zone_name, details={'idnsallowdynupdate': dynamicupdate, 'idnsallowsyncptr': allowsyncptr})

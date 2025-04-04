@@ -11,38 +11,45 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: yarn
-short_description: Manage node.js packages with Yarn
+short_description: Manage Node.js packages with Yarn
 description:
-  - Manage node.js packages with the Yarn package manager (https://yarnpkg.com/)
+  - Manage Node.js packages with the Yarn package manager U(https://yarnpkg.com/).
+  - Note that at the moment, this module B(only works with Yarn Classic).
 author:
   - "David Gunter (@verkaufer)"
   - "Chris Hoffman (@chrishoffman), creator of NPM Ansible module)"
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   name:
     type: str
     description:
-      - The name of a node.js library to install
+      - The name of a Node.js library to install.
       - If omitted all packages in package.json are installed.
-      - To globally install from local node.js library. Prepend "file:" to the path of the node.js library.
+      - To globally install from local Node.js library. Prepend C(file:) to the path of the Node.js library.
     required: false
   path:
     type: path
     description:
-      - The base path where Node.js libraries will be installed.
-      - This is where the node_modules folder lives.
+      - The base path where Node.js installs libraries.
+      - This is where the C(node_modules) folder lives.
     required: false
   version:
     type: str
     description:
       - The version of the library to be installed.
-      - Must be in semver format. If "latest" is desired, use "state" arg instead
+      - Must be in semver format. If "latest" is desired, use O(state) arg instead.
     required: false
   global:
     description:
-      - Install the node.js library globally
+      - Install the Node.js library globally.
     required: false
     default: false
     type: bool
@@ -53,14 +60,14 @@ options:
     required: false
   ignore_scripts:
     description:
-      - Use the --ignore-scripts flag when installing.
+      - Use the C(--ignore-scripts) flag when installing.
     required: false
     type: bool
     default: false
   production:
     description:
       - Install dependencies in production mode.
-      - Yarn will ignore any dependencies under devDependencies in package.json
+      - C(yarn) ignores any dependencies under devDependencies in C(package.json).
     required: false
     type: bool
     default: false
@@ -72,28 +79,28 @@ options:
   state:
     type: str
     description:
-      - Installation state of the named node.js library
-      - If absent is selected, a name option must be provided
+      - Installation state of the named Node.js library.
+      - If V(absent) is selected, a O(name) option must be provided.
     required: false
     default: present
-    choices: [ "present", "absent", "latest" ]
+    choices: ["present", "absent", "latest"]
 requirements:
-    - Yarn installed in bin path (typically /usr/local/bin)
-'''
+  - Yarn Classic installed in bin path (typically C(/usr/local/bin))
+"""
 
-EXAMPLES = '''
-- name: Install "imagemin" node.js package.
+EXAMPLES = r"""
+- name: Install "imagemin" Node.js package.
   community.general.yarn:
     name: imagemin
     path: /app/location
 
-- name: Install "imagemin" node.js package on version 5.3.1
+- name: Install "imagemin" Node.js package on version 5.3.1
   community.general.yarn:
     name: imagemin
     version: '5.3.1'
     path: /app/location
 
-- name: Install "imagemin" node.js package globally.
+- name: Install "imagemin" Node.js package globally.
   community.general.yarn:
     name: imagemin
     global: true
@@ -104,7 +111,7 @@ EXAMPLES = '''
     global: true
     state: absent
 
-- name: Install "imagemin" node.js package from custom registry.
+- name: Install "imagemin" Node.js package from custom registry.
   community.general.yarn:
     name: imagemin
     registry: 'http://registry.mysite.com'
@@ -117,43 +124,16 @@ EXAMPLES = '''
   community.general.yarn:
     path: /app/location
     state: latest
-'''
+"""
 
-RETURN = '''
-changed:
-    description: Whether Yarn changed any package data
-    returned: always
-    type: bool
-    sample: true
-msg:
-    description: Provides an error message if Yarn syntax was incorrect
-    returned: failure
-    type: str
-    sample: "Package must be explicitly named when uninstalling."
-invocation:
-    description: Parameters and values used during execution
-    returned: success
-    type: dict
-    sample: {
-            "module_args": {
-                "executable": null,
-                "globally": false,
-                "ignore_scripts": false,
-                "name": null,
-                "path": "/some/path/folder",
-                "production": false,
-                "registry": null,
-                "state": "present",
-                "version": null
-            }
-        }
+RETURN = r"""
 out:
-    description: Output generated from Yarn.
-    returned: always
-    type: str
-    sample: "yarn add v0.16.1[1/4] Resolving packages...[2/4] Fetching packages...[3/4] Linking dependencies...[4/4]
-    Building fresh packages...success Saved lockfile.success Saved 1 new dependency..left-pad@1.1.3 Done in 0.59s."
-'''
+  description: Output generated from Yarn.
+  returned: always
+  type: str
+  sample: "yarn add v0.16.1[1/4] Resolving packages...[2/4] Fetching packages...[3/4] Linking dependencies...[4/4] Building
+    fresh packages...success Saved lockfile.success Saved 1 new dependency..left-pad@1.1.3 Done in 0.59s."
+"""
 
 import os
 import json
@@ -162,8 +142,6 @@ from ansible.module_utils.basic import AnsibleModule
 
 
 class Yarn(object):
-
-    DEFAULT_GLOBAL_INSTALLATION_PATH = os.path.expanduser('~/.config/yarn/global')
 
     def __init__(self, module, **kwargs):
         self.module = module
@@ -174,24 +152,22 @@ class Yarn(object):
         self.registry = kwargs['registry']
         self.production = kwargs['production']
         self.ignore_scripts = kwargs['ignore_scripts']
+        self.executable = kwargs['executable']
 
         # Specify a version of package if version arg passed in
         self.name_version = None
-
-        if kwargs['executable']:
-            self.executable = kwargs['executable'].split(' ')
-        else:
-            self.executable = [module.get_bin_path('yarn', True)]
 
         if kwargs['version'] and self.name is not None:
             self.name_version = self.name + '@' + str(self.version)
         elif self.name is not None:
             self.name_version = self.name
 
-    def _exec(self, args, run_in_check_mode=False, check_rc=True):
+    def _exec(self, args, run_in_check_mode=False, check_rc=True, unsupported_with_global=False):
         if not self.module.check_mode or (self.module.check_mode and run_in_check_mode):
 
-            if self.globally:
+            with_global_arg = self.globally and not unsupported_with_global
+
+            if with_global_arg:
                 # Yarn global arg is inserted before the command (e.g. `yarn global {some-command}`)
                 args.insert(0, 'global')
 
@@ -207,7 +183,7 @@ class Yarn(object):
 
             # If path is specified, cd into that path and run the command.
             cwd = None
-            if self.path and not self.globally:
+            if self.path and not with_global_arg:
                 if not os.path.exists(self.path):
                     # Module will make directory if not exists.
                     os.makedirs(self.path)
@@ -223,6 +199,15 @@ class Yarn(object):
 
         return None, None
 
+    def _process_yarn_error(self, err):
+        try:
+            # We need to filter for errors, since Yarn warnings are included in stderr
+            for line in err.splitlines():
+                if json.loads(line)['type'] == 'error':
+                    self.module.fail_json(msg=err)
+        except Exception:
+            self.module.fail_json(msg="Unexpected stderr output from Yarn: %s" % err, stderr=err)
+
     def list(self):
         cmd = ['list', '--depth=0', '--json']
 
@@ -233,24 +218,20 @@ class Yarn(object):
             missing.append(self.name)
             return installed, missing
 
-        result, error = self._exec(cmd, True, False)
+        # `yarn global list` should be treated as "unsupported with global" even though it exists,
+        # because it only only lists binaries, but `yarn global add` can install libraries too.
+        result, error = self._exec(cmd, run_in_check_mode=True, check_rc=False, unsupported_with_global=True)
 
-        if error:
-            self.module.fail_json(msg=error)
+        self._process_yarn_error(error)
 
         for json_line in result.strip().split('\n'):
             data = json.loads(json_line)
-            if self.globally:
-                if data['type'] == 'list' and data['data']['type'].startswith('bins-'):
-                    # This is a string in format: 'bins-<PACKAGE_NAME>'
-                    installed.append(data['data']['type'][5:])
-            else:
-                if data['type'] == 'tree':
-                    dependencies = data['data']['trees']
+            if data['type'] == 'tree':
+                dependencies = data['data']['trees']
 
-                    for dep in dependencies:
-                        name, version = dep['name'].rsplit('@', 1)
-                        installed.append(name)
+                for dep in dependencies:
+                    name, version = dep['name'].rsplit('@', 1)
+                    installed.append(name)
 
         if self.name not in installed:
             missing.append(self.name)
@@ -276,9 +257,10 @@ class Yarn(object):
         if not os.path.isfile(os.path.join(self.path, 'yarn.lock')):
             return outdated
 
-        cmd_result, err = self._exec(['outdated', '--json'], True, False)
-        if err:
-            self.module.fail_json(msg=err)
+        cmd_result, err = self._exec(['outdated', '--json'], True, False, unsupported_with_global=True)
+
+        # the package.json in the global dir is missing a license field, so warnings are expected on stderr
+        self._process_yarn_error(err)
 
         if not cmd_result:
             return outdated
@@ -321,7 +303,6 @@ def main():
     version = module.params['version']
     globally = module.params['global']
     production = module.params['production']
-    executable = module.params['executable']
     registry = module.params['registry']
     state = module.params['state']
     ignore_scripts = module.params['ignore_scripts']
@@ -338,9 +319,15 @@ def main():
     if state == 'latest':
         version = 'latest'
 
+    if module.params['executable']:
+        executable = module.params['executable'].split(' ')
+    else:
+        executable = [module.get_bin_path('yarn', True)]
+
     # When installing globally, use the defined path for global node_modules
     if globally:
-        path = Yarn.DEFAULT_GLOBAL_INSTALLATION_PATH
+        _rc, out, _err = module.run_command(executable + ['global', 'dir'], check_rc=True)
+        path = out.strip()
 
     yarn = Yarn(module,
                 name=name,

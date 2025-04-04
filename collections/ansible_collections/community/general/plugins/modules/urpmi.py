@@ -11,24 +11,30 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: urpmi
 short_description: Urpmi manager
 description:
-  - Manages packages with I(urpmi) (such as for Mageia or Mandriva)
+  - Manages packages with C(urpmi) (such as for Mageia or Mandriva).
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: none
+  diff_mode:
+    support: none
 options:
   name:
     description:
       - A list of package names to install, upgrade or remove.
     required: true
-    aliases: [ package, pkg ]
+    aliases: [package, pkg]
     type: list
     elements: str
   state:
     description:
       - Indicates the desired package state.
-    choices: [ absent, present, installed, removed ]
+    choices: [absent, present, installed, removed]
     default: present
     type: str
   update_cache:
@@ -38,26 +44,25 @@ options:
     default: false
   no_recommends:
     description:
-      - Corresponds to the C(--no-recommends) option for I(urpmi).
+      - Corresponds to the C(--no-recommends) option for C(urpmi).
     type: bool
     default: true
   force:
     description:
-      - Assume "yes" is the answer to any question urpmi has to ask.
-        Corresponds to the C(--force) option for I(urpmi).
+      - Assume "yes" is the answer to any question urpmi has to ask. Corresponds to the C(--force) option for C(urpmi).
     type: bool
     default: true
   root:
     description:
-      - Specifies an alternative install root, relative to which all packages will be installed.
-        Corresponds to the C(--root) option for I(urpmi).
-    aliases: [ installroot ]
+      - Specifies an alternative install root, relative to which all packages are installed. Corresponds to the C(--root)
+        option for C(urpmi).
+    aliases: [installroot]
     type: str
 author:
-- Philippe Makowski (@pmakowski)
-'''
+  - Philippe Makowski (@pmakowski)
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Install package foo
   community.general.urpmi:
     pkg: foo
@@ -78,7 +83,7 @@ EXAMPLES = '''
     name: bar
     state: present
     update_cache: true
-'''
+"""
 
 
 from ansible.module_utils.basic import AnsibleModule

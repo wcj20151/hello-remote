@@ -15,61 +15,62 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = """
+DOCUMENTATION = r"""
 module: slack
 short_description: Send Slack notifications
 description:
-    - The C(slack) module sends notifications to U(http://slack.com) via the Incoming WebHook integration
+  - The M(community.general.slack) module sends notifications to U(http://slack.com) using the Incoming WebHook integration.
 author: "Ramon de la Fuente (@ramondelafuente)"
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   domain:
     type: str
     description:
-      - Slack (sub)domain for your environment without protocol. (i.e.
-        C(example.slack.com)) In 1.8 and beyond, this is deprecated and may
-        be ignored.  See token documentation for information.
+      - Slack (sub)domain for your environment without protocol. (For example V(example.slack.com).) In Ansible 1.8 and beyond,
+        this is deprecated and may be ignored. See token documentation for information.
   token:
     type: str
     description:
-      - Slack integration token. This authenticates you to the slack service.
-        Make sure to use the correct type of token, depending on what method you use.
-      - "Webhook token:
-        Prior to 1.8, a token looked like C(3Ffe373sfhRE6y42Fg3rvf4GlK).  In
-        1.8 and above, ansible adapts to the new slack API where tokens look
-        like C(G922VJP24/D921DW937/3Ffe373sfhRE6y42Fg3rvf4GlK).  If tokens
-        are in the new format then slack will ignore any value of domain.  If
-        the token is in the old format the domain is required.  Ansible has no
-        control of when slack will get rid of the old API.  When slack does
-        that the old format will stop working.  ** Please keep in mind the tokens
-        are not the API tokens but are the webhook tokens.  In slack these are
-        found in the webhook URL which are obtained under the apps and integrations.
-        The incoming webhooks can be added in that area.  In some cases this may
-        be locked by your Slack admin and you must request access.  It is there
-        that the incoming webhooks can be added.  The key is on the end of the
-        URL given to you in that section."
-      - "WebAPI token:
-        Slack WebAPI requires a personal, bot or work application token. These tokens start with C(xoxp-), C(xoxb-)
-        or C(xoxa-), eg. C(xoxb-1234-56789abcdefghijklmnop). WebAPI token is required if you intend to receive thread_id.
-        See Slack's documentation (U(https://api.slack.com/docs/token-types)) for more information."
+      - Slack integration token. This authenticates you to the slack service. Make sure to use the correct type of token,
+        depending on what method you use.
+      - 'Webhook token: Prior to Ansible 1.8, a token looked like V(3Ffe373sfhRE6y42Fg3rvf4GlK). In Ansible 1.8 and above,
+        Ansible adapts to the new slack API where tokens look like V(G922VJP24/D921DW937/3Ffe373sfhRE6y42Fg3rvf4GlK). If tokens
+        are in the new format then slack will ignore any value of domain. If the token is in the old format the domain is
+        required. Ansible has no control of when slack will get rid of the old API. When slack does that the old format will
+        stop working. ** Please keep in mind the tokens are not the API tokens but are the webhook tokens. In slack these
+        are found in the webhook URL which are obtained under the apps and integrations. The incoming webhooks can be added
+        in that area. In some cases this may be locked by your Slack admin and you must request access. It is there that the
+        incoming webhooks can be added. The key is on the end of the URL given to you in that section.'
+      - "WebAPI token: Slack WebAPI requires a personal, bot or work application token. These tokens start with V(xoxp-),
+        V(xoxb-) or V(xoxa-), for example V(xoxb-1234-56789abcdefghijklmnop). WebAPI token is required if you intend to receive
+        thread_id. See Slack's documentation (U(https://api.slack.com/docs/token-types)) for more information."
     required: true
   msg:
     type: str
     description:
-      - Message to send. Note that the module does not handle escaping characters.
-        Plain-text angle brackets and ampersands should be converted to HTML entities (e.g. & to &amp;) before sending.
-        See Slack's documentation (U(https://api.slack.com/docs/message-formatting)) for more.
+      - Message to send. Note that the module does not handle escaping characters. Plain-text angle brackets and ampersands
+        should be converted to HTML entities (for example C(&) to C(&amp;)) before sending. See Slack's documentation
+        (U(https://api.slack.com/docs/message-formatting)) for more.
   channel:
     type: str
     description:
-      - Channel to send the message to. If absent, the message goes to the channel selected for the I(token).
+      - Channel to send the message to. If absent, the message goes to the channel selected for the O(token).
   thread_id:
     description:
-      - Optional. Timestamp of parent message to thread this message. https://api.slack.com/docs/message-threading
+      - Optional. Timestamp of parent message to thread this message, see U(https://api.slack.com/docs/message-threading).
     type: str
   message_id:
     description:
       - Optional. Message ID to edit, instead of posting a new message.
-      - If supplied I(channel_id) must be in form of C(C0xxxxxxx). use C({{ slack_response.channel_id }}) to get I(channel_id) from previous task run.
+      - If supplied O(channel) must be in form of C(C0xxxxxxx). use C({{ slack_response.channel }}) to get RV(ignore:channel)
+        from previous task run.
+      - The token needs history scope to get information on the message to edit (C(channels:history,groups:history,mpim:history,im:history)).
       - Corresponds to C(ts) in the Slack API (U(https://api.slack.com/messaging/modifying)).
     type: str
     version_added: 1.2.0
@@ -81,17 +82,17 @@ options:
   icon_url:
     type: str
     description:
-      - Url for the message sender's icon (default C(https://www.ansible.com/favicon.ico))
-    default: https://www.ansible.com/favicon.ico
+      - URL for the message sender's icon.
+    default: https://docs.ansible.com/favicon.ico
   icon_emoji:
     type: str
     description:
       - Emoji for the message sender. See Slack documentation for options.
-        (if I(icon_emoji) is set, I(icon_url) will not be used)
+      - If O(icon_emoji) is set, O(icon_url) will not be used.
   link_names:
     type: int
     description:
-      - Automatically create links for channels and usernames in I(msg).
+      - Automatically create links for channels and usernames in O(msg).
     default: 1
     choices:
       - 1
@@ -99,22 +100,23 @@ options:
   parse:
     type: str
     description:
-      - Setting for the message parser at Slack
+      - Setting for the message parser at Slack.
     choices:
       - 'full'
       - 'none'
   validate_certs:
     description:
-      - If C(false), SSL certificates will not be validated. This should only be used
-        on personally controlled sites using self-signed certificates.
+      - If V(false), SSL certificates will not be validated. This should only be used on personally controlled sites using
+        self-signed certificates.
     type: bool
     default: true
   color:
     type: str
     description:
-      - Allow text to use default colors - use the default of 'normal' to not send a custom color bar at the start of the message.
-      - Allowed values for color can be one of 'normal', 'good', 'warning', 'danger', any valid 3 digit or 6 digit hex color value.
-      - Specifying value in hex is supported since Ansible 2.8.
+      - Allow text to use default colors - use the default of V(normal) to not send a custom color bar at the start of the
+        message.
+      - Allowed values for color can be one of V(normal), V(good), V(warning), V(danger), any valid 3 digit or 6 digit hex
+        color value.
     default: 'normal'
   attachments:
     type: list
@@ -129,9 +131,25 @@ options:
     type: list
     elements: dict
     version_added: 1.0.0
+  prepend_hash:
+    type: str
+    description:
+      - Setting for automatically prepending a V(#) symbol on the passed in O(channel).
+      - The V(auto) method prepends a V(#) unless O(channel) starts with one of V(#), V(@), V(C0), V(GF), V(G0), V(CP). These
+        prefixes only cover a small set of the prefixes that should not have a V(#) prepended. Since an exact condition which
+        O(channel) values must not have the V(#) prefix is not known, the value V(auto) for this option will be deprecated
+        in the future. It is best to explicitly set O(prepend_hash=always) or O(prepend_hash=never) to obtain the needed behavior.
+      - The B(current default) is V(auto), which has been B(deprecated) since community.general 10.2.0. It will change to
+        V(never) in community.general 12.0.0. To prevent deprecation warnings you can explicitly set O(prepend_hash) to the
+        value you want. We suggest to only use V(always) or V(never), but not V(auto), when explicitly setting a value.
+    choices:
+      - 'always'
+      - 'never'
+      - 'auto'
+    version_added: 6.1.0
 """
 
-EXAMPLES = """
+EXAMPLES = r"""
 - name: Send notification message via Slack
   community.general.slack:
     token: thetoken/generatedby/slack
@@ -150,7 +168,8 @@ EXAMPLES = """
     parse: 'none'
   delegate_to: localhost
 
-- name: Insert a color bar in front of the message for visibility purposes and use the default webhook icon and name configured in Slack
+- name: Insert a color bar in front of the message for visibility purposes and use the default webhook icon and name configured
+    in Slack
   community.general.slack:
     token: thetoken/generatedby/slack
     msg: '{{ inventory_hostname }} is alive!'
@@ -193,14 +212,14 @@ EXAMPLES = """
             Display my system load on host A and B
       - type: context
         elements:
-        - type: mrkdwn
-          text: |-
-            *System A*
-            load average: 0,74, 0,66, 0,63
-        - type: mrkdwn
-          text: |-
-            *System B*
-            load average: 5,16, 4,64, 2,43
+          - type: mrkdwn
+            text: |-
+              *System A*
+              load average: 0,74, 0,66, 0,63
+          - type: mrkdwn
+            text: |-
+              *System B*
+              load average: 5,16, 4,64, 2,43
 
 - name: Send a message with a link using Slack markup
   community.general.slack:
@@ -289,7 +308,7 @@ def recursive_escape_quotes(obj, keys):
 
 
 def build_payload_for_slack(text, channel, thread_id, username, icon_url, icon_emoji, link_names,
-                            parse, color, attachments, blocks, message_id):
+                            parse, color, attachments, blocks, message_id, prepend_hash):
     payload = {}
     if color == "normal" and text is not None:
         payload = dict(text=escape_quotes(text))
@@ -297,10 +316,15 @@ def build_payload_for_slack(text, channel, thread_id, username, icon_url, icon_e
         # With a custom color we have to set the message as attachment, and explicitly turn markdown parsing on for it.
         payload = dict(attachments=[dict(text=escape_quotes(text), color=color, mrkdwn_in=["text"])])
     if channel is not None:
-        if channel.startswith(('#', '@', 'C0', 'GF', 'G0', 'CP')):
-            payload['channel'] = channel
-        else:
+        if prepend_hash == 'auto':
+            if channel.startswith(('#', '@', 'C0', 'GF', 'G0', 'CP')):
+                payload['channel'] = channel
+            else:
+                payload['channel'] = '#' + channel
+        elif prepend_hash == 'always':
             payload['channel'] = '#' + channel
+        elif prepend_hash == 'never':
+            payload['channel'] = channel
     if thread_id is not None:
         payload['thread_ts'] = thread_id
     if username is not None:
@@ -365,6 +389,8 @@ def get_slack_message(module, token, channel, ts):
     if info['status'] != 200:
         module.fail_json(msg="failed to get slack message")
     data = module.from_json(response.read())
+    if data.get('ok') is False:
+        module.fail_json(msg="failed to get slack message: %s" % data)
     if len(data['messages']) < 1:
         module.fail_json(msg="no messages matching ts: %s" % ts)
     if len(data['messages']) > 1:
@@ -419,7 +445,7 @@ def main():
             channel=dict(type='str'),
             thread_id=dict(type='str'),
             username=dict(type='str', default='Ansible'),
-            icon_url=dict(type='str', default='https://www.ansible.com/favicon.ico'),
+            icon_url=dict(type='str', default='https://docs.ansible.com/favicon.ico'),
             icon_emoji=dict(type='str'),
             link_names=dict(type='int', default=1, choices=[0, 1]),
             parse=dict(type='str', choices=['none', 'full']),
@@ -428,6 +454,7 @@ def main():
             attachments=dict(type='list', elements='dict'),
             blocks=dict(type='list', elements='dict'),
             message_id=dict(type='str'),
+            prepend_hash=dict(type='str', choices=['always', 'never', 'auto']),
         ),
         supports_check_mode=True,
     )
@@ -446,6 +473,16 @@ def main():
     attachments = module.params['attachments']
     blocks = module.params['blocks']
     message_id = module.params['message_id']
+    prepend_hash = module.params['prepend_hash']
+
+    if prepend_hash is None:
+        module.deprecate(
+            "The default value 'auto' for 'prepend_hash' is deprecated and will change to 'never' in community.general 12.0.0."
+            " You can explicitly set 'prepend_hash' in your task to avoid this deprecation warning",
+            version="12.0.0",
+            collection_name="community.general",
+        )
+        prepend_hash = 'auto'
 
     color_choices = ['normal', 'good', 'warning', 'danger']
     if color not in color_choices and not is_valid_hex_color(color):
@@ -470,7 +507,7 @@ def main():
         module.exit_json(changed=changed)
 
     payload = build_payload_for_slack(text, channel, thread_id, username, icon_url, icon_emoji, link_names,
-                                      parse, color, attachments, blocks, message_id)
+                                      parse, color, attachments, blocks, message_id, prepend_hash)
     slack_response = do_notify_slack(module, domain, token, payload)
 
     if 'ok' in slack_response:

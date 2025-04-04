@@ -15,7 +15,7 @@ DOCUMENTATION = '''
     description:
       - This lookup returns a list of results from an LMDB DB corresponding to a list of items given to it.
     requirements:
-      - lmdb (python library https://lmdb.readthedocs.io/en/release/)
+      - lmdb (Python library U(https://lmdb.readthedocs.io/en/release/))
     options:
       _terms:
         description: List of keys to query.
@@ -96,7 +96,7 @@ class LookupModule(LookupBase):
         try:
             env = lmdb.open(str(db), readonly=True)
         except Exception as e:
-            raise AnsibleError("LMDB can't open database %s: %s" % (db, to_native(e)))
+            raise AnsibleError(f"LMDB cannot open database {db}: {e}")
 
         ret = []
         if len(terms) == 0:

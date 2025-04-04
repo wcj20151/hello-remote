@@ -9,36 +9,32 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: ldap_passwd
 short_description: Set passwords in LDAP
 description:
-  - Set a password for an LDAP entry.  This module only asserts that
-    a given password is valid for a given entry.  To assert the
-    existence of an entry, see M(community.general.ldap_entry).
-notes:
-  - The default authentication settings will attempt to use a SASL EXTERNAL
-    bind over a UNIX domain socket. This works well with the default Ubuntu
-    install for example, which includes a cn=peercred,cn=external,cn=auth ACL
-    rule allowing root to modify the server configuration. If you need to use
-    a simple bind to access your server, pass the credentials in I(bind_dn)
-    and I(bind_pw).
+  - Set a password for an LDAP entry. This module only asserts that a given password is valid for a given entry. To assert
+    the existence of an entry, see M(community.general.ldap_entry).
 author:
   - Keller Fuchs (@KellerFuchs)
 requirements:
   - python-ldap
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   passwd:
     description:
-      - The (plaintext) password to be set for I(dn).
+      - The (plaintext) password to be set for O(dn).
     type: str
 extends_documentation_fragment:
-- community.general.ldap.documentation
+  - community.general.ldap.documentation
+  - community.general.attributes
+"""
 
-'''
-
-EXAMPLES = """
+EXAMPLES = r"""
 - name: Set a password for the admin user
   community.general.ldap_passwd:
     dn: cn=admin,dc=example,dc=com
@@ -50,13 +46,13 @@ EXAMPLES = """
     passwd: "{{ item.value }}"
   with_dict:
     alice: alice123123
-    bob:   "|30b!"
+    bob: "|30b!"
     admin: "{{ vault_secret }}"
 """
 
-RETURN = """
+RETURN = r"""
 modlist:
-  description: list of modified parameters
+  description: List of modified parameters.
   returned: success
   type: list
   sample:
@@ -66,7 +62,7 @@ modlist:
 import traceback
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-from ansible_collections.community.general.plugins.module_utils.ldap import LdapGeneric, gen_specs
+from ansible_collections.community.general.plugins.module_utils.ldap import LdapGeneric, gen_specs, ldap_required_together
 
 LDAP_IMP_ERR = None
 try:
@@ -127,6 +123,7 @@ def main():
     module = AnsibleModule(
         argument_spec=gen_specs(passwd=dict(no_log=True)),
         supports_check_mode=True,
+        required_together=ldap_required_together(),
     )
 
     if not HAS_LDAP:

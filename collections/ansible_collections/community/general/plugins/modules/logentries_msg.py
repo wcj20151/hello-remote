@@ -9,14 +9,18 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: logentries_msg
 short_description: Send a message to logentries
 description:
-   - Send a message to logentries
-requirements:
-  - "python >= 2.6"
+  - Send a message to logentries.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   token:
     type: str
@@ -31,24 +35,24 @@ options:
   api:
     type: str
     description:
-      - API endpoint
+      - API endpoint.
     default: data.logentries.com
   port:
     type: int
     description:
-      - API endpoint port
+      - API endpoint port.
     default: 80
 author: "Jimmy Tang (@jcftang) <jimmy_tang@rapid7.com>"
-'''
+"""
 
-RETURN = '''# '''
+RETURN = """# """
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Send a message to logentries
   community.general.logentries_msg:
-    token=00000000-0000-0000-0000-000000000000
-    msg="{{ ansible_hostname }}"
-'''
+    token: 00000000-0000-0000-0000-000000000000
+    msg: "{{ ansible_hostname }}"
+"""
 
 import socket
 

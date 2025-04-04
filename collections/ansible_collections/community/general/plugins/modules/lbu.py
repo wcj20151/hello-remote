@@ -8,8 +8,7 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: lbu
 
 short_description: Local Backup Utility for Alpine Linux
@@ -17,29 +16,37 @@ short_description: Local Backup Utility for Alpine Linux
 version_added: '0.2.0'
 
 description:
-- Manage Local Backup Utility of Alpine Linux in run-from-RAM mode
+  - Manage Local Backup Utility of Alpine Linux in run-from-RAM mode.
+extends_documentation_fragment:
+  - community.general.attributes
+
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 
 options:
   commit:
     description:
-    - Control whether to commit changed files.
+      - Control whether to commit changed files.
     type: bool
   exclude:
     description:
-    - List of paths to exclude.
+      - List of paths to exclude.
     type: list
     elements: str
   include:
     description:
-    - List of paths to include.
+      - List of paths to include.
     type: list
     elements: str
 
 author:
-- Kaarle Ritvanen (@kunkku)
-'''
+  - Kaarle Ritvanen (@kunkku)
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 # Commit changed files (if any)
 - name: Commit
   community.general.lbu:
@@ -50,22 +57,22 @@ EXAMPLES = '''
   community.general.lbu:
     commit: true
     exclude:
-    - /etc/opt
+      - /etc/opt
 
 # Include paths without committing
 - name: Include file and directory
   community.general.lbu:
     include:
-    - /root/.ssh/authorized_keys
-    - /var/lib/misc
-'''
+      - /root/.ssh/authorized_keys
+      - /var/lib/misc
+"""
 
-RETURN = '''
+RETURN = r"""
 msg:
-  description: Error message
+  description: Error message.
   type: str
   returned: on failure
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 

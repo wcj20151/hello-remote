@@ -11,8 +11,7 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: scaleway_function
 short_description: Scaleway Function management
 version_added: 6.0.0
@@ -22,8 +21,15 @@ description:
 extends_documentation_fragment:
   - community.general.scaleway
   - community.general.scaleway_waitable_resource
+  - community.general.attributes
 requirements:
   - passlib[argon2] >= 1.7.4
+
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 
 options:
   state:
@@ -44,7 +50,7 @@ options:
   region:
     type: str
     description:
-      - Scaleway region to use (for example C(fr-par)).
+      - Scaleway region to use (for example V(fr-par)).
     required: true
     choices:
       - fr-par
@@ -83,15 +89,16 @@ options:
   secret_environment_variables:
     description:
       - Secret environment variables of the function.
-      - Updating thoses values will not output a C(changed) state in Ansible.
+      - Updating those values will not output a C(changed) state in Ansible.
       - Injected in function at runtime.
     type: dict
     default: {}
 
   runtime:
     description:
-      - Runtime of the function
-      - See U(https://www.scaleway.com/en/docs/compute/functions/reference-content/functions-lifecycle/) for all available runtimes
+      - Runtime of the function.
+      - See U(https://www.scaleway.com/en/docs/compute/functions/reference-content/functions-lifecycle/) for all available
+        runtimes.
     type: str
     required: true
 
@@ -114,7 +121,8 @@ options:
   privacy:
     description:
       - Privacy policies define whether a function can be executed anonymously.
-      - Choose C(public) to enable anonymous execution, or C(private) to protect your function with an authentication mechanism provided by the Scaleway API.
+      - Choose V(public) to enable anonymous execution, or V(private) to protect your function with an authentication mechanism
+        provided by the Scaleway API.
     type: str
     default: public
     choices:
@@ -126,9 +134,9 @@ options:
       - Redeploy the function if update is required.
     type: bool
     default: false
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Create a function
   community.general.scaleway_function:
     namespace_id: '{{ scw_function_namespace }}'
@@ -148,12 +156,12 @@ EXAMPLES = '''
     region: fr-par
     state: absent
     name: my-awesome-function
-'''
+"""
 
-RETURN = '''
+RETURN = r"""
 function:
   description: The function information.
-  returned: when I(state=present)
+  returned: when O(state=present)
   type: dict
   sample:
     cpu_limit: 140
@@ -179,12 +187,12 @@ function:
         value: $argon2id$v=19$m=65536,t=1,p=2$tb6UwSPWx/rH5Vyxt9Ujfw$5ZlvaIjWwNDPxD9Rdght3NarJz4IETKjpvAU3mMSmFg
     status: created
     timeout: 300s
-'''
+"""
 
 from copy import deepcopy
 
 from ansible_collections.community.general.plugins.module_utils.scaleway import (
-    SCALEWAY_ENDPOINT, SCALEWAY_REGIONS, scaleway_argument_spec, Scaleway,
+    SCALEWAY_REGIONS, scaleway_argument_spec, Scaleway,
     scaleway_waitable_resource_argument_spec, resource_attributes_should_be_changed,
     SecretVariables
 )
@@ -238,8 +246,7 @@ def absent_strategy(api, wished_fn):
     changed = False
 
     fn_list = api.fetch_all_resources("functions")
-    fn_lookup = dict((fn["name"], fn)
-                     for fn in fn_list)
+    fn_lookup = {fn["name"]: fn for fn in fn_list}
 
     if wished_fn["name"] not in fn_lookup:
         return changed, {}
@@ -263,8 +270,7 @@ def present_strategy(api, wished_fn):
     changed = False
 
     fn_list = api.fetch_all_resources("functions")
-    fn_lookup = dict((fn["name"], fn)
-                     for fn in fn_list)
+    fn_lookup = {fn["name"]: fn for fn in fn_list}
 
     payload_fn = payload_from_wished_fn(wished_fn)
 

@@ -17,13 +17,19 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: cronvar
 short_description: Manage variables in crontabs
 description:
   - Use this module to manage crontab variables.
   - This module allows you to create, update, or delete cron variable definitions.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: none
+  diff_mode:
+    support: none
 options:
   name:
     description:
@@ -33,48 +39,47 @@ options:
   value:
     description:
       - The value to set this variable to.
-      - Required if I(state=present).
+      - Required if O(state=present).
     type: str
   insertafter:
     description:
       - If specified, the variable will be inserted after the variable specified.
-      - Used with I(state=present).
+      - Used with O(state=present).
     type: str
   insertbefore:
     description:
-      - Used with I(state=present). If specified, the variable will be inserted
-        just before the variable specified.
+      - Used with O(state=present). If specified, the variable will be inserted just before the variable specified.
     type: str
   state:
     description:
       - Whether to ensure that the variable is present or absent.
     type: str
-    choices: [ absent, present ]
+    choices: [absent, present]
     default: present
   user:
     description:
       - The specific user whose crontab should be modified.
-      - This parameter defaults to C(root) when unset.
+      - This parameter defaults to V(root) when unset.
     type: str
   cron_file:
     description:
       - If specified, uses this file instead of an individual user's crontab.
-      - Without a leading C(/), this is assumed to be in I(/etc/cron.d).
-      - With a leading C(/), this is taken as absolute.
+      - Without a leading V(/), this is assumed to be in C(/etc/cron.d).
+      - With a leading V(/), this is taken as absolute.
     type: str
   backup:
     description:
-      - If set, create a backup of the crontab before it is modified.
-        The location of the backup is returned in the C(backup) variable by this module.
+      - If set, create a backup of the crontab before it is modified. The location of the backup is returned in the C(backup)
+        variable by this module.
     type: bool
     default: false
 requirements:
   - cron
 author:
-- Doug Luce (@dougluce)
-'''
+  - Doug Luce (@dougluce)
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Ensure entry like "EMAIL=doug@ansibmod.con.com" exists
   community.general.cronvar:
     name: EMAIL
@@ -91,7 +96,7 @@ EXAMPLES = r'''
     value: /var/log/yum-autoupdate.log
     user: root
     cron_file: ansible_yum-autoupdate
-'''
+"""
 
 import os
 import platform
@@ -141,9 +146,8 @@ class CronVar(object):
         if self.cron_file:
             # read the cronfile
             try:
-                f = open(self.cron_file, 'r')
-                self.lines = f.read().splitlines()
-                f.close()
+                with open(self.cron_file, 'r') as f:
+                    self.lines = f.read().splitlines()
             except IOError:
                 # cron file does not exist
                 return
@@ -175,6 +179,7 @@ class CronVar(object):
             fileh = open(backup_file, 'w')
         elif self.cron_file:
             fileh = open(self.cron_file, 'w')
+            path = None
         else:
             filed, path = tempfile.mkstemp(prefix='crontab')
             fileh = os.fdopen(filed, 'w')

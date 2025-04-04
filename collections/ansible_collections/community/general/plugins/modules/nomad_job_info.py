@@ -8,15 +8,14 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: nomad_job_info
 author: FERREIRA Christophe (@chris93111)
 version_added: "1.3.0"
 short_description: Get Nomad Jobs info
 description:
-    - Get info for one Nomad job.
-    - List Nomad jobs.
+  - Get info for one Nomad job.
+  - List Nomad jobs.
 requirements:
   - python-nomad
 extends_documentation_fragment:
@@ -24,20 +23,18 @@ extends_documentation_fragment:
   - community.general.attributes
   - community.general.attributes.info_module
 options:
-    name:
-      description:
-        - Name of job for Get info.
-        - If not specified, lists all jobs.
-      type: str
-notes:
-  - C(check_mode) is supported.
+  name:
+    description:
+      - Name of job for Get info.
+      - If not specified, lists all jobs.
+    type: str
 seealso:
   - name: Nomad jobs documentation
     description: Complete documentation for Nomad API jobs.
     link: https://www.nomadproject.io/api-docs/jobs/
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Get info for job awx
   community.general.nomad_job_info:
     host: localhost
@@ -48,10 +45,9 @@ EXAMPLES = '''
   community.general.nomad_job_info:
     host: localhost
   register: result
+"""
 
-'''
-
-RETURN = '''
+RETURN = r"""
 result:
     description: List with dictionary contains jobs info
     returned: success
@@ -266,7 +262,7 @@ result:
         }
     ]
 
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 from ansible.module_utils.common.text.converters import to_native
@@ -283,6 +279,7 @@ def run():
     module = AnsibleModule(
         argument_spec=dict(
             host=dict(required=True, type='str'),
+            port=dict(type='int', default=4646),
             use_ssl=dict(type='bool', default=True),
             timeout=dict(type='int', default=5),
             validate_certs=dict(type='bool', default=True),
@@ -302,6 +299,7 @@ def run():
 
     nomad_client = nomad.Nomad(
         host=module.params.get('host'),
+        port=module.params.get('port'),
         secure=module.params.get('use_ssl'),
         timeout=module.params.get('timeout'),
         verify=module.params.get('validate_certs'),

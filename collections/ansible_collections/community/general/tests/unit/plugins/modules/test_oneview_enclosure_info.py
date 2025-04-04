@@ -6,9 +6,8 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 from .hpe_test_utils import FactsParamsTestCase
-from .oneview_conftest import mock_ov_client, mock_ansible_module
 
-from ansible_collections.community.general.tests.unit.compat import unittest
+from ansible_collections.community.internal_test_tools.tests.unit.compat import unittest
 from ansible_collections.community.general.plugins.modules.oneview_enclosure_info import EnclosureInfoModule
 
 

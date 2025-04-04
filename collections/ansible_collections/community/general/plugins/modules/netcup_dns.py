@@ -9,27 +9,33 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: netcup_dns
 notes: []
 short_description: Manage Netcup DNS records
 description:
-  - "Manages DNS records via the Netcup API, see the docs U(https://ccp.netcup.net/run/webservice/servers/endpoint.php)."
+  - Manages DNS records using the Netcup API, see the docs U(https://ccp.netcup.net/run/webservice/servers/endpoint.php).
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   api_key:
     description:
-      - "API key for authentication, must be obtained via the netcup CCP (U(https://ccp.netcup.net))."
+      - API key for authentication, must be obtained using the netcup CCP (U(https://ccp.netcup.net)).
     required: true
     type: str
   api_password:
     description:
-      - "API password for authentication, must be obtained via the netcup CCP (U(https://ccp.netcup.net))."
+      - API password for authentication, must be obtained using the netcup CCP (U(https://ccp.netcup.net)).
     required: true
     type: str
   customer_id:
     description:
-      - Netcup customer id.
+      - Netcup customer ID.
     required: true
     type: int
   domain:
@@ -39,14 +45,17 @@ options:
     type: str
   record:
     description:
-      - Record to add or delete, supports wildcard (*). Default is C(@) (e.g. the zone name).
+      - Record to add or delete, supports wildcard (V(*)). Default is V(@) (that is, the zone name).
     default: "@"
-    aliases: [ name ]
+    aliases: [name]
     type: str
   type:
     description:
       - Record type.
-    choices: ['A', 'AAAA', 'MX', 'CNAME', 'CAA', 'SRV', 'TXT', 'TLSA', 'NS', 'DS']
+      - Support for V(OPENPGPKEY), V(SMIMEA) and V(SSHFP) was added in community.general 8.1.0.
+      - Record types V(OPENPGPKEY) and V(SMIMEA) require nc-dnsapi >= 0.1.5.
+      - Record type V(SSHFP) requires nc-dnsapi >= 0.1.6.
+    choices: ['A', 'AAAA', 'MX', 'CNAME', 'CAA', 'SRV', 'TXT', 'TLSA', 'NS', 'DS', 'OPENPGPKEY', 'SMIMEA', 'SSHFP']
     required: true
     type: str
   value:
@@ -58,11 +67,11 @@ options:
     type: bool
     default: false
     description:
-      - Whether the record should be the only one for that record type and record name. Only use with I(state=present).
+      - Whether the record should be the only one for that record type and record name. Only use with O(state=present).
       - This will delete all other records with the same record name and type.
   priority:
     description:
-      - Record priority. Required for I(type=MX).
+      - Record priority. Required for O(type=MX).
     required: false
     type: int
   state:
@@ -70,7 +79,7 @@ options:
       - Whether the record should exist or not.
     required: false
     default: present
-    choices: [ 'present', 'absent' ]
+    choices: ['present', 'absent']
     type: str
   timeout:
     description:
@@ -81,10 +90,9 @@ options:
 requirements:
   - "nc-dnsapi >= 0.1.3"
 author: "Nicolai Buchwitz (@nbuchwitz)"
+"""
 
-'''
-
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Create a record of type A
   community.general.netcup_dns:
     api_key: "..."
@@ -146,41 +154,41 @@ EXAMPLES = '''
     type: "A"
     value: "127.0.0.1"
     timeout: 30
+"""
 
-'''
-
-RETURN = '''
+RETURN = r"""
 records:
-    description: list containing all records
-    returned: success
-    type: complex
-    contains:
-        name:
-            description: the record name
-            returned: success
-            type: str
-            sample: fancy-hostname
-        type:
-            description: the record type
-            returned: succcess
-            type: str
-            sample: A
-        value:
-            description: the record destination
-            returned: success
-            type: str
-            sample: 127.0.0.1
-        priority:
-            description: the record priority (only relevant if type=MX)
-            returned: success
-            type: int
-            sample: 0
-        id:
-            description: internal id of the record
-            returned: success
-            type: int
-            sample: 12345
-'''
+  description: List containing all records.
+  returned: success
+  type: list
+  elements: dict
+  contains:
+    name:
+      description: The record name.
+      returned: success
+      type: str
+      sample: fancy-hostname
+    type:
+      description: The record type.
+      returned: success
+      type: str
+      sample: A
+    value:
+      description: The record destination.
+      returned: success
+      type: str
+      sample: 127.0.0.1
+    priority:
+      description: The record priority (only relevant if RV(records[].type=MX)).
+      returned: success
+      type: int
+      sample: 0
+    id:
+      description: Internal ID of the record.
+      returned: success
+      type: int
+      sample: 12345
+"""
 
 import traceback
 
@@ -206,7 +214,9 @@ def main():
 
             domain=dict(required=True),
             record=dict(required=False, default='@', aliases=['name']),
-            type=dict(required=True, choices=['A', 'AAAA', 'MX', 'CNAME', 'CAA', 'SRV', 'TXT', 'TLSA', 'NS', 'DS']),
+            type=dict(required=True, choices=['A', 'AAAA', 'MX', 'CNAME', 'CAA', 'SRV', 'TXT',
+                                              'TLSA', 'NS', 'DS', 'OPENPGPKEY', 'SMIMEA',
+                                              'SSHFP']),
             value=dict(required=True),
             priority=dict(required=False, type='int'),
             solo=dict(required=False, type='bool', default=False),

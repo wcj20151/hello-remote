@@ -10,47 +10,49 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: layman
 author: "Jakub Jirutka (@jirutka)"
 short_description: Manage Gentoo overlays
 description:
-  - Uses Layman to manage an additional repositories for the Portage package manager on Gentoo Linux.
-    Please note that Layman must be installed on a managed node prior using this module.
+  - Uses Layman to manage an additional repositories for the Portage package manager on Gentoo Linux. Please note that Layman
+    must be installed on a managed node prior using this module.
 requirements:
-  - "python >= 2.6"
   - layman python module
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   name:
     description:
-      - The overlay id to install, synchronize, or uninstall.
-        Use 'ALL' to sync all of the installed overlays (can be used only when I(state=updated)).
+      - The overlay ID to install, synchronize, or uninstall. Use V(ALL) to sync all of the installed overlays (can be used
+        only when O(state=updated)).
     required: true
     type: str
   list_url:
     description:
-      - An URL of the alternative overlays list that defines the overlay to install.
-        This list will be fetched and saved under C(${overlay_defs})/${name}.xml), where
-        C(overlay_defs) is readed from the Layman's configuration.
+      - An URL of the alternative overlays list that defines the overlay to install. This list will be fetched and saved under
+        C(${overlay_defs}/${name}.xml), where C(overlay_defs) is read from the Layman's configuration.
     aliases: [url]
     type: str
   state:
     description:
-      - Whether to install (C(present)), sync (C(updated)), or uninstall (C(absent)) the overlay.
+      - Whether to install (V(present)), sync (V(updated)), or uninstall (V(absent)) the overlay.
     default: present
     choices: [present, absent, updated]
     type: str
   validate_certs:
     description:
-      - If C(false), SSL certificates will not be validated. This should only be
-        set to C(false) when no other option exists.  Prior to 1.9.3 the code
-        defaulted to C(false).
+      - If V(false), SSL certificates will not be validated. This should only be set to V(false) when no other option exists.
     type: bool
     default: true
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Install the overlay mozilla which is on the central overlays list
   community.general.layman:
     name: mozilla
@@ -75,7 +77,7 @@ EXAMPLES = '''
   community.general.layman:
     name: cvut
     state: absent
-'''
+"""
 
 import shutil
 import traceback

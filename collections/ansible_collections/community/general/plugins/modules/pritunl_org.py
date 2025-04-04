@@ -8,48 +8,48 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-DOCUMENTATION = """
----
+DOCUMENTATION = r"""
 module: pritunl_org
 author: Florian Dambrine (@Lowess)
 version_added: 2.5.0
 short_description: Manages Pritunl Organizations using the Pritunl API
 description:
-    - A module to manage Pritunl organizations using the Pritunl API.
+  - A module to manage Pritunl organizations using the Pritunl API.
 extends_documentation_fragment:
-    - community.general.pritunl
+  - community.general.pritunl
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: none
+  diff_mode:
+    support: none
 options:
-    name:
-        type: str
-        required: true
-        aliases:
-            - org
-        description:
-            - The name of the organization to manage in Pritunl.
-
-    force:
-        type: bool
-        default: false
-        description:
-            - If I(force) is C(true) and I(state) is C(absent), the module
-              will delete the organization, no matter if it contains users
-              or not. By default I(force) is C(false), which will cause the
-              module to fail the deletion of the organization when it contains
-              users.
-
-    state:
-        type: str
-        default: 'present'
-        choices:
-            - present
-            - absent
-        description:
-            - If C(present), the module adds organization I(name) to
-              Pritunl. If C(absent), attempt to delete the organization
-              from Pritunl (please read about I(force) usage).
+  name:
+    type: str
+    required: true
+    aliases:
+      - org
+    description:
+      - The name of the organization to manage in Pritunl.
+  force:
+    type: bool
+    default: false
+    description:
+      - If O(force) is V(true) and O(state) is V(absent), the module will delete the organization, no matter if it contains
+        users or not. By default O(force) is V(false), which will cause the module to fail the deletion of the organization
+        when it contains users.
+  state:
+    type: str
+    default: 'present'
+    choices:
+      - present
+      - absent
+    description:
+      - If V(present), the module adds organization O(name) to Pritunl. If V(absent), attempt to delete the organization from
+        Pritunl (please read about O(force) usage).
 """
 
-EXAMPLES = """
+EXAMPLES = r"""
 - name: Ensure the organization named MyOrg exists
   community.general.pritunl_org:
     state: present
@@ -61,7 +61,7 @@ EXAMPLES = """
     name: MyOrg
 """
 
-RETURN = """
+RETURN = r"""
 response:
     description: JSON representation of a Pritunl Organization.
     returned: success
@@ -181,7 +181,7 @@ def main():
                 required=False, choices=["present", "absent"], default="present"
             ),
         )
-    ),
+    )
 
     module = AnsibleModule(argument_spec=argument_spec)
 

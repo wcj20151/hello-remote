@@ -5,10 +5,9 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-from ansible_collections.community.general.tests.unit.compat import unittest, mock
+from ansible_collections.community.internal_test_tools.tests.unit.compat import unittest, mock
 from .hpe_test_utils import OneViewBaseTestCase
 from .oneview_module_loader import NetworkSetModule
-from .oneview_conftest import mock_ov_client, mock_ansible_module
 
 FAKE_MSG_ERROR = 'Fake message error'
 

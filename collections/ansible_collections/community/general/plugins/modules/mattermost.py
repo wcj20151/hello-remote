@@ -15,62 +15,73 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = r"""
 module: mattermost
 short_description: Send Mattermost notifications
 description:
-    - Sends notifications to U(http://your.mattermost.url) via the Incoming WebHook integration.
+  - Sends notifications to U(http://your.mattermost.url) using the Incoming WebHook integration.
 author: "Benjamin Jolivot (@bjolivot)"
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   url:
     type: str
     description:
-      - Mattermost url (i.e. http://mattermost.yourcompany.com).
+      - Mattermost URL (for example V(http://mattermost.yourcompany.com)).
     required: true
   api_key:
     type: str
     description:
-      - Mattermost webhook api key. Log into your mattermost site, go to
-        Menu -> Integration -> Incoming Webhook -> Add Incoming Webhook.
-        This will give you full URL. api_key is the last part.
-        http://mattermost.example.com/hooks/C(API_KEY)
+      - Mattermost webhook API key. Log into your Mattermost site, go to Menu -> Integration -> Incoming Webhook -> Add Incoming
+        Webhook. This will give you full URL. O(api_key) is the last part. U(http://mattermost.example.com/hooks/API_KEY).
     required: true
   text:
     type: str
     description:
       - Text to send. Note that the module does not handle escaping characters.
-      - Required when I(attachments) is not set.
+      - Required when O(attachments) is not set.
   attachments:
     type: list
     elements: dict
     description:
       - Define a list of attachments.
       - For more information, see U(https://developers.mattermost.com/integrate/admin-guide/admin-message-attachments/).
-      - Required when I(text) is not set.
+      - Required when O(text) is not set.
     version_added: 4.3.0
   channel:
     type: str
     description:
-      - Channel to send the message to. If absent, the message goes to the channel selected for the I(api_key).
+      - Channel to send the message to. If absent, the message goes to the channel selected for the O(api_key).
   username:
     type: str
     description:
-      - This is the sender of the message (Username Override need to be enabled by mattermost admin, see mattermost doc.
+      - This is the sender of the message (Username Override need to be enabled by mattermost admin, see mattermost doc).
     default: Ansible
   icon_url:
     type: str
     description:
-      - Url for the message sender's icon.
-    default: https://www.ansible.com/favicon.ico
+      - URL for the message sender's icon.
+    default: https://docs.ansible.com/favicon.ico
+  priority:
+    type: str
+    description:
+      - Set a priority for the message.
+    choices: [important, urgent]
+    version_added: 10.0.0
   validate_certs:
     description:
-      - If C(false), SSL certificates will not be validated. This should only be used
-        on personally controlled sites using self-signed certificates.
+      - If V(false), SSL certificates will not be validated. This should only be used on personally controlled sites using
+        self-signed certificates.
     default: true
     type: bool
-'''
+"""
 
-EXAMPLES = """
+EXAMPLES = r"""
 - name: Send notification message via Mattermost
   community.general.mattermost:
     url: http://mattermost.example.com
@@ -85,6 +96,7 @@ EXAMPLES = """
     channel: notifications
     username: 'Ansible on {{ inventory_hostname }}'
     icon_url: http://www.example.com/some-image-file.png
+    priority: important
 
 - name: Send attachments message via Mattermost
   community.general.mattermost:
@@ -103,16 +115,16 @@ EXAMPLES = """
             short: true
 """
 
-RETURN = '''
+RETURN = r"""
 payload:
-    description: Mattermost payload
-    returned: success
-    type: str
+  description: Mattermost payload.
+  returned: success
+  type: str
 webhook_url:
-    description: URL the webhook is sent to
-    returned: success
-    type: str
-'''
+  description: URL the webhook is sent to.
+  returned: success
+  type: str
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import fetch_url
@@ -127,7 +139,8 @@ def main():
             text=dict(type='str'),
             channel=dict(type='str', default=None),
             username=dict(type='str', default='Ansible'),
-            icon_url=dict(type='str', default='https://www.ansible.com/favicon.ico'),
+            icon_url=dict(type='str', default='https://docs.ansible.com/favicon.ico'),
+            priority=dict(type='str', default=None, choices=['important', 'urgent']),
             validate_certs=dict(default=True, type='bool'),
             attachments=dict(type='list', elements='dict'),
         ),
@@ -147,6 +160,8 @@ def main():
     for param in ['text', 'channel', 'username', 'icon_url', 'attachments']:
         if module.params[param] is not None:
             payload[param] = module.params[param]
+    if module.params['priority'] is not None:
+        payload['priority'] = {'priority': module.params['priority']}
 
     payload = module.jsonify(payload)
     result['payload'] = payload
