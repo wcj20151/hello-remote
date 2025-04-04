@@ -8,37 +8,65 @@ my_bashrc: |
   export HISTSIZE=10000
   export HISTTIMEFORMAT="%F %T "
   export LESS='-X'
+  export GIT_PAGER=/usr/bin/cat
   PROMPT_COMMAND="$PROMPT_COMMAND; history -a; history -n"
 
-  # =========================================
-  # OpenShift Training environment variables
-  # =========================================
-
-  if [ -e /usr/local/etc/ocp4.config ]; then
-    source /usr/local/etc/ocp4.config
-    M=$RHT_OCP4_MASTER_API
-    WC=$RHT_OCP4_WILDCARD_DOMAIN
-    NS=$RHT_OCP4_NEXUS_SERVER
-    U=$RHT_OCP4_DEV_USER
-    P=$RHT_OCP4_DEV_PASSWORD
-    G=$RHT_OCP4_GITHUB_USER
-    Q=$RHT_OCP4_QUAY_USER
-  else
-    M=https://api.ocp4.example.com:6443
-    WC=apps.ocp4.example.com
-    NS=nexus.nexus-common.apps.ocp4.example.com
-    U=developer
-    P=developer
+  # ===============================
+  # General Aliases
+  # ===============================
+  alias ..='cd ..'
+  alias ...='cd ../..'
+  alias avc='ausearch -m avc -ts recent | aureport -a' 
+  if [[ $- == *i* ]]; then
+    alias scp='echo -e "\n⚠️  Stop using scp!\n\n🔗 See: https://www.redhat.com/en/blog/openssh-scp-deprecation-rhel-9-what-you-need-know\n\n💡 Use rsync -a instead.\n"'
   fi
+  alias scp='echo -e "\nStop using scp\n\nSee https://www.redhat.com/en/blog/openssh-scp-deprecation-rhel-9-what-you-need-know\n\nUse rsync -a instead\n"'
+  alias decomment='egrep -v "^[[:space:]]*((#|;|//).*)?$" '
+  alias please='sudo !!'
 
+  # ===============================
+  # OpenShift Aliases
+  # ===============================
   alias lcl="oc login -u admin -p redhat https://api.ocp4.example.com:6443"
   alias mcl="oc login -u admin -p redhat https://api.ocp4-mng.example.com:6443"
   alias dl="oc login -u developer -p developer https://api.ocp4.example.com:6443"
   alias al="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
   alias clustercheck="ssh lab@utility ./wait.sh"
-  alias events='oc get events --sort-by=".lastTimestamp" -n $1'
-  alias podsw='oc get pods -o wide -n $1'
+  alias events='oc get events --sort-by=".lastTimestamp" -n \$1'
+  alias podsw='oc get pods -o wide -n \$1'
   alias velero='oc -n openshift-adp exec deployment/velero -c velero -it -- ./velero'
+  alias ocd='oc describe'
+  alias ocp='oc project'
+  alias ocg='oc get'
+  alias ocl='oc logs'
+  alias vcon='virtctl console'
+  alias showtaints='oc get nodes -o jsonpath=''{range .items[*]}{.metadata.name}{"\t"}{.spec.taints[*].key}{":"}{.spec.taints[*].value}{":"}{.spec.taints[*].effect}{"\n"}{end}'''
+  alias showpods='oc get pods -A -o jsonpath=''{range .items[*]}{.metadata.name} {.spec.nodeName}{"\n"}{end}'''
+
+  # ===============================
+  # Ansible Aliases
+  # ===============================
+
+  alias ap="ansible-playbook"
+  alias apsc="ansible-playbook --syntax-check"
+  alias acd="ansible-config dump"
+  alias av="ansible --version"
+  alias aig="ansible-inventory --graph"
+  alias anr="ansible-navigator run -m stdout"
+  alias ansc="ansible-navigator run -m stdout --syntax-check"
+  alias anch="ansible-navigator run -m stdout --check"
+  alias ancd="ansible-navigator config dump -m stdout"
+  alias anv="ansible-navigator --version"
+  alias anig="ansible-navigator inventory --graph"
+
+  # ===============================
+  # Git Aliases
+  # ===============================
+  alias gc="git commit -m"
+
+  # ===============================
+  # Functions
+  # ===============================
 
   whohas() {
     local role="$1"
@@ -57,34 +85,6 @@ my_bashrc: |
     oc get group "$group" -o json | jq -r '.users[]'
   }
 
-  export GIT_PAGER=/usr/bin/cat
-  alias ap="ansible-playbook"
-  alias apsc="ansible-playbook --syntax-check"
-  alias acd="ansible-config dump"
-  alias av="ansible --version"
-  alias aig="ansible-inventory --graph"
-  alias anr="ansible-navigator run -m stdout"
-  alias ansc="ansible-navigator run -m stdout --syntax-check"
-  alias anch="ansible-navigator run -m stdout --check"
-  alias ancd="ansible-navigator config dump -m stdout"
-  alias anv="ansible-navigator --version"
-  alias anig="ansible-navigator inventory --graph"
-  alias gc="git commit -m"
-  alias decomment='egrep -v "^[[:space:]]*((#|;|//).*)?$" '
-  alias scp='echo -e "\nStop using scp\n\nSee https://www.redhat.com/en/blog/openssh-scp-deprecation-rhel-9-what-you-need-know"'
-  alias ve='python3 -m venv ./venv'
-  alias va='source ./venv/bin/activate'
-  alias showaliases="awk '/^alias/ {sub(/^alias[ \t]*/, \"\"); print}' /etc/bashrc"
-
-  pastebin (){
-    local filename="$1"
-    if [[ -z  "$filename" ]]; then
-        echo "Usage: pastebin /path/to/file"
-        return 1
-    fi
-    glab snippet create -pv public --filename $filename --title $filename
-  }
-
   mcd (){
     mkdir -pv "$1"
     cd "$1" || return
@@ -99,25 +99,44 @@ my_bashrc: |
     git push -u origin "$1"
   }
 
-  my_ocp (){
-    echo 'M=$RHT_OCP4_MASTER_API'
-    echo 'WC=$RHT_OCP4_WILDCARD_DOMAIN'
-    echo 'NS=$RHT_OCP4_NEXUS_SERVER'
-    echo 'U=$RHT_OCP4_DEV_USER'
-    echo 'P=$RHT_OCP4_DEV_PASSWORD'
-    echo 'G=$RHT_OCP4_GITHUB_USER'
-    echo 'Q=$RHT_OCP4_QUAY_USER'
+  pastebin (){
+    local filename="$1"
+    if [[ -z  "$filename" ]]; then
+        echo "Usage: pastebin /path/to/file"
+        return 1
+    fi
+    glab snippet create -pv public --filename $filename --title $filename
   }
 
-  if command -v oc &> /dev/null; then
-    source <(oc completion bash)
-  fi
+  # ===============================
+  # Prompt
+  # ===============================
 
-  if command -v kubectl &> /dev/null; then
-    source <(kubectl completion bash)
-  fi
+  get_oc_project() {
+    if [[ -n "$_LAST_OC_PROJECT" && "$(( $(date +%s) - $_LAST_OC_PROJECT_TIME ))" -lt 5 ]]; then
+      echo "$_LAST_OC_PROJECT"
+    else
+      _LAST_OC_PROJECT=$(oc project -q 2>/dev/null)
+      _LAST_OC_PROJECT_TIME=$(date +%s)
+      echo "$_LAST_OC_PROJECT"
+    fi
+  }
 
-  if command -v virtctl &> /dev/null; then
-    source <(virtctl completion bash)
-  fi
+  export PS1='[\u@\h \W$(proj=$(get_oc_project); [[ -n "$proj" ]] && echo " ($proj)")]\$ '
+
+  # ===============================
+  # Bash Completion
+  # ===============================
+
+  load_completion() {
+    cmd="$1"
+    if command -v "$cmd" &> /dev/null; then
+      source <("$cmd" completion bash)
+    fi
+  }
+
+  load_completion oc
+  load_completion kubectl
+  load_completion virtctl
+
   {% endraw %}
