@@ -58,6 +58,6 @@ config_files:
     file: placeholder
     dest: /var/tmp
 
-regularfont_uuid: "{{ lookup('community.general.uuid') }}"
-mediumfont_uuid: "{{ lookup('community.general.uuid') }}"
-largefont_uuid: "{{ lookup('community.general.uuid') }}"
+regularfont_uuid: "{{ lookup('pipe', 'uuidgen') }}" 
+mediumfont_uuid: "{{ lookup('pipe', 'uuidgen') }}"
+largefont_uuid: "{{ lookup('pipe', 'uuidgen') }}"
