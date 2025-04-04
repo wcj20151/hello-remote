@@ -75,13 +75,6 @@
         src: "{{ item['value']['file'] }}"
         dest: "{{ item['value']['dest'] }}"
 
-    - name: Ensure other file types are copied
-      loop: "{{ lookup('dict', other_files) }}"
-      ansible.builtin.copy:
-        src: "{{ item['value']['file'] }}"
-        dest: "{{ item['value']['dest'] }}"
-        mode: "{{ item['value']['permissions'] | default(omit) }}"
-
     - name: Ensure /etc/bashrc is configured
       become: true
       ansible.builtin.blockinfile:
