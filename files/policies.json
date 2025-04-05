@@ -1,0 +1,56 @@
+{
+  "policies": {
+    "Bookmarks": [
+      {
+        "Title": "IDM",
+        "URL": "https://idm.lab.example.com/",
+        "Folder": "toolbar"
+      },
+      {
+        "Title": "Satellite",
+        "URL": "https://satellite.lab.example.com/",
+        "Folder": "toolbar"
+      },
+      {
+        "Title": "Ansible Courses",
+        "Folder": "toolbar",
+        "Children": [
+          {
+            "Title": "Private Automation Hub",
+            "URL": "https://hub.lab.example.com/"
+          },
+          {
+            "Title": "Controller",
+            "URL": "https://controller.lab.example.com/"
+          }
+        ]
+      },
+      {
+        "Title": "OpenShift Courses",
+        "Folder": "toolbar",
+        "Children": [
+          {
+            "Title": "On-Prem Quay",
+            "URL": "https://central-quay-registry.apps.ocp4.example.com/"
+          },
+          {
+            "Title": "ACS Web Console",
+            "URL": "https://central-stackrox.apps.ocp4.example.com/"
+          },
+          {
+            "Title": "ACM Web Console",
+            "URL": "https://multicloud-console.apps.ocp4.example.com/"
+          },
+          {
+            "Title": "Managed Cluster OpenShift Web Console",
+            "URL": "https://console-openshift-console.apps.ocp4-mng.example.com/"
+          },
+          {
+            "Title": "OpenShift Web Console",
+            "URL": "https://console-openshift-console.apps.ocp4.example.com/"
+          }
+        ]
+      }
+    ]
+  }
+}
