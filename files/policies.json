@@ -1,5 +1,6 @@
 {
   "policies": {
+    "DisplayBookmarksToolbar": "always",
     "Bookmarks": [
       {
         "Title": "IDM",
