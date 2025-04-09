@@ -3,6 +3,7 @@
   hosts: localhost
   become: false
   gather_facts: false
+  force_handlers: true
 
   tasks:
     - name: Check if user is logged in via GUI
