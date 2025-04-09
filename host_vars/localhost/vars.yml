@@ -53,11 +53,6 @@ config_files:
     dest: ~/bin/upload_timings
     permissions: '0755'
 
-# Temp placeholder for a future feature 
-  feature:
-    file: placeholder
-    dest: /var/tmp
-
 regularfont_uuid: "{{ lookup('pipe', 'uuidgen') }}" 
 mediumfont_uuid: "{{ lookup('pipe', 'uuidgen') }}"
 largefont_uuid: "{{ lookup('pipe', 'uuidgen') }}"
