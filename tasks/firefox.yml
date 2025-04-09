@@ -1,49 +1,32 @@
-- name: Ensure Firefox is started
+- name: Start Firefox to generate default profile (first run)
+  shell: "firefox &"
   async: 1
   poll: 0
-  ansible.builtin.shell: "firefox &"
 
-- name: Wait for 15 seconds
-  ansible.builtin.pause:
-    seconds: 15
+- name: Wait for profile to initialize
+  pause:
+    seconds: 10
 
-- name: Ensure Firefox is terminated
-  register: firefox_status
-  ansible.builtin.shell: "pkill firefox"
+- name: Kill Firefox
+  shell: pkill firefox
+  ignore_errors: true
 
-- debug:
-    var: firefox_status
+- name: Find Firefox default profile
+  shell: grep -E '^Path=' ~/.mozilla/firefox/profiles.ini | head -n1 | cut -d= -f2
+  register: firefox_profile
 
-- name: Get the active Firefox profile from profiles.ini
-  register: profiles_info
-  changed_when: false
-  ansible.builtin.command: grep -E '^Path|^Default' ~/.mozilla/firefox/profiles.ini
+- name: Set profile path
+  set_fact:
+    firefox_profile_path: "{{ lookup('env','HOME') }}/.mozilla/firefox/{{ firefox_profile.stdout | trim }}"
 
-- name: Find the active profile path
-  loop: "{{ range(1, profiles_info['stdout_lines'] | length) | list }}"
-  when: "'Default=1' in profiles_info['stdout_lines'][item]"
-  ansible.builtin.set_fact:
-    firefox_profile_dir: "{{ profiles_info['stdout_lines'][item | int - 1] | regex_replace('Path=', '') }}"
+- name: Ensure bookmarkbackups directory exists
+  file:
+    path: "{{ firefox_profile_path }}/bookmarkbackups"
+    state: directory
+    mode: '0755'
 
-- name: Copy bookmarks JSON file
-  ansible.builtin.copy:
-    src: bookmarks.json
-    dest: "~/.mozilla/firefox/{{ firefox_profile_dir }}/bookmarks.json"
-
-- name: Disable restoring default bookmarks
-  ansible.builtin.lineinfile:
-    path: "~/.mozilla/firefox/{{ firefox_profile_dir }}/prefs.js"
-    line: 'user_pref("browser.bookmarks.restore_default_bookmarks", false);'
-    create: true
-
-- name: Ensure Firefox font size is 20
-  ansible.builtin.lineinfile:
-    path: "~/.mozilla/firefox/{{ firefox_profile_dir }}/prefs.js"
-    line: 'user_pref("font.size.variable.x-western", 20);'
-    create: true
-
-- name: Ensure Bookmarks Toolbar is always visible
-  ansible.builtin.lineinfile:
-    path: "~/.mozilla/firefox/{{ firefox_profile_dir }}/prefs.js"
-    line: 'user_pref("toolbar.toolbars.bookmarks.visibility", "visible");'
-    create: true
+- name: Copy bookmarks backup
+  copy:
+    src: files/bookmarks.json
+    dest: "{{ firefox_profile_path }}/bookmarkbackups/bookmarks-ansible.json"
+    mode: '0644'
