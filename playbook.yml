@@ -159,4 +159,4 @@
 
     - name: Ensure terminal terminates
       ansible.builtin.command: killall gnome-terminal-server
-      when: "'gnome-terminal-server' in lookup('pipe', 'pgrep -l gnome-terminal-server')"
+      when: "'gnome-terminal-server' in lookup('pipe', 'pgrep -l gnome-terminal')"
