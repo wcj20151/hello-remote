@@ -10,8 +10,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: sudoers
 short_description: Manage sudoers files
 version_added: "4.3.0"
@@ -19,18 +18,25 @@ description:
   - This module allows for the manipulation of sudoers files.
 author:
   - "Jon Ellis (@JonEllis) <ellis.jp@gmail.com>"
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   commands:
     description:
       - The commands allowed by the sudoers rule.
       - Multiple can be added by passing a list of commands.
-      - Use C(ALL) for all commands.
+      - Use V(ALL) for all commands.
     type: list
     elements: str
   group:
     description:
       - The name of the group for the sudoers rule.
-      - This option cannot be used in conjunction with I(user).
+      - This option cannot be used in conjunction with O(user).
     type: str
   name:
     required: true
@@ -38,11 +44,29 @@ options:
       - The name of the sudoers rule.
       - This will be used for the filename for the sudoers file managed by this rule.
     type: str
+  noexec:
+    description:
+      - Whether a command is prevented to run further commands itself.
+    default: false
+    type: bool
+    version_added: 8.4.0
   nopassword:
     description:
-      - Whether a password will be required to run the sudo'd command.
+      - Whether a password is required when command is run with sudo.
     default: true
     type: bool
+  setenv:
+    description:
+      - Whether to allow keeping the environment when command is run with sudo.
+    default: false
+    type: bool
+    version_added: 6.3.0
+  host:
+    description:
+      - Specify the host the rule is for.
+    default: ALL
+    type: str
+    version_added: 6.2.0
   runas:
     description:
       - Specify the target user the command(s) will run as.
@@ -64,20 +88,20 @@ options:
   user:
     description:
       - The name of the user for the sudoers rule.
-      - This option cannot be used in conjunction with I(group).
+      - This option cannot be used in conjunction with O(group).
     type: str
   validation:
     description:
-      - If C(absent), the sudoers rule will be added without validation.
-      - If C(detect) and visudo is available, then the sudoers rule will be validated by visudo.
-      - If C(required), visudo must be available to validate the sudoers rule.
+      - If V(absent), the sudoers rule will be added without validation.
+      - If V(detect) and visudo is available, then the sudoers rule will be validated by visudo.
+      - If V(required), visudo must be available to validate the sudoers rule.
     type: str
     default: detect
-    choices: [ absent, detect, required ]
+    choices: [absent, detect, required]
     version_added: 5.2.0
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Allow the backup user to sudo /usr/local/bin/backup
   community.general.sudoers:
     name: allow-backup
@@ -95,10 +119,11 @@ EXAMPLES = '''
 
 - name: >-
     Allow the monitoring group to run sudo /usr/local/bin/gather-app-metrics
-    without requiring a password
+    without requiring a password on the host called webserver
   community.general.sudoers:
     name: monitor-app
     group: monitoring
+    host: webserver
     commands: /usr/local/bin/gather-app-metrics
 
 - name: >-
@@ -116,7 +141,23 @@ EXAMPLES = '''
   community.general.sudoers:
     name: alice-service
     state: absent
-'''
+
+- name: Allow alice to sudo /usr/local/bin/upload and keep env variables
+  community.general.sudoers:
+    name: allow-alice-upload
+    user: alice
+    commands: /usr/local/bin/upload
+    setenv: true
+
+- name: >-
+    Allow alice to sudo /usr/bin/less but prevent less from
+    running further commands itself
+  community.general.sudoers:
+    name: allow-alice-restricted-less
+    user: alice
+    commands: /usr/bin/less
+    noexec: true
+"""
 
 import os
 from ansible.module_utils.basic import AnsibleModule
@@ -135,7 +176,10 @@ class Sudoers(object):
         self.user = module.params['user']
         self.group = module.params['group']
         self.state = module.params['state']
+        self.noexec = module.params['noexec']
         self.nopassword = module.params['nopassword']
+        self.setenv = module.params['setenv']
+        self.host = module.params['host']
         self.runas = module.params['runas']
         self.sudoers_path = module.params['sudoers_path']
         self.file = os.path.join(self.sudoers_path, self.name)
@@ -176,9 +220,19 @@ class Sudoers(object):
             owner = '%{group}'.format(group=self.group)
 
         commands_str = ', '.join(self.commands)
+        noexec_str = 'NOEXEC:' if self.noexec else ''
         nopasswd_str = 'NOPASSWD:' if self.nopassword else ''
+        setenv_str = 'SETENV:' if self.setenv else ''
         runas_str = '({runas})'.format(runas=self.runas) if self.runas is not None else ''
-        return "{owner} ALL={runas}{nopasswd} {commands}\n".format(owner=owner, runas=runas_str, nopasswd=nopasswd_str, commands=commands_str)
+        return "{owner} {host}={runas}{noexec}{nopasswd}{setenv} {commands}\n".format(
+            owner=owner,
+            host=self.host,
+            runas=runas_str,
+            noexec=noexec_str,
+            nopasswd=nopasswd_str,
+            setenv=setenv_str,
+            commands=commands_str
+        )
 
     def validate(self):
         if self.validation == 'absent':
@@ -192,7 +246,7 @@ class Sudoers(object):
         rc, stdout, stderr = self.module.run_command(check_command, data=self.content())
 
         if rc != 0:
-            raise Exception('Failed to validate sudoers rule:\n{stdout}'.format(stdout=stdout))
+            self.module.fail_json(msg='Failed to validate sudoers rule:\n{stdout}'.format(stdout=stdout or stderr), stdout=stdout, stderr=stderr)
 
     def run(self):
         if self.state == 'absent':
@@ -221,9 +275,21 @@ def main():
         'name': {
             'required': True,
         },
+        'noexec': {
+            'type': 'bool',
+            'default': False,
+        },
         'nopassword': {
             'type': 'bool',
             'default': True,
+        },
+        'setenv': {
+            'type': 'bool',
+            'default': False,
+        },
+        'host': {
+            'type': 'str',
+            'default': 'ALL',
         },
         'runas': {
             'type': 'str',

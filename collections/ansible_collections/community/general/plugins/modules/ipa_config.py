@@ -7,13 +7,17 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: ipa_config
 author: Fran Fitzpatrick (@fxfitz)
 short_description: Manage Global FreeIPA Configuration Settings
 description:
-- Modify global configuration settings of a FreeIPA Server.
+  - Modify global configuration settings of a FreeIPA Server.
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   ipaconfigstring:
     description: Extra hashes to generate in password plug-in.
@@ -35,6 +39,12 @@ options:
     aliases: ["primarygroup"]
     type: str
     version_added: '2.5.0'
+  ipagroupobjectclasses:
+    description: A list of group objectclasses.
+    aliases: ["groupobjectclasses"]
+    type: list
+    elements: str
+    version_added: '7.3.0'
   ipagroupsearchfields:
     description: A list of fields to search in when searching for groups.
     aliases: ["groupsearchfields"]
@@ -80,12 +90,21 @@ options:
     elements: str
     version_added: '3.7.0'
   ipauserauthtype:
-    description: The authentication type to use by default.
+    description:
+      - The authentication type to use by default.
+      - The choice V(idp) has been added in community.general 7.3.0.
+      - The choice V(passkey) has been added in community.general 8.1.0.
     aliases: ["userauthtype"]
-    choices: ["password", "radius", "otp", "pkinit", "hardened", "disabled"]
+    choices: ["password", "radius", "otp", "pkinit", "hardened", "idp", "passkey", "disabled"]
     type: list
     elements: str
     version_added: '2.5.0'
+  ipauserobjectclasses:
+    description: A list of user objectclasses.
+    aliases: ["userobjectclasses"]
+    type: list
+    elements: str
+    version_added: '7.3.0'
   ipausersearchfields:
     description: A list of fields to search in when searching for users.
     aliases: ["usersearchfields"]
@@ -93,11 +112,11 @@ options:
     elements: str
     version_added: '2.5.0'
 extends_documentation_fragment:
-- community.general.ipa.documentation
+  - community.general.ipa.documentation
+  - community.general.attributes
+"""
 
-'''
-
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Ensure password plugin features DC:Disable Last Success and KDC:Disable Lockout are enabled
   community.general.ipa_config:
     ipaconfigstring: ["KDC:Disable Last Success", "KDC:Disable Lockout"]
@@ -200,14 +219,14 @@ EXAMPLES = r'''
     ipa_host: localhost
     ipa_user: admin
     ipa_pass: supersecret
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 config:
   description: Configuration as returned by IPA API.
   returned: always
   type: dict
-'''
+"""
 
 import traceback
 
@@ -229,11 +248,12 @@ class ConfigIPAClient(IPAClient):
 
 def get_config_dict(ipaconfigstring=None, ipadefaultloginshell=None,
                     ipadefaultemaildomain=None, ipadefaultprimarygroup=None,
-                    ipagroupsearchfields=None, ipahomesrootdir=None,
-                    ipakrbauthzdata=None, ipamaxusernamelength=None,
-                    ipapwdexpadvnotify=None, ipasearchrecordslimit=None,
-                    ipasearchtimelimit=None, ipaselinuxusermaporder=None,
-                    ipauserauthtype=None, ipausersearchfields=None):
+                    ipagroupsearchfields=None, ipagroupobjectclasses=None,
+                    ipahomesrootdir=None, ipakrbauthzdata=None,
+                    ipamaxusernamelength=None, ipapwdexpadvnotify=None,
+                    ipasearchrecordslimit=None, ipasearchtimelimit=None,
+                    ipaselinuxusermaporder=None, ipauserauthtype=None,
+                    ipausersearchfields=None, ipauserobjectclasses=None):
     config = {}
     if ipaconfigstring is not None:
         config['ipaconfigstring'] = ipaconfigstring
@@ -243,6 +263,8 @@ def get_config_dict(ipaconfigstring=None, ipadefaultloginshell=None,
         config['ipadefaultemaildomain'] = ipadefaultemaildomain
     if ipadefaultprimarygroup is not None:
         config['ipadefaultprimarygroup'] = ipadefaultprimarygroup
+    if ipagroupobjectclasses is not None:
+        config['ipagroupobjectclasses'] = ipagroupobjectclasses
     if ipagroupsearchfields is not None:
         config['ipagroupsearchfields'] = ','.join(ipagroupsearchfields)
     if ipahomesrootdir is not None:
@@ -261,6 +283,8 @@ def get_config_dict(ipaconfigstring=None, ipadefaultloginshell=None,
         config['ipaselinuxusermaporder'] = '$'.join(ipaselinuxusermaporder)
     if ipauserauthtype is not None:
         config['ipauserauthtype'] = ipauserauthtype
+    if ipauserobjectclasses is not None:
+        config['ipauserobjectclasses'] = ipauserobjectclasses
     if ipausersearchfields is not None:
         config['ipausersearchfields'] = ','.join(ipausersearchfields)
 
@@ -277,6 +301,7 @@ def ensure(module, client):
         ipadefaultloginshell=module.params.get('ipadefaultloginshell'),
         ipadefaultemaildomain=module.params.get('ipadefaultemaildomain'),
         ipadefaultprimarygroup=module.params.get('ipadefaultprimarygroup'),
+        ipagroupobjectclasses=module.params.get('ipagroupobjectclasses'),
         ipagroupsearchfields=module.params.get('ipagroupsearchfields'),
         ipahomesrootdir=module.params.get('ipahomesrootdir'),
         ipakrbauthzdata=module.params.get('ipakrbauthzdata'),
@@ -287,6 +312,7 @@ def ensure(module, client):
         ipaselinuxusermaporder=module.params.get('ipaselinuxusermaporder'),
         ipauserauthtype=module.params.get('ipauserauthtype'),
         ipausersearchfields=module.params.get('ipausersearchfields'),
+        ipauserobjectclasses=module.params.get('ipauserobjectclasses'),
     )
     ipa_config = client.config_show()
     diff = get_config_diff(client, ipa_config, module_config)
@@ -316,6 +342,8 @@ def main():
         ipadefaultloginshell=dict(type='str', aliases=['loginshell']),
         ipadefaultemaildomain=dict(type='str', aliases=['emaildomain']),
         ipadefaultprimarygroup=dict(type='str', aliases=['primarygroup']),
+        ipagroupobjectclasses=dict(type='list', elements='str',
+                                   aliases=['groupobjectclasses']),
         ipagroupsearchfields=dict(type='list', elements='str',
                                   aliases=['groupsearchfields']),
         ipahomesrootdir=dict(type='str', aliases=['homesrootdir']),
@@ -331,9 +359,11 @@ def main():
         ipauserauthtype=dict(type='list', elements='str',
                              aliases=['userauthtype'],
                              choices=["password", "radius", "otp", "pkinit",
-                                      "hardened", "disabled"]),
+                                      "hardened", "idp", "passkey", "disabled"]),
         ipausersearchfields=dict(type='list', elements='str',
                                  aliases=['usersearchfields']),
+        ipauserobjectclasses=dict(type='list', elements='str',
+                                  aliases=['userobjectclasses']),
     )
 
     module = AnsibleModule(

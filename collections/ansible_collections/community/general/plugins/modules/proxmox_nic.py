@@ -8,18 +8,24 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: proxmox_nic
 short_description: Management of a NIC of a Qemu(KVM) VM in a Proxmox VE cluster
 version_added: 3.1.0
 description:
   - Allows you to create/update/delete a NIC on Qemu(KVM) Virtual Machines in a Proxmox VE cluster.
 author: "Lammert Hellinga (@Kogelvis) <lammert@hellinga.it>"
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
+  action_group:
+    version_added: 9.0.0
 options:
   bridge:
     description:
-      - Add this interface to the specified bridge device. The Proxmox VE default bridge is called C(vmbr0).
+      - Add this interface to the specified bridge device. The Proxmox VE default bridge is called V(vmbr0).
     type: str
   firewall:
     description:
@@ -28,7 +34,7 @@ options:
     default: false
   interface:
     description:
-      - Name of the interface, should be C(net[n]) where C(1 ≤ n ≤ 31).
+      - Name of the interface, should be V(net[n]) where C(1 ≤ n ≤ 31).
     type: str
     required: true
   link_down:
@@ -38,26 +44,26 @@ options:
     default: false
   mac:
     description:
-      - C(XX:XX:XX:XX:XX:XX) should be a unique MAC address. This is automatically generated if not specified.
+      - V(XX:XX:XX:XX:XX:XX) should be a unique MAC address. This is automatically generated if not specified.
       - When not specified this module will keep the MAC address the same when changing an existing interface.
     type: str
   model:
     description:
       - The NIC emulator model.
     type: str
-    choices: ['e1000', 'e1000-82540em', 'e1000-82544gc', 'e1000-82545em', 'i82551', 'i82557b', 'i82559er', 'ne2k_isa', 'ne2k_pci', 'pcnet',
-              'rtl8139', 'virtio', 'vmxnet3']
+    choices: ['e1000', 'e1000-82540em', 'e1000-82544gc', 'e1000-82545em', 'i82551', 'i82557b', 'i82559er', 'ne2k_isa', 'ne2k_pci',
+      'pcnet', 'rtl8139', 'virtio', 'vmxnet3']
     default: virtio
   mtu:
     description:
       - Force MTU, for C(virtio) model only, setting will be ignored otherwise.
-      - Set to C(1) to use the bridge MTU.
+      - Set to V(1) to use the bridge MTU.
       - Value should be C(1 ≤ n ≤ 65520).
     type: int
   name:
     description:
       - Specifies the VM name. Only used on the configuration web interface.
-      - Required only for I(state=present).
+      - Required only for O(state=present).
     type: str
   queues:
     description:
@@ -89,10 +95,12 @@ options:
       - Specifies the instance ID.
     type: int
 extends_documentation_fragment:
+  - community.general.proxmox.actiongroup_proxmox
   - community.general.proxmox.documentation
-'''
+  - community.general.attributes
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Create NIC net0 targeting the vm by name
   community.general.proxmox_nic:
     api_user: root@pam
@@ -122,20 +130,20 @@ EXAMPLES = '''
     name: my_vm
     interface: net0
     state: absent
-'''
+"""
 
-RETURN = '''
+RETURN = r"""
 vmid:
   description: The VM vmid.
   returned: success
   type: int
   sample: 115
 msg:
-  description: A short message
+  description: A short message.
   returned: always
   type: str
   sample: "Nic net0 unchanged on VM with vmid 103"
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.general.plugins.module_utils.proxmox import (proxmox_auth_argument_spec, ProxmoxAnsible)
@@ -223,7 +231,7 @@ class ProxmoxNicAnsible(ProxmoxAnsible):
 
         if interface in vminfo:
             if not self.module.check_mode:
-                self.proxmox_api.nodes(vm['node']).qemu(vmid).config.set(vmid=vmid, delete=interface)
+                self.proxmox_api.nodes(vm['node']).qemu(vmid).config.set(delete=interface)
             return True
 
         return False

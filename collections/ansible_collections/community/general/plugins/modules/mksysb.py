@@ -10,13 +10,24 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 author: Kairo Araujo (@kairoaraujo)
 module: mksysb
 short_description: Generates AIX mksysb rootvg backups
 description:
   - This module manages a basic AIX mksysb (image) of rootvg.
+seealso:
+  - name: C(mksysb) command manual page
+    description: Manual page for the command.
+    link: https://www.ibm.com/docs/en/aix/7.3?topic=m-mksysb-command
+
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   backup_crypt_files:
     description:
@@ -51,7 +62,7 @@ options:
   name:
     type: str
     description:
-      - Backup name
+      - Backup name.
     required: true
   new_image_data:
     description:
@@ -60,8 +71,7 @@ options:
     default: true
   software_packing:
     description:
-      - Exclude files from packing option listed in
-        C(/etc/exclude_packing.rootvg).
+      - Exclude files from packing option listed in C(/etc/exclude_packing.rootvg).
     type: bool
     default: false
   storage_path:
@@ -74,18 +84,18 @@ options:
       - Creates backup using snapshots.
     type: bool
     default: false
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Running a backup image mksysb
   community.general.mksysb:
     name: myserver
     storage_path: /repository/images
     exclude_files: true
     exclude_wpar_files: true
-'''
+"""
 
-RETURN = '''
+RETURN = r"""
 changed:
   description: Return changed for mksysb actions as true or false.
   returned: always
@@ -94,16 +104,12 @@ msg:
   description: Return message regarding the action.
   returned: always
   type: str
-'''
+"""
 
 import os
 
 from ansible_collections.community.general.plugins.module_utils.cmd_runner import CmdRunner, cmd_runner_fmt
 from ansible_collections.community.general.plugins.module_utils.module_helper import ModuleHelper
-
-from ansible_collections.community.general.plugins.module_utils.module_helper import (
-    ArgFormat
-)
 
 
 class MkSysB(ModuleHelper):
@@ -135,6 +141,7 @@ class MkSysB(ModuleHelper):
         backup_dmapi_fs=cmd_runner_fmt.as_bool("-A"),
         combined_path=cmd_runner_fmt.as_func(cmd_runner_fmt.unpack_args(lambda p, n: ["%s/%s" % (p, n)])),
     )
+    use_old_vardict = False
 
     def __init_module__(self):
         if not os.path.isdir(self.vars.storage_path):
@@ -143,8 +150,7 @@ class MkSysB(ModuleHelper):
     def __run__(self):
         def process(rc, out, err):
             if rc != 0:
-                self.do_raise("mksysb failed.")
-            self.vars.msg = out
+                self.do_raise("mksysb failed: {0}".format(out))
 
         runner = CmdRunner(
             self.module,
@@ -155,6 +161,8 @@ class MkSysB(ModuleHelper):
                      'extended_attrs', 'backup_crypt_files', 'backup_dmapi_fs', 'new_image_data', 'combined_path'],
                     output_process=process, check_mode_skip=True) as ctx:
             ctx.run(combined_path=[self.vars.storage_path, self.vars.name])
+            if self.verbosity >= 4:
+                self.vars.run_info = ctx.run_info
 
         self.changed = True
 

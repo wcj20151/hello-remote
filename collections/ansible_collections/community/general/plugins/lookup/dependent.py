@@ -22,7 +22,7 @@ options:
         The name is the index that is used in the result object. The value is iterated over as described below.
       - If the value is a list, it is simply iterated over.
       - If the value is a dictionary, it is iterated over and returned as if they would be processed by the
-        R(ansible.builtin.dict2items filter,ansible_collections.ansible.builtin.dict2items_filter).
+        P(ansible.builtin.dict2items#filter) filter.
       - If the value is a string, it is evaluated as Jinja2 expressions which can access the previously chosen
         elements with C(item.<index_name>). The result must be a list or a dictionary.
     type: list
@@ -173,8 +173,7 @@ class LookupModule(LookupBase):
                 values = self.__evaluate(expression, templar, variables=vars)
             except Exception as e:
                 raise AnsibleLookupError(
-                    'Caught "{error}" while evaluating {key!r} with item == {item!r}'.format(
-                        error=e, key=key, item=current))
+                    f'Caught "{e}" while evaluating {key!r} with item == {current!r}')
 
         if isinstance(values, Mapping):
             for idx, val in sorted(values.items()):
@@ -186,8 +185,7 @@ class LookupModule(LookupBase):
                 self.__process(result, terms, index + 1, current, templar, variables)
         else:
             raise AnsibleLookupError(
-                'Did not obtain dictionary or list while evaluating {key!r} with item == {item!r}, but {type}'.format(
-                    key=key, item=current, type=type(values)))
+                f'Did not obtain dictionary or list while evaluating {key!r} with item == {current!r}, but {type(values)}')
 
     def run(self, terms, variables=None, **kwargs):
         """Generate list."""
@@ -201,16 +199,14 @@ class LookupModule(LookupBase):
             for index, term in enumerate(terms):
                 if not isinstance(term, Mapping):
                     raise AnsibleLookupError(
-                        'Parameter {index} must be a dictionary, got {type}'.format(
-                            index=index, type=type(term)))
+                        f'Parameter {index} must be a dictionary, got {type(term)}')
                 if len(term) != 1:
                     raise AnsibleLookupError(
-                        'Parameter {index} must be a one-element dictionary, got {count} elements'.format(
-                            index=index, count=len(term)))
+                        f'Parameter {index} must be a one-element dictionary, got {len(term)} elements')
                 k, v = list(term.items())[0]
                 if k in vars_so_far:
                     raise AnsibleLookupError(
-                        'The variable {key!r} appears more than once'.format(key=k))
+                        f'The variable {k!r} appears more than once')
                 vars_so_far.add(k)
                 if isinstance(v, string_types):
                     data.append((k, v, None))
@@ -218,7 +214,6 @@ class LookupModule(LookupBase):
                     data.append((k, None, v))
                 else:
                     raise AnsibleLookupError(
-                        'Parameter {key!r} (index {index}) must have a value of type string, dictionary or list, got type {type}'.format(
-                            index=index, key=k, type=type(v)))
+                        f'Parameter {k!r} (index {index}) must have a value of type string, dictionary or list, got type {type(v)}')
             self.__process(result, data, 0, {}, templar, variables)
         return result

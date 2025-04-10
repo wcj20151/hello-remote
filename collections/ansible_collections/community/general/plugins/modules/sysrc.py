@@ -9,57 +9,62 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 author:
-    - David Lundgren (@dlundgren)
+  - David Lundgren (@dlundgren)
 module: sysrc
 short_description: Manage FreeBSD using sysrc
 version_added: '2.0.0'
 description:
-    - Manages C(/etc/rc.conf) for FreeBSD.
+  - Manages C(/etc/rc.conf) for FreeBSD.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
-    name:
-        description:
-            - Name of variable in C(/etc/rc.conf) to manage.
-        type: str
-        required: true
-    value:
-        description:
-            - The value to set when I(state=present).
-            - The value to add when I(state=value_present).
-            - The value to remove when I(state=value_absent).
-        type: str
-    state:
-        description:
-            - Use I(present) to add the variable.
-            - Use I(absent) to remove the variable.
-            - Use I(value_present) to add the value to the existing variable.
-            - Use I(value_absent) to remove the value from the existing variable.
-        type: str
-        default: "present"
-        choices: [ absent, present, value_present, value_absent ]
-    path:
-        description:
-            - Path to file to use instead of C(/etc/rc.conf).
-        type: str
-        default: "/etc/rc.conf"
-    delim:
-        description:
-            - Delimiter to be used instead of C( ).
-            - Only used when I(state=value_present) or I(state=value_absent).
-        default: " "
-        type: str
-    jail:
-        description:
-            - Name or ID of the jail to operate on.
-        type: str
+  name:
+    description:
+      - Name of variable in C(/etc/rc.conf) to manage.
+    type: str
+    required: true
+  value:
+    description:
+      - The value to set when O(state=present).
+      - The value to add when O(state=value_present).
+      - The value to remove when O(state=value_absent).
+    type: str
+  state:
+    description:
+      - Use V(present) to add the variable.
+      - Use V(absent) to remove the variable.
+      - Use V(value_present) to add the value to the existing variable.
+      - Use V(value_absent) to remove the value from the existing variable.
+    type: str
+    default: "present"
+    choices: [absent, present, value_present, value_absent]
+  path:
+    description:
+      - Path to file to use instead of V(/etc/rc.conf).
+    type: str
+    default: "/etc/rc.conf"
+  delim:
+    description:
+      - Delimiter to be used instead of V(" ") (space).
+      - Only used when O(state=value_present) or O(state=value_absent).
+    default: " "
+    type: str
+  jail:
+    description:
+      - Name or ID of the jail to operate on.
+    type: str
 notes:
-  - The C(name) cannot contain periods as sysrc does not support OID style names.
-'''
+  - The O(name) cannot contain periods as sysrc does not support OID style names.
+"""
 
-EXAMPLES = r'''
----
+EXAMPLES = r"""
 # enable mysql in the /etc/rc.conf
 - name: Configure mysql pid file
   community.general.sysrc:
@@ -87,15 +92,15 @@ EXAMPLES = r'''
     name: nginx_enable
     value: "YES"
     jail: testjail
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 changed:
   description: Return changed for sysrc actions.
   returned: always
   type: bool
   sample: true
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 import re
@@ -215,7 +220,7 @@ def main():
     # OID style names are not supported
     if not re.match('^[a-zA-Z0-9_]+$', name):
         module.fail_json(
-            msg="Name may only contain alpha-numeric and underscore characters"
+            msg="Name may only contain alphanumeric and underscore characters"
         )
 
     value = module.params.pop('value')

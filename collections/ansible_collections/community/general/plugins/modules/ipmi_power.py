@@ -9,16 +9,22 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: ipmi_power
 short_description: Power management for machine
 description:
-  - Use this module for power management
+  - Use this module for power management.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   name:
     description:
-      - Hostname or ip address of the BMC.
+      - Hostname or IP address of the BMC.
     required: true
     type: str
   port:
@@ -45,13 +51,13 @@ options:
   state:
     description:
       - Whether to ensure that the machine in desired state.
-      - "The choices for state are:
-            - on -- Request system turn on
-            - off -- Request system turn off without waiting for OS to shutdown
-            - shutdown -- Have system request OS proper shutdown
-            - reset -- Request system reset without waiting for OS
-            - boot -- If system is off, then 'on', else 'reset'"
-      - Either this option or I(machine) is required.
+      - 'The choices for state are:'
+      - V(on) -- Request system turn on.
+      - V(off) -- Request system turn off without waiting for OS to shutdown.
+      - V(shutdown) -- Have system request OS proper shutdown.
+      - V(reset) -- Request system reset without waiting for OS.
+      - V(boot) -- If system is off, then V(on), else V(reset).
+      - Either this option or O(machine) is required.
     choices: ['on', 'off', shutdown, reset, boot]
     type: str
   timeout:
@@ -61,9 +67,8 @@ options:
     type: int
   machine:
     description:
-      - Provide a list of the remote target address for the bridge IPMI request,
-        and the power status.
-      - Either this option or I(state) is required.
+      - Provide a list of the remote target address for the bridge IPMI request, and the power status.
+      - Either this option or O(state) is required.
     required: false
     type: list
     elements: dict
@@ -76,63 +81,53 @@ options:
         required: true
       state:
         description:
-          - Whether to ensure that the machine specified by I(targetAddress) in desired state.
-          - If this option is not set, the power state is set by I(state).
-          - If both this option and I(state) are set, this option takes precedence over I(state).
+          - Whether to ensure that the machine specified by O(machine[].targetAddress) in desired state.
+          - If this option is not set, the power state is set by O(state).
+          - If both this option and O(state) are set, this option takes precedence over O(state).
         choices: ['on', 'off', shutdown, reset, boot]
         type: str
 
 requirements:
-  - "python >= 2.6"
   - pyghmi
 author: "Bulat Gaifullin (@bgaifullin) <gaifullinbf@gmail.com>"
-'''
+"""
 
-RETURN = '''
+RETURN = r"""
 powerstate:
-    description: The current power state of the machine.
-    returned: success and I(machine) is not provided
-    type: str
-    sample: on
+  description: The current power state of the machine.
+  returned: success and O(machine) is not provided
+  type: str
+  sample: 'on'
 status:
-    description: The current power state of the machine when the machine option is set.
-    returned: success and I(machine) is provided
-    type: list
-    elements: dict
-    version_added: 4.3.0
-    contains:
-        powerstate:
-          description: The current power state of the machine specified by I(targetAddress).
-          type: str
-        targetAddress:
-          description: The remote target address.
-          type: int
-    sample: [
-              {
-                "powerstate": "on",
-                "targetAddress": 48,
-              },
-              {
-                "powerstate": "on",
-                "targetAddress": 50,
-              },
-    ]
-'''
+  description: The current power state of the machine when the machine option is set.
+  returned: success and O(machine) is provided
+  type: list
+  elements: dict
+  version_added: 4.3.0
+  contains:
+    powerstate:
+      description: The current power state of the machine specified by RV(status[].targetAddress).
+      type: str
+    targetAddress:
+      description: The remote target address.
+      type: int
+  sample: [{"powerstate": "on", "targetAddress": 48}, {"powerstate": "on", "targetAddress": 50}]
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Ensure machine is powered on
   community.general.ipmi_power:
     name: test.testdomain.com
     user: admin
     password: password
-    state: on
+    state: 'on'
 
 - name: Ensure machines of which remote target address is 48 and 50 are powered off
   community.general.ipmi_power:
     name: test.testdomain.com
     user: admin
     password: password
-    state: off
+    state: 'off'
     machine:
       - targetAddress: 48
       - targetAddress: 50
@@ -144,10 +139,10 @@ EXAMPLES = '''
     password: password
     machine:
       - targetAddress: 48
-        state: on
+        state: 'on'
       - targetAddress: 50
-        state: off
-'''
+        state: 'off'
+"""
 
 import traceback
 import binascii

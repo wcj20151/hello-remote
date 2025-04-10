@@ -5,14 +5,14 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-from ansible_collections.community.general.tests.unit.compat import unittest
-from ansible_collections.community.general.tests.unit.compat.mock import patch, call
+from ansible_collections.community.internal_test_tools.tests.unit.compat import unittest
+from ansible_collections.community.internal_test_tools.tests.unit.compat.mock import patch, call
 from ansible.errors import AnsibleError
 from ansible.module_utils.urls import ConnectionError, SSLValidationError
 from ansible.module_utils.six.moves.urllib.error import HTTPError, URLError
 from ansible.module_utils import six
 from ansible.plugins.loader import lookup_loader
-from ansible_collections.community.general.plugins.lookup.manifold import ManifoldApiClient, LookupModule, ApiError
+from ansible_collections.community.general.plugins.lookup.manifold import ManifoldApiClient, ApiError
 import json
 import os
 

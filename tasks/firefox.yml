@@ -1,0 +1,32 @@
+- name: Start Firefox to generate default profile (first run)
+  shell: "firefox &"
+  async: 1
+  poll: 0
+
+- name: Wait for profile to initialize
+  pause:
+    seconds: 10
+
+- name: Kill Firefox
+  shell: pkill firefox
+  ignore_errors: true
+
+# - name: Find Firefox default profile
+#   shell: grep -E '^Path=' ~/.mozilla/firefox/profiles.ini | head -n1 | cut -d= -f2
+#   register: firefox_profile
+
+# - name: Set profile path
+#   set_fact:
+#     firefox_profile_path: "{{ lookup('env','HOME') }}/.mozilla/firefox/{{ firefox_profile.stdout | trim }}"
+
+- name: Ensure bookmarkbackups directory exists
+  file:
+    path: "{{ firefox_profile_path }}/bookmarkbackups"
+    state: directory
+    mode: '0755'
+
+- name: Copy bookmarks backup
+  copy:
+    src: files/bookmarks.json
+    dest: "{{ firefox_profile_path }}/bookmarkbackups/bookmarks-ansible.json"
+    mode: '0644'

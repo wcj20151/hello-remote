@@ -8,59 +8,63 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: pagerduty_user
 short_description: Manage a user account on PagerDuty
 description:
-    - This module manages the creation/removal of a user account on PagerDuty.
+  - This module manages the creation/removal of a user account on PagerDuty.
 version_added: '1.3.0'
 author: Zainab Alsaffar (@zanssa)
 requirements:
-    - pdpyras python module = 4.1.1
-    - PagerDuty API Access
+  - pdpyras python module = 4.1.1
+  - PagerDuty API Access
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
-    access_token:
-        description:
-            - An API access token to authenticate with the PagerDuty REST API.
-        required: true
-        type: str
-    pd_user:
-        description:
-            - Name of the user in PagerDuty.
-        required: true
-        type: str
-    pd_email:
-        description:
-            - The user's email address.
-            - I(pd_email) is the unique identifier used and cannot be updated using this module.
-        required: true
-        type: str
-    pd_role:
-        description:
-            - The user's role.
-        choices: ['global_admin', 'manager', 'responder', 'observer', 'stakeholder', 'limited_stakeholder', 'restricted_access']
-        default: 'responder'
-        type: str
-    state:
-        description:
-            - State of the user.
-            - On C(present), it creates a user if the user doesn't exist.
-            - On C(absent), it removes a user if the account exists.
-        choices: ['present', 'absent']
-        default: 'present'
-        type: str
-    pd_teams:
-        description:
-            - The teams to which the user belongs.
-            - Required if I(state=present).
-        type: list
-        elements: str
-notes:
-    - Supports C(check_mode).
-'''
+  access_token:
+    description:
+      - An API access token to authenticate with the PagerDuty REST API.
+    required: true
+    type: str
+  pd_user:
+    description:
+      - Name of the user in PagerDuty.
+    required: true
+    type: str
+  pd_email:
+    description:
+      - The user's email address.
+      - O(pd_email) is the unique identifier used and cannot be updated using this module.
+    required: true
+    type: str
+  pd_role:
+    description:
+      - The user's role.
+    choices: ['global_admin', 'manager', 'responder', 'observer', 'stakeholder', 'limited_stakeholder', 'restricted_access']
+    default: 'responder'
+    type: str
+  state:
+    description:
+      - State of the user.
+      - On V(present), it creates a user if the user does not exist.
+      - On V(absent), it removes a user if the account exists.
+    choices: ['present', 'absent']
+    default: 'present'
+    type: str
+  pd_teams:
+    description:
+      - The teams to which the user belongs.
+      - Required if O(state=present).
+    type: list
+    elements: str
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a user account on PagerDuty
   community.general.pagerduty_user:
     access_token: 'Your_Access_token'
@@ -76,29 +80,16 @@ EXAMPLES = r'''
     pd_user: user_full_name
     pd_email: user_email
     state: "absent"
-'''
+"""
 
-RETURN = r''' # '''
+RETURN = r""" # """
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-import traceback
 from os import path
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.general.plugins.module_utils import deps
 
-try:
-    from pdpyras import APISession
-    HAS_PD_PY = True
-    PD_IMPORT_ERR = None
-except ImportError:
-    HAS_PD_PY = False
-    PD_IMPORT_ERR = traceback.format_exc()
-
-try:
-    from pdpyras import PDClientError
-    HAS_PD_CLIENT_ERR = True
-    PD_CLIENT_ERR_IMPORT_ERR = None
-except ImportError:
-    HAS_PD_CLIENT_ERR = False
-    PD_CLIENT_ERR_IMPORT_ERR = traceback.format_exc()
+with deps.declare("pdpyras", url="https://github.com/PagerDuty/pdpyras"):
+    from pdpyras import APISession, PDClientError
 
 
 class PagerDutyUser(object):
@@ -202,11 +193,7 @@ def main():
         supports_check_mode=True,
     )
 
-    if not HAS_PD_PY:
-        module.fail_json(msg=missing_required_lib('pdpyras', url='https://github.com/PagerDuty/pdpyras'), exception=PD_IMPORT_ERR)
-
-    if not HAS_PD_CLIENT_ERR:
-        module.fail_json(msg=missing_required_lib('PDClientError', url='https://github.com/PagerDuty/pdpyras'), exception=PD_CLIENT_ERR_IMPORT_ERR)
+    deps.validate(module)
 
     access_token = module.params['access_token']
     pd_user = module.params['pd_user']

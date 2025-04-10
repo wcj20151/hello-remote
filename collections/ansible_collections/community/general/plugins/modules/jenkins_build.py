@@ -8,18 +8,25 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: jenkins_build
 short_description: Manage jenkins builds
 version_added: 2.2.0
 description:
-    - Manage Jenkins builds with Jenkins REST API.
+  - Manage Jenkins builds with Jenkins REST API.
 requirements:
   - "python-jenkins >= 0.4.12"
 author:
   - Brett Milford (@brettmilford)
   - Tong He (@unnecessary-username)
+  - Juan Casanova (@juanmcasanova)
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: none
+  diff_mode:
+    support: none
 options:
   args:
     description:
@@ -41,7 +48,7 @@ options:
   state:
     description:
       - Attribute that specifies if the build is to be created, deleted or stopped.
-      - The C(stopped) state has been added in community.general 3.3.0.
+      - The V(stopped) state has been added in community.general 3.3.0.
     default: present
     choices: ['present', 'absent', 'stopped']
     type: str
@@ -56,11 +63,24 @@ options:
     type: str
   user:
     description:
-       - User to authenticate with the Jenkins server.
+      - User to authenticate with the Jenkins server.
     type: str
-'''
+  detach:
+    description:
+      - Enable detached mode to not wait for the build end.
+    default: false
+    type: bool
+    version_added: 7.4.0
+  time_between_checks:
+    description:
+      - Time in seconds to wait between requests to the Jenkins server.
+      - This times must be higher than the configured quiet time for the job.
+    default: 10
+    type: int
+    version_added: 7.4.0
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Create a jenkins build using basic authentication
   community.general.jenkins_build:
     name: "test-check"
@@ -87,10 +107,9 @@ EXAMPLES = '''
     user: Jenkins
     token: abcdefghijklmnopqrstuvwxyz123456
     url: http://localhost:8080
-'''
+"""
 
-RETURN = '''
----
+RETURN = r"""
 name:
   description: Name of the jenkins job.
   returned: success
@@ -107,7 +126,7 @@ user:
   type: str
   sample: admin
 url:
-  description: Url to connect to the Jenkins server.
+  description: URL to connect to the Jenkins server.
   returned: success
   type: str
   sample: https://jenkins.mydomain.com
@@ -115,7 +134,7 @@ build_info:
   description: Build info of the jenkins job.
   returned: success
   type: dict
-'''
+"""
 
 import traceback
 from time import sleep
@@ -145,6 +164,8 @@ class JenkinsBuild:
         self.user = module.params.get('user')
         self.jenkins_url = module.params.get('url')
         self.build_number = module.params.get('build_number')
+        self.detach = module.params.get('detach')
+        self.time_between_checks = module.params.get('time_between_checks')
         self.server = self.get_jenkins_connection()
 
         self.result = {
@@ -228,7 +249,14 @@ class JenkinsBuild:
         build_status = self.get_build_status()
 
         if build_status['result'] is None:
-            sleep(10)
+            # If detached mode is active mark as success, we wouldn't be able to get here if it didn't exist
+            if self.detach:
+                result['changed'] = True
+                result['build_info'] = build_status
+
+                return result
+
+            sleep(self.time_between_checks)
             self.get_result()
         else:
             if self.state == "stopped" and build_status['result'] == "ABORTED":
@@ -266,6 +294,8 @@ def main():
             token=dict(no_log=True),
             url=dict(default="http://localhost:8080"),
             user=dict(),
+            detach=dict(type='bool', default=False),
+            time_between_checks=dict(type='int', default=10),
         ),
         mutually_exclusive=[['password', 'token']],
         required_if=[['state', 'absent', ['build_number'], True], ['state', 'stopped', ['build_number'], True]],
@@ -281,7 +311,7 @@ def main():
     else:
         jenkins_build.absent_build()
 
-    sleep(10)
+    sleep(jenkins_build.time_between_checks)
     result = jenkins_build.get_result()
     module.exit_json(**result)
 

@@ -9,57 +9,61 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: twilio
 short_description: Sends a text message to a mobile phone through Twilio
 description:
-   - Sends a text message to a phone number through the Twilio messaging API.
+  - Sends a text message to a phone number through the Twilio messaging API.
 notes:
-   - This module is non-idempotent because it sends an email through the
-     external API. It is idempotent only in the case that the module fails.
-   - Like the other notification modules, this one requires an external
-     dependency to work. In this case, you'll need a Twilio account with
-     a purchased or verified phone number to send the text message.
+  - This module is non-idempotent because it sends an email through the external API. It is idempotent only in the case that
+    the module fails.
+  - Like the other notification modules, this one requires an external dependency to work. In this case, you need a Twilio
+    account with a purchased or verified phone number to send the text message.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   account_sid:
     type: str
     description:
-      user's Twilio account token found on the account page
+      - User's Twilio account token found on the account page.
     required: true
   auth_token:
     type: str
-    description: user's Twilio authentication token
+    description:
+      - User's Twilio authentication token.
     required: true
   msg:
     type: str
     description:
-      the body of the text message
+      - The body of the text message.
     required: true
   to_numbers:
     type: list
     elements: str
     description:
-      one or more phone numbers to send the text message to,
-      format +15551112222
+      - One or more phone numbers to send the text message to, format C(+15551112222).
     required: true
-    aliases: [ to_number ]
+    aliases: [to_number]
   from_number:
     type: str
     description:
-      the Twilio number to send the text message from, format +15551112222
+      - The Twilio number to send the text message from, format C(+15551112222).
     required: true
   media_url:
     type: str
     description:
-      a URL with a picture, video or sound clip to send with an MMS
-      (multimedia message) instead of a plain SMS
+      - A URL with a picture, video or sound clip to send with an MMS (multimedia message) instead of a plain SMS.
     required: false
 
 author: "Matt Makai (@makaimc)"
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 # send an SMS about the build status to (555) 303 5681
 # note: replace account_sid and auth_token values with your credentials
 # and you have to have the 'from_number' on your Twilio account
@@ -68,8 +72,8 @@ EXAMPLES = '''
     msg: All servers with webserver role are now configured.
     account_sid: ACXXXXXXXXXXXXXXXXX
     auth_token: ACXXXXXXXXXXXXXXXXX
-    from_number: +15552014545
-    to_number: +15553035681
+    from_number: "+15552014545"
+    to_number: "+15553035681"
   delegate_to: localhost
 
 # send an SMS to multiple phone numbers about the deployment
@@ -80,11 +84,11 @@ EXAMPLES = '''
     msg: This server configuration is now complete.
     account_sid: ACXXXXXXXXXXXXXXXXX
     auth_token: ACXXXXXXXXXXXXXXXXX
-    from_number: +15553258899
+    from_number: "+15553258899"
     to_numbers:
-      - +15551113232
-      - +12025551235
-      - +19735559010
+      - "+15551113232"
+      - "+12025551235"
+      - "+19735559010"
   delegate_to: localhost
 
 # send an MMS to a single recipient with an update on the deployment
@@ -96,11 +100,11 @@ EXAMPLES = '''
     msg: Deployment complete!
     account_sid: ACXXXXXXXXXXXXXXXXX
     auth_token: ACXXXXXXXXXXXXXXXXX
-    from_number: +15552014545
-    to_number: +15553035681
+    from_number: "+15552014545"
+    to_number: "+15553035681"
     media_url: https://demo.twilio.com/logo.png
   delegate_to: localhost
-'''
+"""
 
 # =======================================
 # twilio module support methods

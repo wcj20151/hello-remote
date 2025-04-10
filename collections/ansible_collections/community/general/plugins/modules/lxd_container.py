@@ -9,197 +9,191 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: lxd_container
 short_description: Manage LXD instances
 description:
   - Management of LXD containers and virtual machines.
 author: "Hiroaki Nakamura (@hnakamur)"
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+    version_added: 6.4.0
+  diff_mode:
+    support: full
+    version_added: 6.4.0
 options:
-    name:
-        description:
-          - Name of an instance.
-        type: str
-        required: true
-    project:
-        description:
-          - 'Project of an instance.
-            See U(https://github.com/lxc/lxd/blob/master/doc/projects.md).'
-        required: false
-        type: str
-        version_added: 4.8.0
-    architecture:
-        description:
-          - 'The architecture for the instance (for example C(x86_64) or C(i686)).
-            See U(https://github.com/lxc/lxd/blob/master/doc/rest-api.md#post-1).'
-        type: str
-        required: false
-    config:
-        description:
-          - 'The config for the instance (for example C({"limits.cpu": "2"})).
-            See U(https://github.com/lxc/lxd/blob/master/doc/rest-api.md#post-1).'
-          - If the instance already exists and its "config" values in metadata
-            obtained from the LXD API U(https://github.com/lxc/lxd/blob/master/doc/rest-api.md#instances-containers-and-virtual-machines)
-            are different, this module tries to apply the configurations.
-          - The keys starting with C(volatile.) are ignored for this comparison when I(ignore_volatile_options=true).
-        type: dict
-        required: false
-    ignore_volatile_options:
-        description:
-          - If set to C(true), options starting with C(volatile.) are ignored. As a result,
-            they are reapplied for each execution.
-          - This default behavior can be changed by setting this option to C(false).
-          - The default value changed from C(true) to C(false) in community.general 6.0.0.
-        type: bool
-        required: false
-        default: false
-        version_added: 3.7.0
-    profiles:
-        description:
-          - Profile to be used by the instance.
-        type: list
-        elements: str
-    devices:
-        description:
-          - 'The devices for the instance
-            (for example C({ "rootfs": { "path": "/dev/kvm", "type": "unix-char" }})).
-            See U(https://github.com/lxc/lxd/blob/master/doc/rest-api.md#post-1).'
-        type: dict
-        required: false
-    ephemeral:
-        description:
-          - Whether or not the instance is ephemeral (for example C(true) or C(false)).
-            See U(https://github.com/lxc/lxd/blob/master/doc/rest-api.md#post-1).
-        required: false
-        type: bool
-    source:
-        description:
-          - 'The source for the instance
-            (e.g. { "type": "image",
-                    "mode": "pull",
-                    "server": "https://images.linuxcontainers.org",
-                    "protocol": "lxd",
-                    "alias": "ubuntu/xenial/amd64" }).'
-          - 'See U(https://github.com/lxc/lxd/blob/master/doc/rest-api.md#post-1) for complete API documentation.'
-          - 'Note that C(protocol) accepts two choices: C(lxd) or C(simplestreams).'
-        required: false
-        type: dict
-    state:
-        choices:
-          - started
-          - stopped
-          - restarted
-          - absent
-          - frozen
-        description:
-          - Define the state of an instance.
-        required: false
-        default: started
-        type: str
-    target:
-        description:
-          - For cluster deployments. Will attempt to create an instance on a target node.
-            If the instance exists elsewhere in a cluster, then it will not be replaced or moved.
-            The name should respond to same name of the node you see in C(lxc cluster list).
-        type: str
-        required: false
-        version_added: 1.0.0
-    timeout:
-        description:
-          - A timeout for changing the state of the instance.
-          - This is also used as a timeout for waiting until IPv4 addresses
-            are set to the all network interfaces in the instance after
-            starting or restarting.
-        required: false
-        default: 30
-        type: int
-    type:
-        description:
-          - Instance type can be either C(virtual-machine) or C(container).
-        required: false
-        default: container
-        choices:
-          - container
-          - virtual-machine
-        type: str
-        version_added: 4.1.0
-    wait_for_ipv4_addresses:
-        description:
-          - If this is true, the C(lxd_container) waits until IPv4 addresses
-            are set to the all network interfaces in the instance after
-            starting or restarting.
-        required: false
-        default: false
-        type: bool
-    wait_for_container:
-        description:
-            - If set to C(true), the tasks will wait till the task reports a
-              success status when performing container operations.
-        default: false
-        type: bool
-        version_added: 4.4.0
-    force_stop:
-        description:
-          - If this is true, the C(lxd_container) forces to stop the instance
-            when it stops or restarts the instance.
-        required: false
-        default: false
-        type: bool
-    url:
-        description:
-          - The unix domain socket path or the https URL for the LXD server.
-        required: false
-        default: unix:/var/lib/lxd/unix.socket
-        type: str
-    snap_url:
-        description:
-          - The unix domain socket path when LXD is installed by snap package manager.
-        required: false
-        default: unix:/var/snap/lxd/common/lxd/unix.socket
-        type: str
-    client_key:
-        description:
-          - The client certificate key file path.
-          - If not specified, it defaults to C(${HOME}/.config/lxc/client.key).
-        required: false
-        aliases: [ key_file ]
-        type: path
-    client_cert:
-        description:
-          - The client certificate file path.
-          - If not specified, it defaults to C(${HOME}/.config/lxc/client.crt).
-        required: false
-        aliases: [ cert_file ]
-        type: path
-    trust_password:
-        description:
-          - The client trusted password.
-          - 'You need to set this password on the LXD server before
-            running this module using the following command:
-            C(lxc config set core.trust_password <some random password>).
-            See U(https://www.stgraber.org/2016/04/18/lxd-api-direct-interaction/).'
-          - If trust_password is set, this module send a request for
-            authentication before sending any requests.
-        required: false
-        type: str
+  name:
+    description:
+      - Name of an instance.
+    type: str
+    required: true
+  project:
+    description:
+      - Project of an instance.
+      - See U(https://documentation.ubuntu.com/lxd/en/latest/projects/).
+    required: false
+    type: str
+    version_added: 4.8.0
+  architecture:
+    description:
+      - The architecture for the instance (for example V(x86_64) or V(i686)).
+      - See U(https://documentation.ubuntu.com/lxd/en/latest/api/#/instances/instance_get).
+    type: str
+    required: false
+  config:
+    description:
+      - 'The config for the instance (for example V({"limits.cpu": "2"})).'
+      - See U(https://documentation.ubuntu.com/lxd/en/latest/api/#/instances/instance_get).
+      - If the instance already exists and its "config" values in metadata obtained from the LXD API
+        U(https://documentation.ubuntu.com/lxd/en/latest/api/#/instances/instance_get)
+        are different, then this module tries to apply the configurations U(https://documentation.ubuntu.com/lxd/en/latest/api/#/instances/instance_put).
+      - The keys starting with C(volatile.) are ignored for this comparison when O(ignore_volatile_options=true).
+    type: dict
+    required: false
+  ignore_volatile_options:
+    description:
+      - If set to V(true), options starting with C(volatile.) are ignored. As a result, they are reapplied for each execution.
+      - This default behavior can be changed by setting this option to V(false).
+      - The default value changed from V(true) to V(false) in community.general 6.0.0.
+    type: bool
+    required: false
+    default: false
+    version_added: 3.7.0
+  profiles:
+    description:
+      - Profile to be used by the instance.
+    type: list
+    elements: str
+  devices:
+    description:
+      - 'The devices for the instance (for example V({ "rootfs": { "path": "/dev/kvm", "type": "unix-char" }})).'
+      - See U(https://documentation.ubuntu.com/lxd/en/latest/api/#/instances/instance_get).
+    type: dict
+    required: false
+  ephemeral:
+    description:
+      - Whether or not the instance is ephemeral (for example V(true) or V(false)).
+      - See U(https://documentation.ubuntu.com/lxd/en/latest/api/#/instances/instance_get).
+    required: false
+    type: bool
+  source:
+    description:
+      - 'The source for the instance (for example V({ "type": "image", "mode": "pull", "server": "https://cloud-images.ubuntu.com/releases/",
+        "protocol": "simplestreams", "alias": "22.04" })).'
+      - See U(https://documentation.ubuntu.com/lxd/en/latest/api/) for complete API documentation.
+      - 'Note that C(protocol) accepts two choices: V(lxd) or V(simplestreams).'
+    required: false
+    type: dict
+  state:
+    choices:
+      - started
+      - stopped
+      - restarted
+      - absent
+      - frozen
+    description:
+      - Define the state of an instance.
+    required: false
+    default: started
+    type: str
+  target:
+    description:
+      - For cluster deployments. Will attempt to create an instance on a target node. If the instance exists elsewhere in
+        a cluster, then it will not be replaced or moved. The name should respond to same name of the node you see in C(lxc
+        cluster list).
+    type: str
+    required: false
+    version_added: 1.0.0
+  timeout:
+    description:
+      - A timeout for changing the state of the instance.
+      - This is also used as a timeout for waiting until IPv4 addresses are set to the all network interfaces in the instance
+        after starting or restarting.
+    required: false
+    default: 30
+    type: int
+  type:
+    description:
+      - Instance type can be either V(virtual-machine) or V(container).
+    required: false
+    default: container
+    choices:
+      - container
+      - virtual-machine
+    type: str
+    version_added: 4.1.0
+  wait_for_ipv4_addresses:
+    description:
+      - If this is V(true), the C(lxd_container) waits until IPv4 addresses are set to the all network interfaces in the instance
+        after starting or restarting.
+    required: false
+    default: false
+    type: bool
+  wait_for_container:
+    description:
+      - If set to V(true), the tasks will wait till the task reports a success status when performing container operations.
+    default: false
+    type: bool
+    version_added: 4.4.0
+  force_stop:
+    description:
+      - If this is V(true), the C(lxd_container) forces to stop the instance when it stops or restarts the instance.
+    required: false
+    default: false
+    type: bool
+  url:
+    description:
+      - The unix domain socket path or the https URL for the LXD server.
+    required: false
+    default: unix:/var/lib/lxd/unix.socket
+    type: str
+  snap_url:
+    description:
+      - The unix domain socket path when LXD is installed by snap package manager.
+    required: false
+    default: unix:/var/snap/lxd/common/lxd/unix.socket
+    type: str
+  client_key:
+    description:
+      - The client certificate key file path.
+      - If not specified, it defaults to C(${HOME}/.config/lxc/client.key).
+    required: false
+    aliases: [key_file]
+    type: path
+  client_cert:
+    description:
+      - The client certificate file path.
+      - If not specified, it defaults to C(${HOME}/.config/lxc/client.crt).
+    required: false
+    aliases: [cert_file]
+    type: path
+  trust_password:
+    description:
+      - The client trusted password.
+      - 'You need to set this password on the LXD server before running this module using the following command: C(lxc config
+        set core.trust_password <some random password>). See U(https://www.stgraber.org/2016/04/18/lxd-api-direct-interaction/).'
+      - If trust_password is set, this module send a request for authentication before sending any requests.
+    required: false
+    type: str
 notes:
   - Instances can be a container or a virtual machine, both of them must have unique name. If you attempt to create an instance
-    with a name that already existed in the users namespace the module will
-    simply return as "unchanged".
-  - There are two ways to run commands inside a container or virtual machine, using the command
-    module or using the ansible lxd connection plugin bundled in Ansible >=
-    2.1, the later requires python to be installed in the instance which can
-    be done with the command module.
-  - You can copy a file from the host to the instance
-    with the Ansible M(ansible.builtin.copy) and M(ansible.builtin.template) module and the C(community.general.lxd) connection plugin.
-    See the example below.
-  - You can copy a file in the created instance to the localhost
-    with C(command=lxc file pull instance_name/dir/filename filename).
+    with a name that already existed in the users namespace the module will simply return as "unchanged".
+  - There are two ways to run commands inside a container or virtual machine, using the command module or using the ansible
+    lxd connection plugin bundled in Ansible >= 2.1, the later requires python to be installed in the instance which can be
+    done with the command module.
+  - You can copy a file from the host to the instance with the Ansible M(ansible.builtin.copy) and M(ansible.builtin.template)
+    module and the P(community.general.lxd#connection) connection plugin. See the example below.
+  - You can copy a file in the created instance to the localhost with C(command=lxc file pull instance_name/dir/filename filename).
     See the first example below.
-'''
+  - Linuxcontainers.org has phased out LXC/LXD support with March 2024
+    (U(https://discuss.linuxcontainers.org/t/important-notice-for-lxd-users-image-server/18479)).
+    Currently only Ubuntu is still providing images.
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 # An example for creating a Ubuntu container and install python
 - hosts: localhost
   connection: local
@@ -212,9 +206,9 @@ EXAMPLES = '''
         source:
           type: image
           mode: pull
-          server: https://images.linuxcontainers.org
-          protocol: lxd # if you get a 404, try setting protocol: simplestreams
-          alias: ubuntu/xenial/amd64
+          server: https://cloud-images.ubuntu.com/releases/
+          protocol: simplestreams
+          alias: "22.04"
         profiles: ["default"]
         wait_for_ipv4_addresses: true
         timeout: 600
@@ -256,6 +250,26 @@ EXAMPLES = '''
         wait_for_ipv4_addresses: true
         timeout: 600
 
+# An example of creating a ubuntu-minial container
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Create a started container
+      community.general.lxd_container:
+        name: mycontainer
+        ignore_volatile_options: true
+        state: started
+        source:
+          type: image
+          mode: pull
+         # Provides Ubuntu minimal images
+          server: https://cloud-images.ubuntu.com/minimal/releases/
+          protocol: simplestreams
+          alias: "22.04"
+        profiles: ["default"]
+        wait_for_ipv4_addresses: true
+        timeout: 600
+
 # An example for creating container in project other than default
 - hosts: localhost
   connection: local
@@ -270,8 +284,8 @@ EXAMPLES = '''
           protocol: simplestreams
           type: image
           mode: pull
-          server: https://images.linuxcontainers.org
-          alias: ubuntu/20.04/cloud
+          server: https://cloud-images.ubuntu.com/releases/
+          alias: "22.04"
         profiles: ["default"]
         wait_for_ipv4_addresses: true
         timeout: 600
@@ -304,8 +318,8 @@ EXAMPLES = '''
       community.general.lxd_container:
         url: https://127.0.0.1:8443
         # These client_cert and client_key values are equal to the default values.
-        #client_cert: "{{ lookup('env', 'HOME') }}/.config/lxc/client.crt"
-        #client_key: "{{ lookup('env', 'HOME') }}/.config/lxc/client.key"
+        # client_cert: "{{ lookup('env', 'HOME') }}/.config/lxc/client.crt"
+        # client_key: "{{ lookup('env', 'HOME') }}/.config/lxc/client.key"
         trust_password: mypassword
         name: mycontainer
         state: restarted
@@ -339,7 +353,7 @@ EXAMPLES = '''
         source:
           type: image
           mode: pull
-          alias: ubuntu/xenial/amd64
+          alias: "22.04"
         target: node01
 
     - name: Create container on another node
@@ -350,7 +364,7 @@ EXAMPLES = '''
         source:
           type: image
           mode: pull
-          alias: ubuntu/xenial/amd64
+          alias: "22.04"
         target: node02
 
 # An example for creating a virtual machine
@@ -369,12 +383,12 @@ EXAMPLES = '''
           protocol: simplestreams
           type: image
           mode: pull
-          server: https://images.linuxcontainers.org
+          server: ['...'] # URL to the image server
           alias: debian/11
         timeout: 600
-'''
+"""
 
-RETURN = '''
+RETURN = r"""
 addresses:
   description: Mapping from the network device name to a list of IPv4 addresses in the instance.
   returned: when state is started or restarted
@@ -395,7 +409,9 @@ actions:
   returned: success
   type: list
   sample: ["create", "start"]
-'''
+"""
+
+import copy
 import datetime
 import os
 import time
@@ -411,7 +427,7 @@ LXD_ANSIBLE_STATES = {
     'stopped': '_stopped',
     'restarted': '_restarted',
     'absent': '_destroyed',
-    'frozen': '_frozen'
+    'frozen': '_frozen',
 }
 
 # ANSIBLE_LXD_STATES is a map of states of lxd containers to the Ansible
@@ -427,8 +443,12 @@ ANSIBLE_LXD_DEFAULT_URL = 'unix:/var/lib/lxd/unix.socket'
 
 # CONFIG_PARAMS is a list of config attribute names.
 CONFIG_PARAMS = [
-    'architecture', 'config', 'devices', 'ephemeral', 'profiles', 'source'
+    'architecture', 'config', 'devices', 'ephemeral', 'profiles', 'source', 'type'
 ]
+
+# CONFIG_CREATION_PARAMS is a list of attribute names that are only applied
+# on instance creation.
+CONFIG_CREATION_PARAMS = ['source', 'type']
 
 
 class LXDContainerManagement(object):
@@ -453,13 +473,6 @@ class LXDContainerManagement(object):
         self.wait_for_container = self.module.params['wait_for_container']
 
         self.type = self.module.params['type']
-
-        # LXD Rest API provides additional endpoints for creating containers and virtual-machines.
-        self.api_endpoint = None
-        if self.type == 'container':
-            self.api_endpoint = '/1.0/containers'
-        elif self.type == 'virtual-machine':
-            self.api_endpoint = '/1.0/virtual-machines'
 
         self.key_file = self.module.params.get('client_key')
         if self.key_file is None:
@@ -486,8 +499,23 @@ class LXDContainerManagement(object):
             )
         except LXDClientException as e:
             self.module.fail_json(msg=e.msg)
+
+        # LXD (3.19) Rest API provides instances endpoint, failback to containers and virtual-machines
+        # https://documentation.ubuntu.com/lxd/en/latest/rest-api/#instances-containers-and-virtual-machines
+        self.api_endpoint = '/1.0/instances'
+        check_api_endpoint = self.client.do('GET', '{0}?project='.format(self.api_endpoint), ok_error_codes=[404])
+
+        if check_api_endpoint['error_code'] == 404:
+            if self.type == 'container':
+                self.api_endpoint = '/1.0/containers'
+            elif self.type == 'virtual-machine':
+                self.api_endpoint = '/1.0/virtual-machines'
+
         self.trust_password = self.module.params.get('trust_password', None)
         self.actions = []
+        self.diff = {'before': {}, 'after': {}}
+        self.old_instance_json = {}
+        self.old_sections = {}
 
     def _build_config(self):
         self.config = {}
@@ -521,7 +549,8 @@ class LXDContainerManagement(object):
         body_json = {'action': action, 'timeout': self.timeout}
         if force_stop:
             body_json['force'] = True
-        return self.client.do('PUT', url, body_json=body_json)
+        if not self.module.check_mode:
+            return self.client.do('PUT', url, body_json=body_json)
 
     def _create_instance(self):
         url = self.api_endpoint
@@ -534,7 +563,10 @@ class LXDContainerManagement(object):
             url = '{0}?{1}'.format(url, urlencode(url_params))
         config = self.config.copy()
         config['name'] = self.name
-        self.client.do('POST', url, config, wait_for_container=self.wait_for_container)
+        if self.type not in self.api_endpoint:
+            config['type'] = self.type
+        if not self.module.check_mode:
+            self.client.do('POST', url, config, wait_for_container=self.wait_for_container)
         self.actions.append('create')
 
     def _start_instance(self):
@@ -553,7 +585,8 @@ class LXDContainerManagement(object):
         url = '{0}/{1}'.format(self.api_endpoint, self.name)
         if self.project:
             url = '{0}?{1}'.format(url, urlencode(dict(project=self.project)))
-        self.client.do('DELETE', url)
+        if not self.module.check_mode:
+            self.client.do('DELETE', url)
         self.actions.append('delete')
 
     def _freeze_instance(self):
@@ -562,15 +595,20 @@ class LXDContainerManagement(object):
 
     def _unfreeze_instance(self):
         self._change_state('unfreeze')
-        self.actions.append('unfreez')
+        self.actions.append('unfreeze')
 
     def _instance_ipv4_addresses(self, ignore_devices=None):
         ignore_devices = ['lo'] if ignore_devices is None else ignore_devices
-
-        resp_json = self._get_instance_state_json()
-        network = resp_json['metadata']['network'] or {}
-        network = dict((k, v) for k, v in network.items() if k not in ignore_devices) or {}
-        addresses = dict((k, [a['address'] for a in v['addresses'] if a['family'] == 'inet']) for k, v in network.items()) or {}
+        data = (self._get_instance_state_json() or {}).get('metadata', None) or {}
+        network = {
+            k: v
+            for k, v in (data.get('network') or {}).items()
+            if k not in ignore_devices
+        }
+        addresses = {
+            k: [a['address'] for a in v['addresses'] if a['family'] == 'inet']
+            for k, v in network.items()
+        }
         return addresses
 
     @staticmethod
@@ -583,7 +621,7 @@ class LXDContainerManagement(object):
             while datetime.datetime.now() < due:
                 time.sleep(1)
                 addresses = self._instance_ipv4_addresses()
-                if self._has_all_ipv4_addresses(addresses):
+                if self._has_all_ipv4_addresses(addresses) or self.module.check_mode:
                     self.addresses = addresses
                     return
         except LXDClientException as e:
@@ -656,16 +694,10 @@ class LXDContainerManagement(object):
     def _needs_to_change_instance_config(self, key):
         if key not in self.config:
             return False
-        if key == 'config' and self.ignore_volatile_options:  # the old behavior is to ignore configurations by keyword "volatile"
-            old_configs = dict((k, v) for k, v in self.old_instance_json['metadata'][key].items() if not k.startswith('volatile.'))
-            for k, v in self.config['config'].items():
-                if k not in old_configs:
-                    return True
-                if old_configs[k] != v:
-                    return True
-            return False
-        elif key == 'config':  # next default behavior
-            old_configs = dict((k, v) for k, v in self.old_instance_json['metadata'][key].items())
+
+        if key == 'config':
+            # self.old_sections is already filtered for volatile keys if necessary
+            old_configs = dict(self.old_sections.get(key, None) or {})
             for k, v in self.config['config'].items():
                 if k not in old_configs:
                     return True
@@ -673,47 +705,44 @@ class LXDContainerManagement(object):
                     return True
             return False
         else:
-            old_configs = self.old_instance_json['metadata'][key]
+            old_configs = self.old_sections.get(key, {})
             return self.config[key] != old_configs
 
     def _needs_to_apply_instance_configs(self):
-        return (
-            self._needs_to_change_instance_config('architecture') or
-            self._needs_to_change_instance_config('config') or
-            self._needs_to_change_instance_config('ephemeral') or
-            self._needs_to_change_instance_config('devices') or
-            self._needs_to_change_instance_config('profiles')
-        )
+        for param in set(CONFIG_PARAMS) - set(CONFIG_CREATION_PARAMS):
+            if self._needs_to_change_instance_config(param):
+                return True
+        return False
 
     def _apply_instance_configs(self):
-        old_metadata = self.old_instance_json['metadata']
-        body_json = {
-            'architecture': old_metadata['architecture'],
-            'config': old_metadata['config'],
-            'devices': old_metadata['devices'],
-            'profiles': old_metadata['profiles']
-        }
+        old_metadata = copy.deepcopy(self.old_instance_json).get('metadata', None) or {}
+        body_json = {}
+        for param in set(CONFIG_PARAMS) - set(CONFIG_CREATION_PARAMS):
+            if param in old_metadata:
+                body_json[param] = old_metadata[param]
 
-        if self._needs_to_change_instance_config('architecture'):
-            body_json['architecture'] = self.config['architecture']
-        if self._needs_to_change_instance_config('config'):
-            for k, v in self.config['config'].items():
-                body_json['config'][k] = v
-        if self._needs_to_change_instance_config('ephemeral'):
-            body_json['ephemeral'] = self.config['ephemeral']
-        if self._needs_to_change_instance_config('devices'):
-            body_json['devices'] = self.config['devices']
-        if self._needs_to_change_instance_config('profiles'):
-            body_json['profiles'] = self.config['profiles']
-
+            if self._needs_to_change_instance_config(param):
+                if param == 'config':
+                    body_json['config'] = body_json.get('config', None) or {}
+                    for k, v in self.config['config'].items():
+                        body_json['config'][k] = v
+                else:
+                    body_json[param] = self.config[param]
+        self.diff['after']['instance'] = body_json
         url = '{0}/{1}'.format(self.api_endpoint, self.name)
         if self.project:
             url = '{0}?{1}'.format(url, urlencode(dict(project=self.project)))
-        self.client.do('PUT', url, body_json=body_json)
+        if not self.module.check_mode:
+            self.client.do('PUT', url, body_json=body_json)
         self.actions.append('apply_instance_configs')
 
     def run(self):
         """Run the main method."""
+
+        def adjust_content(content):
+            return content if not isinstance(content, dict) else {
+                k: v for k, v in content.items() if not (self.ignore_volatile_options and k.startswith('volatile.'))
+            }
 
         try:
             if self.trust_password is not None:
@@ -721,7 +750,20 @@ class LXDContainerManagement(object):
             self.ignore_volatile_options = self.module.params.get('ignore_volatile_options')
 
             self.old_instance_json = self._get_instance_json()
+            self.old_sections = {
+                section: adjust_content(content)
+                for section, content in (self.old_instance_json.get('metadata') or {}).items()
+                if section in set(CONFIG_PARAMS) - set(CONFIG_CREATION_PARAMS)
+            }
+
+            self.diff['before']['instance'] = self.old_sections
+            # preliminary, will be overwritten in _apply_instance_configs() if called
+            self.diff['after']['instance'] = self.config
+
             self.old_state = self._instance_json_to_module_state(self.old_instance_json)
+            self.diff['before']['state'] = self.old_state
+            self.diff['after']['state'] = self.state
+
             action = getattr(self, LXD_ANSIBLE_STATES[self.state])
             action()
 
@@ -730,7 +772,8 @@ class LXDContainerManagement(object):
                 'log_verbosity': self.module._verbosity,
                 'changed': state_changed,
                 'old_state': self.old_state,
-                'actions': self.actions
+                'actions': self.actions,
+                'diff': self.diff,
             }
             if self.client.debug:
                 result_json['logs'] = self.client.logs
@@ -742,7 +785,8 @@ class LXDContainerManagement(object):
             fail_params = {
                 'msg': e.msg,
                 'changed': state_changed,
-                'actions': self.actions
+                'actions': self.actions,
+                'diff': self.diff,
             }
             if self.client.debug:
                 fail_params['logs'] = e.kwargs['logs']
@@ -756,7 +800,7 @@ def main():
         argument_spec=dict(
             name=dict(
                 type='str',
-                required=True
+                required=True,
             ),
             project=dict(
                 type='str',
@@ -786,7 +830,7 @@ def main():
             ),
             state=dict(
                 choices=list(LXD_ANSIBLE_STATES.keys()),
-                default='started'
+                default='started',
             ),
             target=dict(
                 type='str',
@@ -802,35 +846,35 @@ def main():
             ),
             wait_for_container=dict(
                 type='bool',
-                default=False
+                default=False,
             ),
             wait_for_ipv4_addresses=dict(
                 type='bool',
-                default=False
+                default=False,
             ),
             force_stop=dict(
                 type='bool',
-                default=False
+                default=False,
             ),
             url=dict(
                 type='str',
-                default=ANSIBLE_LXD_DEFAULT_URL
+                default=ANSIBLE_LXD_DEFAULT_URL,
             ),
             snap_url=dict(
                 type='str',
-                default='unix:/var/snap/lxd/common/lxd/unix.socket'
+                default='unix:/var/snap/lxd/common/lxd/unix.socket',
             ),
             client_key=dict(
                 type='path',
-                aliases=['key_file']
+                aliases=['key_file'],
             ),
             client_cert=dict(
                 type='path',
-                aliases=['cert_file']
+                aliases=['cert_file'],
             ),
-            trust_password=dict(type='str', no_log=True)
+            trust_password=dict(type='str', no_log=True),
         ),
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
 
     lxd_manage = LXDContainerManagement(module=module)

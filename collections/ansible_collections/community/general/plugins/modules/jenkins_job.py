@@ -8,29 +8,35 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: jenkins_job
 short_description: Manage jenkins jobs
 description:
-    - Manage Jenkins jobs by using Jenkins REST API.
+  - Manage Jenkins jobs by using Jenkins REST API.
 requirements:
   - "python-jenkins >= 0.4.12"
 author: "Sergio Millan Rodriguez (@sermilrod)"
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: full
 options:
   config:
     type: str
     description:
-      - config in XML format.
+      - Config in XML format.
       - Required if job does not yet exist.
-      - Mutually exclusive with I(enabled).
-      - Considered if I(state=present).
+      - Mutually exclusive with O(enabled).
+      - Considered if O(state=present).
     required: false
   enabled:
     description:
       - Whether the job should be enabled or disabled.
-      - Mutually exclusive with I(config).
-      - Considered if I(state=present).
+      - Mutually exclusive with O(config).
+      - Considered if O(state=present).
     type: bool
     required: false
   name:
@@ -64,20 +70,19 @@ options:
   user:
     type: str
     description:
-       - User to authenticate with the Jenkins server.
+      - User to authenticate with the Jenkins server.
     required: false
   validate_certs:
     type: bool
     default: true
     description:
-      - If set to C(false), the SSL certificates will not be validated.
-        This should only set to C(false) used on personally controlled sites
-        using self-signed certificates as it avoids verifying the source site.
-      - The C(python-jenkins) library only handles this by using the environment variable C(PYTHONHTTPSVERIFY).
+      - If set to V(false), the SSL certificates will not be validated. This should only set to V(false) used on personally
+        controlled sites using self-signed certificates as it avoids verifying the source site.
+      - The C(python-jenkins) library only handles this by using the environment variable E(PYTHONHTTPSVERIFY).
     version_added: 2.3.0
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Create a jenkins job using basic authentication
   community.general.jenkins_job:
     config: "{{ lookup('file', 'templates/test.xml') }}"
@@ -125,10 +130,9 @@ EXAMPLES = '''
     enabled: false
     url: http://localhost:8080
     user: admin
-'''
+"""
 
-RETURN = '''
----
+RETURN = r"""
 name:
   description: Name of the jenkins job.
   returned: success
@@ -150,11 +154,11 @@ user:
   type: str
   sample: admin
 url:
-  description: Url to connect to the Jenkins server.
+  description: URL to connect to the Jenkins server.
   returned: success
   type: str
   sample: https://jenkins.mydomain.com
-'''
+"""
 
 import os
 import traceback

@@ -10,18 +10,24 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: cpanm
 short_description: Manages Perl library dependencies
 description:
   - Manage Perl library dependencies using cpanminus.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: none
+  diff_mode:
+    support: none
 options:
   name:
     type: str
     description:
-      - The Perl library to install. Valid values change according to the I(mode), see notes for more details.
-      - Note that for installing from a local path the parameter I(from_path) should be used.
+      - The Perl library to install. Valid values change according to the O(mode), see notes for more details.
+      - Note that for installing from a local path the parameter O(from_path) should be used.
     aliases: [pkg]
   from_path:
     type: path
@@ -50,9 +56,25 @@ options:
       - Only install dependencies.
     type: bool
     default: false
+  install_recommendations:
+    description:
+      - If V(true), installs dependencies declared as recommends per META spec.
+      - If V(false), it ensures the dependencies declared as recommends are not installed, overriding any decision made earlier in E(PERL_CPANM_OPT).
+      - If parameter is not set, C(cpanm) will use its existing defaults.
+      - When these dependencies fail to install, cpanm continues the installation, since they are just recommendation.
+    type: bool
+    version_added: 10.3.0
+  install_suggestions:
+    description:
+      - If V(true), installs dependencies declared as suggests per META spec.
+      - If V(false), it ensures the dependencies declared as suggests are not installed, overriding any decision made earlier in E(PERL_CPANM_OPT).
+      - If parameter is not set, C(cpanm) will use its existing defaults.
+      - When these dependencies fail to install, cpanm continues the installation, since they are just suggestion.
+    type: bool
+    version_added: 10.3.0
   version:
     description:
-      - Version specification for the perl module. When I(mode) is C(new), C(cpanm) version operators are accepted.
+      - Version specification for the perl module. When O(mode) is V(new), C(cpanm) version operators are accepted.
     type: str
   executable:
     description:
@@ -61,38 +83,38 @@ options:
   mode:
     description:
       - Controls the module behavior. See notes below for more details.
+      - The default changed from V(compatibility) to V(new) in community.general 9.0.0.
     type: str
     choices: [compatibility, new]
-    default: compatibility
+    default: new
     version_added: 3.0.0
   name_check:
     description:
-      - When in C(new) mode, this parameter can be used to check if there is a module I(name) installed (at I(version), when specified).
+      - When O(mode=new), this parameter can be used to check if there is a module O(name) installed (at O(version), when
+        specified).
     type: str
     version_added: 3.0.0
 notes:
   - Please note that U(http://search.cpan.org/dist/App-cpanminus/bin/cpanm, cpanm) must be installed on the remote host.
-  - "This module now comes with a choice of execution I(mode): C(compatibility) or C(new)."
-  - "C(compatibility) mode:"
-  - When using C(compatibility) mode, the module will keep backward compatibility. This is the default mode.
-  - I(name) must be either a module name or a distribution file.
-  - >
-    If the perl module given by I(name) is installed (at the exact I(version) when specified), then nothing happens.
-    Otherwise, it will be installed using the C(cpanm) executable.
-  - I(name) cannot be an URL, or a git URL.
-  - C(cpanm) version specifiers do not work in this mode.
-  - "C(new) mode:"
-  - "When using C(new) mode, the module will behave differently"
-  - >
-    The I(name) parameter may refer to a module name, a distribution file,
-    a HTTP URL or a git repository URL as described in C(cpanminus) documentation.
-  - C(cpanm) version specifiers are recognized.
+  - 'This module now comes with a choice of execution O(mode): V(compatibility) or V(new).'
+  - 'O(mode=compatibility): When using V(compatibility) mode, the module will keep backward compatibility. This was the default
+    mode before community.general 9.0.0. O(name) must be either a module name or a distribution file. If the perl module given
+    by O(name) is installed (at the exact O(version) when specified), then nothing happens. Otherwise, it will be installed
+    using the C(cpanm) executable. O(name) cannot be an URL, or a git URL. C(cpanm) version specifiers do not work in this
+    mode.'
+  - 'O(mode=new): When using V(new) mode, the module will behave differently. The O(name) parameter may refer to a module
+    name, a distribution file, a HTTP URL or a git repository URL as described in C(cpanminus) documentation. C(cpanm) version
+    specifiers are recognized. This is the default mode from community.general 9.0.0 onwards.'
+seealso:
+  - name: C(cpanm) command manual page
+    description: Manual page for the command.
+    link: https://metacpan.org/dist/App-cpanminus/view/bin/cpanm
 author:
   - "Franck Cuny (@fcuny)"
   - "Alexei Znamensky (@russoz)"
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Install Dancer perl package
   community.general.cpanm:
     name: Dancer
@@ -130,9 +152,20 @@ EXAMPLES = '''
   community.general.cpanm:
     name: Dancer
     version: '1.0'
-'''
+"""
+
+RETURN = r"""
+cpanm_version:
+  description: Version of CPANMinus.
+  type: str
+  returned: always
+  sample: "1.7047"
+  version_added: 10.0.0
+"""
+
 
 import os
+import re
 
 from ansible_collections.community.general.plugins.module_utils.cmd_runner import CmdRunner, cmd_runner_fmt
 from ansible_collections.community.general.plugins.module_utils.module_helper import ModuleHelper
@@ -150,8 +183,10 @@ class CPANMinus(ModuleHelper):
             mirror=dict(type='str'),
             mirror_only=dict(type='bool', default=False),
             installdeps=dict(type='bool', default=False),
+            install_recommendations=dict(type='bool'),
+            install_suggestions=dict(type='bool'),
             executable=dict(type='path'),
-            mode=dict(type='str', choices=['compatibility', 'new'], default='compatibility'),
+            mode=dict(type='str', default='new', choices=['compatibility', 'new']),
             name_check=dict(type='str')
         ),
         required_one_of=[('name', 'from_path')],
@@ -164,8 +199,12 @@ class CPANMinus(ModuleHelper):
         mirror=cmd_runner_fmt.as_opt_val('--mirror'),
         mirror_only=cmd_runner_fmt.as_bool("--mirror-only"),
         installdeps=cmd_runner_fmt.as_bool("--installdeps"),
+        install_recommendations=cmd_runner_fmt.as_bool("--with-recommends", "--without-recommends", ignore_none=True),
+        install_suggestions=cmd_runner_fmt.as_bool("--with-suggests", "--without-suggests", ignore_none=True),
         pkg_spec=cmd_runner_fmt.as_list(),
+        cpanm_version=cmd_runner_fmt.as_fixed("--version"),
     )
+    use_old_vardict = False
 
     def __init_module__(self):
         v = self.vars
@@ -176,8 +215,17 @@ class CPANMinus(ModuleHelper):
             if v.name and v.from_path:
                 self.do_raise("Parameters 'name' and 'from_path' are mutually exclusive when 'mode=new'")
 
-        self.command = self.module.get_bin_path(v.executable if v.executable else self.command)
-        self.vars.set("binary", self.command)
+        self.command = v.executable if v.executable else self.command
+        self.runner = CmdRunner(self.module, self.command, self.command_args_formats, check_rc=True)
+        self.vars.binary = self.runner.binary
+
+        with self.runner("cpanm_version") as ctx:
+            rc, out, err = ctx.run()
+            line = out.split('\n')[0]
+            match = re.search(r"version\s+([\d\.]+)\s+", line)
+            if not match:
+                self.do_raise("Failed to determine version number. First line of output: {0}".format(line))
+            self.vars.cpanm_version = match.group(1)
 
     def _is_package_installed(self, name, locallib, version):
         def process(rc, out, err):
@@ -213,8 +261,6 @@ class CPANMinus(ModuleHelper):
                 self.do_raise(msg=err, cmd=self.vars.cmd_args)
             return 'is up to date' not in err and 'is up to date' not in out
 
-        runner = CmdRunner(self.module, self.command, self.command_args_formats, check_rc=True)
-
         v = self.vars
         pkg_param = 'from_path' if v.from_path else 'name'
 
@@ -228,7 +274,16 @@ class CPANMinus(ModuleHelper):
                 return
             pkg_spec = self.sanitize_pkg_spec_version(v[pkg_param], v.version)
 
-        with runner(['notest', 'locallib', 'mirror', 'mirror_only', 'installdeps', 'pkg_spec'], output_process=process) as ctx:
+        with self.runner([
+            'notest',
+            'locallib',
+            'mirror',
+            'mirror_only',
+            'installdeps',
+            'install_recommendations',
+            'install_suggestions',
+            'pkg_spec'
+        ], output_process=process) as ctx:
             self.changed = ctx.run(pkg_spec=pkg_spec)
 
 

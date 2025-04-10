@@ -32,10 +32,10 @@ DOCUMENTATION = '''
             default: false
         endpoints:
             description:
-            - Counterpart of C(ETCDCTL_ENDPOINTS) environment variable.
-              Specify the etcd3 connection with and URL form eg. C(https://hostname:2379)  or C(<host>:<port>) form.
-            - The C(host) part is overwritten by I(host) option, if defined.
-            - The C(port) part is overwritten by I(port) option, if defined.
+            - Counterpart of E(ETCDCTL_ENDPOINTS) environment variable.
+              Specify the etcd3 connection with and URL form, for example V(https://hostname:2379), or V(<host>:<port>) form.
+            - The V(host) part is overwritten by O(host) option, if defined.
+            - The V(port) part is overwritten by O(port) option, if defined.
             env:
             - name: ETCDCTL_ENDPOINTS
             default: '127.0.0.1:2379'
@@ -43,12 +43,12 @@ DOCUMENTATION = '''
         host:
             description:
             - etcd3 listening client host.
-            - Takes precedence over I(endpoints).
+            - Takes precedence over O(endpoints).
             type: str
         port:
             description:
             - etcd3 listening client port.
-            - Takes precedence over I(endpoints).
+            - Takes precedence over O(endpoints).
             type: int
         ca_cert:
             description:
@@ -89,13 +89,13 @@ DOCUMENTATION = '''
             type: str
 
     notes:
-    - I(host) and I(port) options take precedence over (endpoints) option.
-    - The recommended way to connect to etcd3 server is using C(ETCDCTL_ENDPOINT)
-      environment variable and keep I(endpoints), I(host), and I(port) unused.
+    - O(host) and O(port) options take precedence over (endpoints) option.
+    - The recommended way to connect to etcd3 server is using E(ETCDCTL_ENDPOINT)
+      environment variable and keep O(endpoints), O(host), and O(port) unused.
     seealso:
     - module: community.general.etcd3
-    - ref: ansible_collections.community.general.etcd_lookup
-      description: The etcd v2 lookup.
+    - plugin: community.general.etcd
+      plugin_type: lookup
 
     requirements:
     - "etcd3 >= 0.10"
@@ -136,12 +136,11 @@ RETURN = '''
 
 import re
 
-from ansible.plugins.lookup import LookupBase
-from ansible.utils.display import Display
+from ansible.errors import AnsibleLookupError
 from ansible.module_utils.basic import missing_required_lib
 from ansible.module_utils.common.text.converters import to_native
 from ansible.plugins.lookup import LookupBase
-from ansible.errors import AnsibleError, AnsibleLookupError
+from ansible.utils.display import Display
 
 try:
     import etcd3
@@ -169,7 +168,7 @@ def etcd3_client(client_params):
         etcd = etcd3.client(**client_params)
         etcd.status()
     except Exception as exp:
-        raise AnsibleLookupError('Cannot connect to etcd cluster: %s' % (to_native(exp)))
+        raise AnsibleLookupError(f'Cannot connect to etcd cluster: {exp}')
     return etcd
 
 
@@ -205,7 +204,7 @@ class LookupModule(LookupBase):
         cnx_log = dict(client_params)
         if 'password' in cnx_log:
             cnx_log['password'] = '<redacted>'
-        display.verbose("etcd3 connection parameters: %s" % cnx_log)
+        display.verbose(f"etcd3 connection parameters: {cnx_log}")
 
         # connect to etcd3 server
         etcd = etcd3_client(client_params)
@@ -219,12 +218,12 @@ class LookupModule(LookupBase):
                         if val and meta:
                             ret.append({'key': to_native(meta.key), 'value': to_native(val)})
                 except Exception as exp:
-                    display.warning('Caught except during etcd3.get_prefix: %s' % (to_native(exp)))
+                    display.warning(f'Caught except during etcd3.get_prefix: {exp}')
             else:
                 try:
                     val, meta = etcd.get(term)
                     if val and meta:
                         ret.append({'key': to_native(meta.key), 'value': to_native(val)})
                 except Exception as exp:
-                    display.warning('Caught except during etcd3.get: %s' % (to_native(exp)))
+                    display.warning(f'Caught except during etcd3.get: {exp}')
         return ret

@@ -10,18 +10,24 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: osx_defaults
 author:
 # DO NOT RE-ADD GITHUB HANDLE!
-- Franck Nijhof (!UNKNOWN)
+  - Franck Nijhof (!UNKNOWN)
 short_description: Manage macOS user defaults
 description:
-  - osx_defaults allows users to read, write, and delete macOS user defaults from Ansible scripts.
-  - macOS applications and other programs use the defaults system to record user preferences and other
-    information that must be maintained when the applications are not running (such as default font for new
-    documents, or the position of an Info panel).
+  - This module allows users to read, write, and delete macOS user defaults from Ansible scripts.
+  - MacOS applications and other programs use the defaults system to record user preferences and other information that must
+    be maintained when the applications are not running (such as default font for new documents, or the position of an Info
+    panel).
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   domain:
     description:
@@ -31,7 +37,7 @@ options:
   host:
     description:
       - The host on which the preference should apply.
-      - The special value C(currentHost) corresponds to the C(-currentHost) switch of the defaults commandline tool.
+      - The special value V(currentHost) corresponds to the C(-currentHost) switch of the defaults commandline tool.
     type: str
   key:
     description:
@@ -41,8 +47,15 @@ options:
     description:
       - The type of value to write.
     type: str
-    choices: [ array, bool, boolean, date, float, int, integer, string ]
+    choices: [array, bool, boolean, date, float, int, integer, string]
     default: string
+  check_type:
+    description:
+      - Checks if the type of the provided O(value) matches the type of an existing default.
+      - If the types do not match, raises an error.
+    type: bool
+    default: true
+    version_added: 8.6.0
   array_add:
     description:
       - Add new elements to the array for a key which has an array as its value.
@@ -51,15 +64,14 @@ options:
   value:
     description:
       - The value to write.
-      - Only required when I(state=present).
+      - Only required when O(state=present).
     type: raw
   state:
     description:
       - The state of the user defaults.
-      - If set to C(list) will query the given parameter specified by C(key). Returns 'null' is nothing found or mis-spelled.
-      - C(list) added in version 2.8.
+      - If set to V(list) will query the given parameter specified by O(key). Returns V(null) is nothing found or mis-spelled.
     type: str
-    choices: [ absent, list, present ]
+    choices: [absent, list, present]
     default: present
   path:
     description:
@@ -67,57 +79,62 @@ options:
     type: str
     default: /usr/bin:/usr/local/bin
 notes:
-    - Apple Mac caches defaults. You may need to logout and login to apply the changes.
-'''
+  - Apple Mac caches defaults. You may need to logout and login to apply the changes.
+"""
 
-EXAMPLES = r'''
-# TODO: Describe what happens in each example
-
-- community.general.osx_defaults:
+EXAMPLES = r"""
+- name: Set boolean valued key for application domain
+  community.general.osx_defaults:
     domain: com.apple.Safari
     key: IncludeInternalDebugMenu
     type: bool
     value: true
     state: present
 
-- community.general.osx_defaults:
+- name: Set string valued key for global domain
+  community.general.osx_defaults:
     domain: NSGlobalDomain
     key: AppleMeasurementUnits
     type: string
     value: Centimeters
     state: present
 
-- community.general.osx_defaults:
+- name: Set int valued key for arbitrary plist
+  community.general.osx_defaults:
     domain: /Library/Preferences/com.apple.SoftwareUpdate
     key: AutomaticCheckEnabled
     type: int
     value: 1
   become: true
 
-- community.general.osx_defaults:
+- name: Set int valued key only for the current host
+  community.general.osx_defaults:
     domain: com.apple.screensaver
     host: currentHost
     key: showClock
     type: int
     value: 1
 
-- community.general.osx_defaults:
+- name: Defaults to global domain and setting value
+  community.general.osx_defaults:
     key: AppleMeasurementUnits
     type: string
     value: Centimeters
 
-- community.general.osx_defaults:
+- name: Setting an array valued key
+  community.general.osx_defaults:
     key: AppleLanguages
     type: array
     value:
       - en
       - nl
 
-- community.general.osx_defaults:
+- name: Removing a key
+  community.general.osx_defaults:
     domain: com.geekchimp.macable
     key: ExampleKeyToRemove
     state: absent
-'''
+"""
 
 from datetime import datetime
 import re
@@ -147,6 +164,7 @@ class OSXDefaults(object):
         self.domain = module.params['domain']
         self.host = module.params['host']
         self.key = module.params['key']
+        self.check_type = module.params['check_type']
         self.type = module.params['type']
         self.array_add = module.params['array_add']
         self.value = module.params['value']
@@ -257,7 +275,7 @@ class OSXDefaults(object):
 
         # If the RC is not 0, then terrible happened! Ooooh nooo!
         if rc != 0:
-            raise OSXDefaultsException("An error occurred while reading key type from defaults: %s" % out)
+            raise OSXDefaultsException("An error occurred while reading key type from defaults: %s" % err)
 
         # Ok, lets parse the type from output
         data_type = out.strip().replace('Type is ', '')
@@ -268,9 +286,9 @@ class OSXDefaults(object):
         # Strip output
         out = out.strip()
 
-        # An non zero RC at this point is kinda strange...
+        # A non zero RC at this point is kinda strange...
         if rc != 0:
-            raise OSXDefaultsException("An error occurred while reading key value from defaults: %s" % out)
+            raise OSXDefaultsException("An error occurred while reading key value from defaults: %s" % err)
 
         # Convert string to list when type is array
         if data_type == "array":
@@ -308,13 +326,13 @@ class OSXDefaults(object):
                                                expand_user_and_vars=False)
 
         if rc != 0:
-            raise OSXDefaultsException('An error occurred while writing value to defaults: %s' % out)
+            raise OSXDefaultsException('An error occurred while writing value to defaults: %s' % err)
 
     def delete(self):
         """ Deletes defaults key from domain """
         rc, out, err = self.module.run_command(self._base_command() + ['delete', self.domain, self.key])
         if rc != 0:
-            raise OSXDefaultsException("An error occurred while deleting key from defaults: %s" % out)
+            raise OSXDefaultsException("An error occurred while deleting key from defaults: %s" % err)
 
     # /commands ----------------------------------------------------------- }}}
 
@@ -338,10 +356,11 @@ class OSXDefaults(object):
             self.delete()
             return True
 
-        # There is a type mismatch! Given type does not match the type in defaults
-        value_type = type(self.value)
-        if self.current_value is not None and not isinstance(self.current_value, value_type):
-            raise OSXDefaultsException("Type mismatch. Type in defaults: %s" % type(self.current_value).__name__)
+        # Check if there is a type mismatch, e.g. given type does not match the type in defaults
+        if self.check_type:
+            value_type = type(self.value)
+            if self.current_value is not None and not isinstance(self.current_value, value_type):
+                raise OSXDefaultsException("Type mismatch. Type in defaults: %s" % type(self.current_value).__name__)
 
         # Current value matches the given value. Nothing need to be done. Arrays need extra care
         if self.type == "array" and self.current_value is not None and not self.array_add and \
@@ -372,6 +391,7 @@ def main():
             domain=dict(type='str', default='NSGlobalDomain'),
             host=dict(type='str'),
             key=dict(type='str', no_log=False),
+            check_type=dict(type='bool', default=True),
             type=dict(type='str', default='string', choices=['array', 'bool', 'boolean', 'date', 'float', 'int', 'integer', 'string']),
             array_add=dict(type='bool', default=False),
             value=dict(type='raw'),

@@ -8,28 +8,34 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: pkg5
 author:
-- Peter Oliver (@mavit)
+  - Peter Oliver (@mavit)
 short_description: Manages packages with the Solaris 11 Image Packaging System
 description:
   - IPS packages are the native packages in Solaris 11 and higher.
 notes:
   - The naming of IPS packages is explained at U(http://www.oracle.com/technetwork/articles/servers-storage-admin/ips-package-versioning-2232906.html).
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   name:
     description:
       - An FRMI of the package(s) to be installed/removed/updated.
-      - Multiple packages may be specified, separated by C(,).
+      - Multiple packages may be specified, separated by V(,).
     required: true
     type: list
     elements: str
   state:
     description:
-      - Whether to install (I(present), I(latest)), or remove (I(absent)) a package.
-    choices: [ absent, latest, present, installed, removed, uninstalled ]
+      - Whether to install (V(present), V(latest)), or remove (V(absent)) a package.
+    choices: [absent, latest, present, installed, removed, uninstalled]
     default: present
     type: str
   accept_licenses:
@@ -37,7 +43,7 @@ options:
       - Accept any licences.
     type: bool
     default: false
-    aliases: [ accept, accept_licences ]
+    aliases: [accept, accept_licences]
   be_name:
     description:
       - Creates a new boot environment with the given name.
@@ -47,8 +53,14 @@ options:
       - Refresh publishers before execution.
     type: bool
     default: true
-'''
-EXAMPLES = '''
+  verbose:
+    description:
+      - Set to V(true) to disable quiet execution.
+    type: bool
+    default: false
+    version_added: 9.0.0
+"""
+EXAMPLES = r"""
 - name: Install Vim
   community.general.pkg5:
     name: editor/vim
@@ -66,9 +78,9 @@ EXAMPLES = '''
 - name: Install several packages at once
   community.general.pkg5:
     name:
-    - /file/gnu-findutils
-    - /text/gnu-grep
-'''
+      - /file/gnu-findutils
+      - /text/gnu-grep
+"""
 
 import re
 
@@ -83,6 +95,7 @@ def main():
             accept_licenses=dict(type='bool', default=False, aliases=['accept', 'accept_licences']),
             be_name=dict(type='str'),
             refresh=dict(type='bool', default=True),
+            verbose=dict(type='bool', default=False),
         ),
         supports_check_mode=True,
     )
@@ -149,9 +162,15 @@ def ensure(module, state, packages, params):
     else:
         no_refresh = ['--no-refresh']
 
+    if params['verbose']:
+        verbosity = []
+    else:
+        verbosity = ['-q']
+
     to_modify = list(filter(behaviour[state]['filter'], packages))
     if to_modify:
-        rc, out, err = module.run_command(['pkg', behaviour[state]['subcommand']] + dry_run + accept_licenses + beadm + no_refresh + ['-q', '--'] + to_modify)
+        rc, out, err = module.run_command(
+            ['pkg', behaviour[state]['subcommand']] + dry_run + accept_licenses + beadm + no_refresh + verbosity + ['--'] + to_modify)
         response['rc'] = rc
         response['results'].append(out)
         response['msg'] += err

@@ -8,19 +8,19 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: redfish_info
 short_description: Manages Out-Of-Band controllers using Redfish APIs
 description:
-  - Builds Redfish URIs locally and sends them to remote OOB controllers to
-    get information back.
+  - Builds Redfish URIs locally and sends them to remote OOB controllers to get information back.
   - Information retrieved is placed in a location specified by the user.
-  - This module was called C(redfish_facts) before Ansible 2.9, returning C(ansible_facts).
-    Note that the M(community.general.redfish_info) module no longer returns C(ansible_facts)!
 extends_documentation_fragment:
   - community.general.attributes
   - community.general.attributes.info_module
+attributes:
+  check_mode:
+    version_added: 3.3.0
+    # This was backported to 2.5.4 and 1.3.11 as well, since this was a bugfix
 options:
   category:
     required: false
@@ -53,264 +53,355 @@ options:
       - Security token for authenticating to OOB controller.
     type: str
     version_added: 2.3.0
+  manager:
+    description:
+      - Name of manager on OOB controller to target.
+    type: str
+    version_added: '8.3.0'
   timeout:
     description:
       - Timeout in seconds for HTTP requests to OOB controller.
-    default: 10
+      - The default value for this parameter changed from V(10) to V(60) in community.general 9.0.0.
     type: int
+    default: 60
+  update_handle:
+    required: false
+    description:
+      - Handle to check the status of an update in progress.
+    type: str
+    version_added: '6.1.0'
+  ciphers:
+    required: false
+    description:
+      - SSL/TLS Ciphers to use for the request.
+      - When a list is provided, all ciphers are joined in order with V(:).
+      - See the L(OpenSSL Cipher List Format,https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html#CIPHER-LIST-FORMAT)
+        for more details.
+      - The available ciphers is dependent on the Python and OpenSSL/LibreSSL versions.
+    type: list
+    elements: str
+    version_added: 9.2.0
 
 author: "Jose Delarosa (@jose-delarosa)"
-'''
+"""
 
-EXAMPLES = '''
-  - name: Get CPU inventory
-    community.general.redfish_info:
-      category: Systems
-      command: GetCpuInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
+EXAMPLES = r"""
+- name: Get CPU inventory
+  community.general.redfish_info:
+    category: Systems
+    command: GetCpuInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
 
-  - name: Print fetched information
-    ansible.builtin.debug:
-      msg: "{{ result.redfish_facts.cpu.entries | to_nice_json }}"
+- name: Print fetched information
+  ansible.builtin.debug:
+    msg: "{{ result.redfish_facts.cpu.entries | to_nice_json }}"
 
-  - name: Get CPU model
-    community.general.redfish_info:
-      category: Systems
-      command: GetCpuInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
+- name: Get CPU model
+  community.general.redfish_info:
+    category: Systems
+    command: GetCpuInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
 
-  - name: Print fetched information
-    ansible.builtin.debug:
-      msg: "{{ result.redfish_facts.cpu.entries.0.Model }}"
+- name: Print fetched information
+  ansible.builtin.debug:
+    msg: "{{ result.redfish_facts.cpu.entries.0.Model }}"
 
-  - name: Get memory inventory
-    community.general.redfish_info:
-      category: Systems
-      command: GetMemoryInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
+- name: Get memory inventory
+  community.general.redfish_info:
+    category: Systems
+    command: GetMemoryInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
 
-  - name: Get fan inventory with a timeout of 20 seconds
-    community.general.redfish_info:
-      category: Chassis
-      command: GetFanInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      timeout: 20
-    register: result
+- name: Get fan inventory with a timeout of 20 seconds
+  community.general.redfish_info:
+    category: Chassis
+    command: GetFanInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    timeout: 20
+  register: result
 
-  - name: Get Virtual Media information
-    community.general.redfish_info:
-      category: Manager
-      command: GetVirtualMedia
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
+- name: Get Virtual Media information
+  community.general.redfish_info:
+    category: Manager
+    command: GetVirtualMedia
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
 
-  - name: Print fetched information
-    ansible.builtin.debug:
-      msg: "{{ result.redfish_facts.virtual_media.entries | to_nice_json }}"
+- name: Print fetched information
+  ansible.builtin.debug:
+    msg: "{{ result.redfish_facts.virtual_media.entries | to_nice_json }}"
 
-  - name: Get Virtual Media information from Systems
-    community.general.redfish_info:
-      category: Systems
-      command: GetVirtualMedia
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
+- name: Get Virtual Media information from Systems
+  community.general.redfish_info:
+    category: Systems
+    command: GetVirtualMedia
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
 
-  - name: Print fetched information
-    ansible.builtin.debug:
-      msg: "{{ result.redfish_facts.virtual_media.entries | to_nice_json }}"
+- name: Print fetched information
+  ansible.builtin.debug:
+    msg: "{{ result.redfish_facts.virtual_media.entries | to_nice_json }}"
 
-  - name: Get Volume Inventory
-    community.general.redfish_info:
-      category: Systems
-      command: GetVolumeInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
-  - name: Print fetched information
-    ansible.builtin.debug:
-      msg: "{{ result.redfish_facts.volume.entries | to_nice_json }}"
+- name: Get Volume Inventory
+  community.general.redfish_info:
+    category: Systems
+    command: GetVolumeInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
+- name: Print fetched information
+  ansible.builtin.debug:
+    msg: "{{ result.redfish_facts.volume.entries | to_nice_json }}"
 
-  - name: Get Session information
-    community.general.redfish_info:
-      category: Sessions
-      command: GetSessions
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
+- name: Get Session information
+  community.general.redfish_info:
+    category: Sessions
+    command: GetSessions
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
 
-  - name: Print fetched information
-    ansible.builtin.debug:
-      msg: "{{ result.redfish_facts.session.entries | to_nice_json }}"
+- name: Print fetched information
+  ansible.builtin.debug:
+    msg: "{{ result.redfish_facts.session.entries | to_nice_json }}"
 
-  - name: Get default inventory information
-    community.general.redfish_info:
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
-  - name: Print fetched information
-    ansible.builtin.debug:
-      msg: "{{ result.redfish_facts | to_nice_json }}"
+- name: Get default inventory information
+  community.general.redfish_info:
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
+- name: Print fetched information
+  ansible.builtin.debug:
+    msg: "{{ result.redfish_facts | to_nice_json }}"
 
-  - name: Get several inventories
-    community.general.redfish_info:
-      category: Systems
-      command: GetNicInventory,GetBiosAttributes
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get several inventories
+  community.general.redfish_info:
+    category: Systems
+    command: GetNicInventory,GetBiosAttributes
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get default system inventory and user information
-    community.general.redfish_info:
-      category: Systems,Accounts
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get configuration of the AccountService
+  community.general.redfish_info:
+    category: Accounts
+    command: GetAccountServiceConfig
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get default system, user and firmware information
-    community.general.redfish_info:
-      category: ["Systems", "Accounts", "Update"]
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get default system inventory and user information
+  community.general.redfish_info:
+    category: Systems,Accounts
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get Manager NIC inventory information
-    community.general.redfish_info:
-      category: Manager
-      command: GetManagerNicInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get default system, user and firmware information
+  community.general.redfish_info:
+    category: ["Systems", "Accounts", "Update"]
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get boot override information
-    community.general.redfish_info:
-      category: Systems
-      command: GetBootOverride
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get Manager NIC inventory information
+  community.general.redfish_info:
+    category: Manager
+    command: GetManagerNicInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get chassis inventory
-    community.general.redfish_info:
-      category: Chassis
-      command: GetChassisInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get boot override information
+  community.general.redfish_info:
+    category: Systems
+    command: GetBootOverride
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get all information available in the Manager category
-    community.general.redfish_info:
-      category: Manager
-      command: all
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get chassis inventory
+  community.general.redfish_info:
+    category: Chassis
+    command: GetChassisInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get firmware update capability information
-    community.general.redfish_info:
-      category: Update
-      command: GetFirmwareUpdateCapabilities
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get all information available in the Manager category
+  community.general.redfish_info:
+    category: Manager
+    command: all
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get firmware inventory
-    community.general.redfish_info:
-      category: Update
-      command: GetFirmwareInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get firmware update capability information
+  community.general.redfish_info:
+    category: Update
+    command: GetFirmwareUpdateCapabilities
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get software inventory
-    community.general.redfish_info:
-      category: Update
-      command: GetSoftwareInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get firmware inventory
+  community.general.redfish_info:
+    category: Update
+    command: GetFirmwareInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get Manager Services
-    community.general.redfish_info:
-      category: Manager
-      command: GetNetworkProtocols
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get service identification
+  community.general.redfish_info:
+    category: Manager
+    command: GetServiceIdentification
+    manager: "{{ manager }}"
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get all information available in all categories
-    community.general.redfish_info:
-      category: all
-      command: all
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get software inventory
+  community.general.redfish_info:
+    category: Update
+    command: GetSoftwareInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get system health report
-    community.general.redfish_info:
-      category: Systems
-      command: GetHealthReport
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get the status of an update operation
+  community.general.redfish_info:
+    category: Update
+    command: GetUpdateStatus
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    update_handle: /redfish/v1/TaskService/TaskMonitors/735
 
-  - name: Get chassis health report
-    community.general.redfish_info:
-      category: Chassis
-      command: GetHealthReport
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get Manager Services
+  community.general.redfish_info:
+    category: Manager
+    command: GetNetworkProtocols
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get manager health report
-    community.general.redfish_info:
-      category: Manager
-      command: GetHealthReport
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get all information available in all categories
+  community.general.redfish_info:
+    category: all
+    command: all
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get manager Redfish Host Interface inventory
-    community.general.redfish_info:
-      category: Manager
-      command: GetHostInterfaces
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
+- name: Get system health report
+  community.general.redfish_info:
+    category: Systems
+    command: GetHealthReport
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-  - name: Get Manager Inventory
-    community.general.redfish_info:
-      category: Manager
-      command: GetManagerInventory
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-'''
+- name: Get chassis health report
+  community.general.redfish_info:
+    category: Chassis
+    command: GetHealthReport
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
 
-RETURN = '''
+- name: Get manager health report
+  community.general.redfish_info:
+    category: Manager
+    command: GetHealthReport
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Get manager Redfish Host Interface inventory
+  community.general.redfish_info:
+    category: Manager
+    command: GetHostInterfaces
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Get Manager Inventory
+  community.general.redfish_info:
+    category: Manager
+    command: GetManagerInventory
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Get HPE Thermal Config
+  community.general.redfish_info:
+    category: Chassis
+    command: GetHPEThermalConfig
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Get HPE Fan Percent Minimum
+  community.general.redfish_info:
+    category: Chassis
+    command: GetHPEFanPercentMin
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Get BIOS registry
+  community.general.redfish_info:
+    category: Systems
+    command: GetBiosRegistries
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Get power restore policy
+  community.general.redfish_info:
+    category: Systems
+    command: GetPowerRestorePolicy
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Check the availability of the service with a timeout of 5 seconds
+  community.general.redfish_info:
+    category: Service
+    command: CheckAvailability
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    timeout: 5
+  register: result
+"""
+
+RETURN = r"""
 result:
-    description: different results depending on task
-    returned: always
-    type: dict
-    sample: List of CPUs on system
-'''
+  description: Different results depending on task.
+  returned: always
+  type: dict
+  sample: List of CPUs on system
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.general.plugins.module_utils.redfish_utils import RedfishUtils
@@ -319,14 +410,17 @@ CATEGORY_COMMANDS_ALL = {
     "Systems": ["GetSystemInventory", "GetPsuInventory", "GetCpuInventory",
                 "GetMemoryInventory", "GetNicInventory", "GetHealthReport",
                 "GetStorageControllerInventory", "GetDiskInventory", "GetVolumeInventory",
-                "GetBiosAttributes", "GetBootOrder", "GetBootOverride", "GetVirtualMedia"],
+                "GetBiosAttributes", "GetBootOrder", "GetBootOverride", "GetVirtualMedia", "GetBiosRegistries",
+                "GetPowerRestorePolicy"],
     "Chassis": ["GetFanInventory", "GetPsuInventory", "GetChassisPower",
-                "GetChassisThermals", "GetChassisInventory", "GetHealthReport"],
-    "Accounts": ["ListUsers"],
+                "GetChassisThermals", "GetChassisInventory", "GetHealthReport", "GetHPEThermalConfig", "GetHPEFanPercentMin"],
+    "Accounts": ["ListUsers", "GetAccountServiceConfig"],
     "Sessions": ["GetSessions"],
-    "Update": ["GetFirmwareInventory", "GetFirmwareUpdateCapabilities", "GetSoftwareInventory"],
+    "Update": ["GetFirmwareInventory", "GetFirmwareUpdateCapabilities", "GetSoftwareInventory",
+               "GetUpdateStatus"],
     "Manager": ["GetManagerNicInventory", "GetVirtualMedia", "GetLogs", "GetNetworkProtocols",
-                "GetHealthReport", "GetHostInterfaces", "GetManagerInventory"],
+                "GetHealthReport", "GetHostInterfaces", "GetManagerInventory", "GetServiceIdentification"],
+    "Service": ["CheckAvailability"],
 }
 
 CATEGORY_COMMANDS_DEFAULT = {
@@ -335,7 +429,8 @@ CATEGORY_COMMANDS_DEFAULT = {
     "Accounts": "ListUsers",
     "Update": "GetFirmwareInventory",
     "Sessions": "GetSessions",
-    "Manager": "GetManagerNicInventory"
+    "Manager": "GetManagerNicInventory",
+    "Service": "CheckAvailability",
 }
 
 
@@ -350,7 +445,10 @@ def main():
             username=dict(),
             password=dict(no_log=True),
             auth_token=dict(no_log=True),
-            timeout=dict(type='int', default=10)
+            timeout=dict(type='int', default=60),
+            update_handle=dict(),
+            manager=dict(),
+            ciphers=dict(type='list', elements='str'),
         ),
         required_together=[
             ('username', 'password'),
@@ -372,9 +470,18 @@ def main():
     # timeout
     timeout = module.params['timeout']
 
+    # update handle
+    update_handle = module.params['update_handle']
+
+    # manager
+    manager = module.params['manager']
+
+    # ciphers
+    ciphers = module.params['ciphers']
+
     # Build root URI
     root_uri = "https://" + module.params['baseuri']
-    rf_utils = RedfishUtils(creds, root_uri, timeout, module)
+    rf_utils = RedfishUtils(creds, root_uri, timeout, module, ciphers=ciphers)
 
     # Build Category list
     if "all" in module.params['category']:
@@ -407,7 +514,13 @@ def main():
             module.fail_json(msg="Invalid Category: %s" % category)
 
         # Organize by Categories / Commands
-        if category == "Systems":
+        if category == "Service":
+            # service-level commands are always available
+            for command in command_list:
+                if command == "CheckAvailability":
+                    result["service"] = rf_utils.check_service_availability()
+
+        elif category == "Systems":
             # execute only if we find a Systems resource
             resource = rf_utils._find_systems_resource()
             if resource['ret'] is False:
@@ -438,6 +551,10 @@ def main():
                     result["health_report"] = rf_utils.get_multi_system_health_report()
                 elif command == "GetVirtualMedia":
                     result["virtual_media"] = rf_utils.get_multi_virtualmedia(category)
+                elif command == "GetBiosRegistries":
+                    result["bios_registries"] = rf_utils.get_bios_registries()
+                elif command == "GetPowerRestorePolicy":
+                    result["power_restore_policy"] = rf_utils.get_multi_power_restore_policy()
 
         elif category == "Chassis":
             # execute only if we find Chassis resource
@@ -458,6 +575,10 @@ def main():
                     result["chassis"] = rf_utils.get_chassis_inventory()
                 elif command == "GetHealthReport":
                     result["health_report"] = rf_utils.get_multi_chassis_health_report()
+                elif command == "GetHPEThermalConfig":
+                    result["hpe_thermal_config"] = rf_utils.get_hpe_thermal_config()
+                elif command == "GetHPEFanPercentMin":
+                    result["hpe_fan_percent_min"] = rf_utils.get_hpe_fan_percent_min()
 
         elif category == "Accounts":
             # execute only if we find an Account service resource
@@ -468,6 +589,8 @@ def main():
             for command in command_list:
                 if command == "ListUsers":
                     result["user"] = rf_utils.list_users()
+                elif command == "GetAccountServiceConfig":
+                    result["accountservice_config"] = rf_utils.get_accountservice_properties()
 
         elif category == "Update":
             # execute only if we find UpdateService resources
@@ -482,6 +605,8 @@ def main():
                     result["software"] = rf_utils.get_software_inventory()
                 elif command == "GetFirmwareUpdateCapabilities":
                     result["firmware_update_capabilities"] = rf_utils.get_firmware_update_capabilities()
+                elif command == "GetUpdateStatus":
+                    result["update_status"] = rf_utils.get_update_status(update_handle)
 
         elif category == "Sessions":
             # execute only if we find SessionService resources
@@ -514,6 +639,8 @@ def main():
                     result["host_interfaces"] = rf_utils.get_hostinterfaces()
                 elif command == "GetManagerInventory":
                     result["manager"] = rf_utils.get_multi_manager_inventory()
+                elif command == "GetServiceIdentification":
+                    result["service_id"] = rf_utils.get_service_identification(manager)
 
     # Return data back
     module.exit_json(redfish_facts=result)

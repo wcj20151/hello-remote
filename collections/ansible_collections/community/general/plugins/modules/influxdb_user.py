@@ -10,16 +10,19 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: influxdb_user
 short_description: Manage InfluxDB users
 description:
   - Manage InfluxDB users.
 author: "Vitaliy Zhhuta (@zhhuta)"
 requirements:
-  - "python >= 2.6"
   - "influxdb >= 0.9"
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   user_name:
     description:
@@ -40,7 +43,7 @@ options:
   state:
     description:
       - State of the user.
-    choices: [ absent, present ]
+    choices: [absent, present]
     default: present
     type: str
   grants:
@@ -52,11 +55,11 @@ options:
     type: list
     elements: dict
 extends_documentation_fragment:
-- community.general.influxdb
+  - community.general.influxdb
+  - community.general.attributes
+"""
 
-'''
-
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a user on localhost using default login credentials
   community.general.influxdb_user:
     user_name: john
@@ -96,11 +99,11 @@ EXAMPLES = r'''
     login_username: "{{ influxdb_username }}"
     login_password: "{{ influxdb_password }}"
     state: absent
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 #only defaults
-'''
+"""
 
 import json
 
@@ -168,8 +171,14 @@ def drop_user(module, client, user_name):
 def set_user_grants(module, client, user_name, grants):
     changed = False
 
+    current_grants = []
     try:
         current_grants = client.get_list_privileges(user_name)
+    except influx.exceptions.InfluxDBClientError as e:
+        if not module.check_mode or 'user not found' not in e.content:
+            module.fail_json(msg=e.content)
+
+    try:
         parsed_grants = []
         # Fix privileges wording
         for i, v in enumerate(current_grants):

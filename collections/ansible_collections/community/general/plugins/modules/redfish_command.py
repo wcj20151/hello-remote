@@ -8,16 +8,21 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: redfish_command
 short_description: Manages Out-Of-Band controllers using Redfish APIs
 description:
-  - Builds Redfish URIs locally and sends them to remote OOB controllers to
-    perform an action.
+  - Builds Redfish URIs locally and sends them to remote OOB controllers to perform an action.
   - Manages OOB controller ex. reboot, log management.
   - Manages OOB controller users ex. add, remove, update.
   - Manages system power ex. on, off, graceful and forced reboot.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: none
+  diff_mode:
+    support: none
 options:
   category:
     required: true
@@ -55,29 +60,46 @@ options:
     version_added: 2.3.0
   id:
     required: false
-    aliases: [ account_id ]
+    aliases: [account_id]
     description:
       - ID of account to delete/modify.
-      - Can also be used in account creation to work around vendor issues where the ID of the new user is required in the POST request.
+      - Can also be used in account creation to work around vendor issues where the ID of the new user is required in the
+        POST request.
     type: str
   new_username:
     required: false
-    aliases: [ account_username ]
+    aliases: [account_username]
     description:
       - Username of account to add/delete/modify.
     type: str
   new_password:
     required: false
-    aliases: [ account_password ]
+    aliases: [account_password]
     description:
       - New password of account to add/modify.
     type: str
   roleid:
     required: false
-    aliases: [ account_roleid ]
+    aliases: [account_roleid]
     description:
       - Role of account to add/modify.
     type: str
+  account_types:
+    required: false
+    aliases: [account_accounttypes]
+    description:
+      - Array of account types to apply to a user account.
+    type: list
+    elements: str
+    version_added: '7.2.0'
+  oem_account_types:
+    required: false
+    aliases: [account_oemaccounttypes]
+    description:
+      - Array of OEM account types to apply to a user account.
+    type: list
+    elements: str
+    version_added: '7.2.0'
   bootdevice:
     required: false
     description:
@@ -86,13 +108,14 @@ options:
   timeout:
     description:
       - Timeout in seconds for HTTP requests to OOB controller.
-    default: 10
+      - The default value for this parameter changed from V(10) to V(60) in community.general 9.0.0.
     type: int
+    default: 60
   boot_override_mode:
     description:
       - Boot mode when using an override.
     type: str
-    choices: [ Legacy, UEFI ]
+    choices: [Legacy, UEFI]
     version_added: 3.5.0
   uefi_target:
     required: false
@@ -106,7 +129,7 @@ options:
     type: str
   update_username:
     required: false
-    aliases: [ account_updatename ]
+    aliases: [account_updatename]
     description:
       - New user name for updating account_username.
     type: str
@@ -130,6 +153,12 @@ options:
       - URI of the image for the update.
     type: str
     version_added: '0.2.0'
+  update_image_file:
+    required: false
+    description:
+      - Filename, with optional path, of the image for the update.
+    type: path
+    version_added: '7.1.0'
   update_protocol:
     required: false
     description:
@@ -161,6 +190,55 @@ options:
         description:
           - Password for retrieving the update image.
         type: str
+  update_apply_time:
+    required: false
+    description:
+      - Time when to apply the update.
+    type: str
+    choices:
+      - Immediate
+      - OnReset
+      - AtMaintenanceWindowStart
+      - InMaintenanceWindowOnReset
+      - OnStartUpdateRequest
+    version_added: '6.1.0'
+  update_oem_params:
+    required: false
+    description:
+      - Properties for HTTP Multipart Push Updates.
+    type: dict
+    version_added: '7.5.0'
+  update_handle:
+    required: false
+    description:
+      - Handle to check the status of an update in progress.
+    type: str
+    version_added: '6.1.0'
+  update_custom_oem_header:
+    required: false
+    description:
+      - Optional OEM header, sent as separate form-data for the Multipart HTTP push update.
+      - The header shall start with "Oem" according to DMTF Redfish spec 12.6.2.2.
+      - For more details, see U(https://www.dmtf.org/sites/default/files/standards/documents/DSP0266_1.21.0.html).
+      - If set, then O(update_custom_oem_params) is required too.
+    type: str
+    version_added: '10.1.0'
+  update_custom_oem_params:
+    required: false
+    description:
+      - Custom OEM properties for HTTP Multipart Push updates.
+      - If set, then O(update_custom_oem_header) is required too.
+      - The properties will be passed raw without any validation or conversion by Ansible. This means the content can be a
+        file, a string, or any other data. If the content is a dict that should be converted to JSON, then the content must
+        be converted to JSON before passing it to this module using the P(ansible.builtin.to_json#filter) filter.
+    type: raw
+    version_added: '10.1.0'
+  update_custom_oem_mime_type:
+    required: false
+    description:
+      - MIME Type for custom OEM properties for HTTP Multipart Push updates.
+    type: str
+    version_added: '10.1.0'
   virtual_media:
     required: false
     description:
@@ -214,403 +292,558 @@ options:
         type: str
   strip_etag_quotes:
     description:
-      - Removes surrounding quotes of etag used in C(If-Match) header
-        of C(PATCH) requests.
-      - Only use this option to resolve bad vendor implementation where
-        C(If-Match) only matches the unquoted etag string.
+      - Removes surrounding quotes of etag used in C(If-Match) header of C(PATCH) requests.
+      - Only use this option to resolve bad vendor implementation where C(If-Match) only matches the unquoted etag string.
     type: bool
     default: false
     version_added: 3.7.0
-
-author: "Jose Delarosa (@jose-delarosa)"
-'''
-
-EXAMPLES = '''
-  - name: Restart system power gracefully
-    community.general.redfish_command:
-      category: Systems
-      command: PowerGracefulRestart
-      resource_id: 437XR1138R2
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-
-  - name: Turn system power off
-    community.general.redfish_command:
-      category: Systems
-      command: PowerForceOff
-      resource_id: 437XR1138R2
-
-  - name: Restart system power forcefully
-    community.general.redfish_command:
-      category: Systems
-      command: PowerForceRestart
-      resource_id: 437XR1138R2
-
-  - name: Shutdown system power gracefully
-    community.general.redfish_command:
-      category: Systems
-      command: PowerGracefulShutdown
-      resource_id: 437XR1138R2
-
-  - name: Turn system power on
-    community.general.redfish_command:
-      category: Systems
-      command: PowerOn
-      resource_id: 437XR1138R2
-
-  - name: Reboot system power
-    community.general.redfish_command:
-      category: Systems
-      command: PowerReboot
-      resource_id: 437XR1138R2
-
-  - name: Set one-time boot device to {{ bootdevice }}
-    community.general.redfish_command:
-      category: Systems
-      command: SetOneTimeBoot
-      resource_id: 437XR1138R2
-      bootdevice: "{{ bootdevice }}"
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-
-  - name: Set one-time boot device to UefiTarget of "/0x31/0x33/0x01/0x01"
-    community.general.redfish_command:
-      category: Systems
-      command: SetOneTimeBoot
-      resource_id: 437XR1138R2
-      bootdevice: "UefiTarget"
-      uefi_target: "/0x31/0x33/0x01/0x01"
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-
-  - name: Set one-time boot device to BootNext target of "Boot0001"
-    community.general.redfish_command:
-      category: Systems
-      command: SetOneTimeBoot
-      resource_id: 437XR1138R2
-      bootdevice: "UefiBootNext"
-      boot_next: "Boot0001"
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-
-  - name: Set persistent boot device override
-    community.general.redfish_command:
-      category: Systems
-      command: EnableContinuousBootOverride
-      resource_id: 437XR1138R2
-      bootdevice: "{{ bootdevice }}"
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-
-  - name: Set one-time boot to BiosSetup
-    community.general.redfish_command:
-      category: Systems
-      command: SetOneTimeBoot
-      boot_next: BiosSetup
-      boot_override_mode: Legacy
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-
-  - name: Disable persistent boot device override
-    community.general.redfish_command:
-      category: Systems
-      command: DisableBootOverride
-
-  - name: Set system indicator LED to blink using security token for auth
-    community.general.redfish_command:
-      category: Systems
-      command: IndicatorLedBlink
-      resource_id: 437XR1138R2
-      baseuri: "{{ baseuri }}"
-      auth_token: "{{ result.session.token }}"
-
-  - name: Add user
-    community.general.redfish_command:
-      category: Accounts
-      command: AddUser
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      new_username: "{{ new_username }}"
-      new_password: "{{ new_password }}"
-      roleid: "{{ roleid }}"
-
-  - name: Add user using new option aliases
-    community.general.redfish_command:
-      category: Accounts
-      command: AddUser
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_username: "{{ account_username }}"
-      account_password: "{{ account_password }}"
-      account_roleid: "{{ account_roleid }}"
-
-  - name: Delete user
-    community.general.redfish_command:
-      category: Accounts
-      command: DeleteUser
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_username: "{{ account_username }}"
-
-  - name: Disable user
-    community.general.redfish_command:
-      category: Accounts
-      command: DisableUser
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_username: "{{ account_username }}"
-
-  - name: Enable user
-    community.general.redfish_command:
-      category: Accounts
-      command: EnableUser
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_username: "{{ account_username }}"
-
-  - name: Add and enable user
-    community.general.redfish_command:
-      category: Accounts
-      command: AddUser,EnableUser
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      new_username: "{{ new_username }}"
-      new_password: "{{ new_password }}"
-      roleid: "{{ roleid }}"
-
-  - name: Update user password
-    community.general.redfish_command:
-      category: Accounts
-      command: UpdateUserPassword
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_username: "{{ account_username }}"
-      account_password: "{{ account_password }}"
-
-  - name: Update user role
-    community.general.redfish_command:
-      category: Accounts
-      command: UpdateUserRole
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_username: "{{ account_username }}"
-      roleid: "{{ roleid }}"
-
-  - name: Update user name
-    community.general.redfish_command:
-      category: Accounts
-      command: UpdateUserName
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_username: "{{ account_username }}"
-      account_updatename: "{{ account_updatename }}"
-
-  - name: Update user name
-    community.general.redfish_command:
-      category: Accounts
-      command: UpdateUserName
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_username: "{{ account_username }}"
-      update_username: "{{ update_username }}"
-
-  - name: Update AccountService properties
-    community.general.redfish_command:
-      category: Accounts
-      command: UpdateAccountServiceProperties
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      account_properties:
-        AccountLockoutThreshold: 5
-        AccountLockoutDuration: 600
-
-  - name: Clear Manager Logs with a timeout of 20 seconds
-    community.general.redfish_command:
-      category: Manager
-      command: ClearLogs
-      resource_id: BMC
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      timeout: 20
-
-  - name: Create session
-    community.general.redfish_command:
-      category: Sessions
-      command: CreateSession
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
-
-  - name: Set chassis indicator LED to blink using security token for auth
-    community.general.redfish_command:
-      category: Chassis
-      command: IndicatorLedBlink
-      resource_id: 1U
-      baseuri: "{{ baseuri }}"
-      auth_token: "{{ result.session.token }}"
-
-  - name: Delete session using security token created by CreateSesssion above
-    community.general.redfish_command:
-      category: Sessions
-      command: DeleteSession
-      baseuri: "{{ baseuri }}"
-      auth_token: "{{ result.session.token }}"
-      session_uri: "{{ result.session.uri }}"
-
-  - name: Clear Sessions
-    community.general.redfish_command:
-      category: Sessions
-      command: ClearSessions
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-
-  - name: Simple update
-    community.general.redfish_command:
-      category: Update
-      command: SimpleUpdate
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      update_image_uri: https://example.com/myupdate.img
-
-  - name: Simple update with additional options
-    community.general.redfish_command:
-      category: Update
-      command: SimpleUpdate
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      update_image_uri: //example.com/myupdate.img
-      update_protocol: FTP
-      update_targets:
-        - /redfish/v1/UpdateService/FirmwareInventory/BMC
-      update_creds:
-        username: operator
-        password: supersecretpwd
-
-  - name: Insert Virtual Media
-    community.general.redfish_command:
-      category: Systems
-      command: VirtualMediaInsert
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      virtual_media:
-        image_url: 'http://example.com/images/SomeLinux-current.iso'
-        media_types:
-          - CD
-          - DVD
-      resource_id: 1
-
-  - name: Insert Virtual Media
-    community.general.redfish_command:
-      category: Manager
-      command: VirtualMediaInsert
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      virtual_media:
-        image_url: 'http://example.com/images/SomeLinux-current.iso'
-        media_types:
-          - CD
-          - DVD
-      resource_id: BMC
-
-  - name: Eject Virtual Media
-    community.general.redfish_command:
-      category: Systems
-      command: VirtualMediaEject
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      virtual_media:
-        image_url: 'http://example.com/images/SomeLinux-current.iso'
-      resource_id: 1
-
-  - name: Eject Virtual Media
-    community.general.redfish_command:
-      category: Manager
-      command: VirtualMediaEject
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      virtual_media:
-        image_url: 'http://example.com/images/SomeLinux-current.iso'
-      resource_id: BMC
-
-  - name: Restart manager power gracefully
-    community.general.redfish_command:
-      category: Manager
-      command: GracefulRestart
-      resource_id: BMC
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-
-  - name: Restart manager power gracefully
-    community.general.redfish_command:
-      category: Manager
-      command: PowerGracefulRestart
-      resource_id: BMC
-
-  - name: Turn manager power off
-    community.general.redfish_command:
-      category: Manager
-      command: PowerForceOff
-      resource_id: BMC
-
-  - name: Restart manager power forcefully
-    community.general.redfish_command:
-      category: Manager
-      command: PowerForceRestart
-      resource_id: BMC
-
-  - name: Shutdown manager power gracefully
-    community.general.redfish_command:
-      category: Manager
-      command: PowerGracefulShutdown
-      resource_id: BMC
-
-  - name: Turn manager power on
-    community.general.redfish_command:
-      category: Manager
-      command: PowerOn
-      resource_id: BMC
-
-  - name: Reboot manager power
-    community.general.redfish_command:
-      category: Manager
-      command: PowerReboot
-      resource_id: BMC
-'''
-
-RETURN = '''
-msg:
-    description: Message with action result or error description
-    returned: always
+  bios_attributes:
+    required: false
+    description:
+      - BIOS attributes that needs to be verified in the given server.
+    type: dict
+    version_added: 6.4.0
+  reset_to_defaults_mode:
+    description:
+      - Mode to apply when reseting to default.
     type: str
-    sample: "Action was successful"
-'''
+    choices: [ResetAll, PreserveNetworkAndUsers, PreserveNetwork]
+    version_added: 8.6.0
+  wait:
+    required: false
+    description:
+      - Block until the service is ready again.
+    type: bool
+    default: false
+    version_added: 9.1.0
+  wait_timeout:
+    required: false
+    description:
+      - How long to block until the service is ready again before giving up.
+    type: int
+    default: 120
+    version_added: 9.1.0
+  ciphers:
+    required: false
+    description:
+      - SSL/TLS Ciphers to use for the request.
+      - When a list is provided, all ciphers are joined in order with V(:).
+      - See the L(OpenSSL Cipher List Format,https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html#CIPHER-LIST-FORMAT)
+        for more details.
+      - The available ciphers is dependent on the Python and OpenSSL/LibreSSL versions.
+    type: list
+    elements: str
+    version_added: 9.2.0
+
+author:
+  - "Jose Delarosa (@jose-delarosa)"
+  - "T S Kushal (@TSKushal)"
+"""
+
+EXAMPLES = r"""
+- name: Restart system power gracefully
+  community.general.redfish_command:
+    category: Systems
+    command: PowerGracefulRestart
+    resource_id: 437XR1138R2
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Turn system power off
+  community.general.redfish_command:
+    category: Systems
+    command: PowerForceOff
+    resource_id: 437XR1138R2
+
+- name: Restart system power forcefully
+  community.general.redfish_command:
+    category: Systems
+    command: PowerForceRestart
+    resource_id: 437XR1138R2
+
+- name: Shutdown system power gracefully
+  community.general.redfish_command:
+    category: Systems
+    command: PowerGracefulShutdown
+    resource_id: 437XR1138R2
+
+- name: Turn system power on
+  community.general.redfish_command:
+    category: Systems
+    command: PowerOn
+    resource_id: 437XR1138R2
+
+- name: Reboot system power
+  community.general.redfish_command:
+    category: Systems
+    command: PowerReboot
+    resource_id: 437XR1138R2
+
+- name: Set one-time boot device to {{ bootdevice }}
+  community.general.redfish_command:
+    category: Systems
+    command: SetOneTimeBoot
+    resource_id: 437XR1138R2
+    bootdevice: "{{ bootdevice }}"
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Set one-time boot device to UefiTarget of "/0x31/0x33/0x01/0x01"
+  community.general.redfish_command:
+    category: Systems
+    command: SetOneTimeBoot
+    resource_id: 437XR1138R2
+    bootdevice: "UefiTarget"
+    uefi_target: "/0x31/0x33/0x01/0x01"
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Set one-time boot device to BootNext target of "Boot0001"
+  community.general.redfish_command:
+    category: Systems
+    command: SetOneTimeBoot
+    resource_id: 437XR1138R2
+    bootdevice: "UefiBootNext"
+    boot_next: "Boot0001"
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Set persistent boot device override
+  community.general.redfish_command:
+    category: Systems
+    command: EnableContinuousBootOverride
+    resource_id: 437XR1138R2
+    bootdevice: "{{ bootdevice }}"
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Set one-time boot to BiosSetup
+  community.general.redfish_command:
+    category: Systems
+    command: SetOneTimeBoot
+    boot_next: BiosSetup
+    boot_override_mode: Legacy
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Disable persistent boot device override
+  community.general.redfish_command:
+    category: Systems
+    command: DisableBootOverride
+
+- name: Set system indicator LED to blink using security token for auth
+  community.general.redfish_command:
+    category: Systems
+    command: IndicatorLedBlink
+    resource_id: 437XR1138R2
+    baseuri: "{{ baseuri }}"
+    auth_token: "{{ result.session.token }}"
+
+- name: Add user
+  community.general.redfish_command:
+    category: Accounts
+    command: AddUser
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    new_username: "{{ new_username }}"
+    new_password: "{{ new_password }}"
+    roleid: "{{ roleid }}"
+
+- name: Add user with specified account types
+  community.general.redfish_command:
+    category: Accounts
+    command: AddUser
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    new_username: "{{ new_username }}"
+    new_password: "{{ new_password }}"
+    roleid: "{{ roleid }}"
+    account_types:
+      - Redfish
+      - WebUI
+
+- name: Add user using new option aliases
+  community.general.redfish_command:
+    category: Accounts
+    command: AddUser
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+    account_password: "{{ account_password }}"
+    account_roleid: "{{ account_roleid }}"
+
+- name: Delete user
+  community.general.redfish_command:
+    category: Accounts
+    command: DeleteUser
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+
+- name: Disable user
+  community.general.redfish_command:
+    category: Accounts
+    command: DisableUser
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+
+- name: Enable user
+  community.general.redfish_command:
+    category: Accounts
+    command: EnableUser
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+
+- name: Add and enable user
+  community.general.redfish_command:
+    category: Accounts
+    command: AddUser,EnableUser
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    new_username: "{{ new_username }}"
+    new_password: "{{ new_password }}"
+    roleid: "{{ roleid }}"
+
+- name: Update user password
+  community.general.redfish_command:
+    category: Accounts
+    command: UpdateUserPassword
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+    account_password: "{{ account_password }}"
+
+- name: Update user role
+  community.general.redfish_command:
+    category: Accounts
+    command: UpdateUserRole
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+    roleid: "{{ roleid }}"
+
+- name: Update user name
+  community.general.redfish_command:
+    category: Accounts
+    command: UpdateUserName
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+    account_updatename: "{{ account_updatename }}"
+
+- name: Update user name
+  community.general.redfish_command:
+    category: Accounts
+    command: UpdateUserName
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+    update_username: "{{ update_username }}"
+
+- name: Update AccountService properties
+  community.general.redfish_command:
+    category: Accounts
+    command: UpdateAccountServiceProperties
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_properties:
+      AccountLockoutThreshold: 5
+      AccountLockoutDuration: 600
+
+- name: Update user AccountTypes
+  community.general.redfish_command:
+    category: Accounts
+    command: UpdateUserAccountTypes
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    account_username: "{{ account_username }}"
+    account_types:
+      - Redfish
+      - WebUI
+
+- name: Clear Manager Logs with a timeout of 20 seconds
+  community.general.redfish_command:
+    category: Manager
+    command: ClearLogs
+    resource_id: BMC
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    timeout: 20
+
+- name: Create session
+  community.general.redfish_command:
+    category: Sessions
+    command: CreateSession
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: result
+
+- name: Set chassis indicator LED to blink using security token for auth
+  community.general.redfish_command:
+    category: Chassis
+    command: IndicatorLedBlink
+    resource_id: 1U
+    baseuri: "{{ baseuri }}"
+    auth_token: "{{ result.session.token }}"
+
+- name: Delete session using security token created by CreateSesssion above
+  community.general.redfish_command:
+    category: Sessions
+    command: DeleteSession
+    baseuri: "{{ baseuri }}"
+    auth_token: "{{ result.session.token }}"
+    session_uri: "{{ result.session.uri }}"
+
+- name: Clear Sessions
+  community.general.redfish_command:
+    category: Sessions
+    command: ClearSessions
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Simple update
+  community.general.redfish_command:
+    category: Update
+    command: SimpleUpdate
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    update_image_uri: https://example.com/myupdate.img
+
+- name: Simple update with additional options
+  community.general.redfish_command:
+    category: Update
+    command: SimpleUpdate
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    update_image_uri: //example.com/myupdate.img
+    update_protocol: FTP
+    update_targets:
+      - /redfish/v1/UpdateService/FirmwareInventory/BMC
+    update_creds:
+      username: operator
+      password: supersecretpwd
+
+- name: Multipart HTTP push update; timeout is 600 seconds to allow for a large image transfer
+  community.general.redfish_command:
+    category: Update
+    command: MultipartHTTPPushUpdate
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    timeout: 600
+    update_image_file: ~/images/myupdate.img
+
+- name: Multipart HTTP push with additional options; timeout is 600 seconds to allow for a large image transfer
+  community.general.redfish_command:
+    category: Update
+    command: MultipartHTTPPushUpdate
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    timeout: 600
+    update_image_file: ~/images/myupdate.img
+    update_targets:
+      - /redfish/v1/UpdateService/FirmwareInventory/BMC
+    update_oem_params:
+      PreserveConfiguration: false
+
+- name: Multipart HTTP push with custom OEM options
+  vars:
+    oem_payload:
+      ImageType: BMC
+  community.general.redfish_command:
+    category: Update
+    command: MultipartHTTPPushUpdate
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    update_image_file: ~/images/myupdate.img
+    update_targets:
+      - /redfish/v1/UpdateService/FirmwareInventory/BMC
+    update_custom_oem_header: OemParameters
+    update_custom_oem_mime_type: "application/json"
+    update_custom_oem_params: "{{ oem_payload | to_json }}"
+
+- name: Perform requested operations to continue the update
+  community.general.redfish_command:
+    category: Update
+    command: PerformRequestedOperations
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    update_handle: /redfish/v1/TaskService/TaskMonitors/735
+
+- name: Insert Virtual Media
+  community.general.redfish_command:
+    category: Systems
+    command: VirtualMediaInsert
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    virtual_media:
+      image_url: 'http://example.com/images/SomeLinux-current.iso'
+      media_types:
+        - CD
+        - DVD
+    resource_id: 1
+
+- name: Insert Virtual Media
+  community.general.redfish_command:
+    category: Manager
+    command: VirtualMediaInsert
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    virtual_media:
+      image_url: 'http://example.com/images/SomeLinux-current.iso'
+      media_types:
+        - CD
+        - DVD
+    resource_id: BMC
+
+- name: Eject Virtual Media
+  community.general.redfish_command:
+    category: Systems
+    command: VirtualMediaEject
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    virtual_media:
+      image_url: 'http://example.com/images/SomeLinux-current.iso'
+    resource_id: 1
+
+- name: Eject Virtual Media
+  community.general.redfish_command:
+    category: Manager
+    command: VirtualMediaEject
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    virtual_media:
+      image_url: 'http://example.com/images/SomeLinux-current.iso'
+    resource_id: BMC
+
+- name: Restart manager power gracefully
+  community.general.redfish_command:
+    category: Manager
+    command: GracefulRestart
+    resource_id: BMC
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+
+- name: Restart manager power gracefully and wait for it to be available
+  community.general.redfish_command:
+    category: Manager
+    command: GracefulRestart
+    resource_id: BMC
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    wait: true
+
+- name: Restart manager power gracefully
+  community.general.redfish_command:
+    category: Manager
+    command: PowerGracefulRestart
+    resource_id: BMC
+
+- name: Turn manager power off
+  community.general.redfish_command:
+    category: Manager
+    command: PowerForceOff
+    resource_id: BMC
+
+- name: Restart manager power forcefully
+  community.general.redfish_command:
+    category: Manager
+    command: PowerForceRestart
+    resource_id: BMC
+
+- name: Shutdown manager power gracefully
+  community.general.redfish_command:
+    category: Manager
+    command: PowerGracefulShutdown
+    resource_id: BMC
+
+- name: Turn manager power on
+  community.general.redfish_command:
+    category: Manager
+    command: PowerOn
+    resource_id: BMC
+
+- name: Reboot manager power
+  community.general.redfish_command:
+    category: Manager
+    command: PowerReboot
+    resource_id: BMC
+
+- name: Factory reset manager to defaults
+  community.general.redfish_command:
+    category: Manager
+    command: ResetToDefaults
+    resource_id: BMC
+    reset_to_defaults_mode: ResetAll
+
+- name: Verify BIOS attributes
+  community.general.redfish_command:
+    category: Systems
+    command: VerifyBiosAttributes
+    baseuri: "{{ baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    bios_attributes:
+      SubNumaClustering: "Disabled"
+      WorkloadProfile: "Virtualization-MaxPerformance"
+"""
+
+RETURN = r"""
+msg:
+  description: Message with action result or error description.
+  returned: always
+  type: str
+  sample: "Action was successful"
+return_values:
+  description: Dictionary containing command-specific response data from the action.
+  returned: on success
+  type: dict
+  version_added: 6.1.0
+  sample: {
+    "update_status": {
+      "handle": "/redfish/v1/TaskService/TaskMonitors/735",
+      "messages": [],
+      "resets_requested": [],
+      "ret": true,
+      "status": "New"
+    }
+  }
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.general.plugins.module_utils.redfish_utils import RedfishUtils
@@ -620,22 +853,26 @@ from ansible.module_utils.common.text.converters import to_native
 # More will be added as module features are expanded
 CATEGORY_COMMANDS_ALL = {
     "Systems": ["PowerOn", "PowerForceOff", "PowerForceRestart", "PowerGracefulRestart",
-                "PowerGracefulShutdown", "PowerReboot", "SetOneTimeBoot", "EnableContinuousBootOverride", "DisableBootOverride",
-                "IndicatorLedOn", "IndicatorLedOff", "IndicatorLedBlink", "VirtualMediaInsert", "VirtualMediaEject"],
+                "PowerGracefulShutdown", "PowerReboot", "PowerCycle", "PowerFullPowerCycle",
+                "SetOneTimeBoot", "EnableContinuousBootOverride", "DisableBootOverride",
+                "IndicatorLedOn", "IndicatorLedOff", "IndicatorLedBlink", "VirtualMediaInsert",
+                "VirtualMediaEject", "VerifyBiosAttributes"],
     "Chassis": ["IndicatorLedOn", "IndicatorLedOff", "IndicatorLedBlink"],
     "Accounts": ["AddUser", "EnableUser", "DeleteUser", "DisableUser",
                  "UpdateUserRole", "UpdateUserPassword", "UpdateUserName",
-                 "UpdateAccountServiceProperties"],
+                 "UpdateUserAccountTypes", "UpdateAccountServiceProperties"],
     "Sessions": ["ClearSessions", "CreateSession", "DeleteSession"],
     "Manager": ["GracefulRestart", "ClearLogs", "VirtualMediaInsert",
+                "ResetToDefaults",
                 "VirtualMediaEject", "PowerOn", "PowerForceOff", "PowerForceRestart",
                 "PowerGracefulRestart", "PowerGracefulShutdown", "PowerReboot"],
-    "Update": ["SimpleUpdate"]
+    "Update": ["SimpleUpdate", "MultipartHTTPPushUpdate", "PerformRequestedOperations"],
 }
 
 
 def main():
     result = {}
+    return_values = {}
     module = AnsibleModule(
         argument_spec=dict(
             category=dict(required=True),
@@ -649,17 +886,24 @@ def main():
             new_username=dict(aliases=["account_username"]),
             new_password=dict(aliases=["account_password"], no_log=True),
             roleid=dict(aliases=["account_roleid"]),
+            account_types=dict(type='list', elements='str', aliases=["account_accounttypes"]),
+            oem_account_types=dict(type='list', elements='str', aliases=["account_oemaccounttypes"]),
             update_username=dict(type='str', aliases=["account_updatename"]),
             account_properties=dict(type='dict', default={}),
             bootdevice=dict(),
-            timeout=dict(type='int', default=10),
+            timeout=dict(type='int', default=60),
             uefi_target=dict(),
             boot_next=dict(),
             boot_override_mode=dict(choices=['Legacy', 'UEFI']),
             resource_id=dict(),
             update_image_uri=dict(),
+            update_image_file=dict(type='path'),
             update_protocol=dict(),
             update_targets=dict(type='list', elements='str', default=[]),
+            update_oem_params=dict(type='dict'),
+            update_custom_oem_header=dict(type='str'),
+            update_custom_oem_mime_type=dict(type='str'),
+            update_custom_oem_params=dict(type='raw'),
             update_creds=dict(
                 type='dict',
                 options=dict(
@@ -667,6 +911,9 @@ def main():
                     password=dict(no_log=True)
                 )
             ),
+            update_apply_time=dict(choices=['Immediate', 'OnReset', 'AtMaintenanceWindowStart',
+                                            'InMaintenanceWindowOnReset', 'OnStartUpdateRequest']),
+            update_handle=dict(),
             virtual_media=dict(
                 type='dict',
                 options=dict(
@@ -681,9 +928,15 @@ def main():
                 )
             ),
             strip_etag_quotes=dict(type='bool', default=False),
+            reset_to_defaults_mode=dict(choices=['ResetAll', 'PreserveNetworkAndUsers', 'PreserveNetwork']),
+            bios_attributes=dict(type="dict"),
+            wait=dict(type='bool', default=False),
+            wait_timeout=dict(type='int', default=120),
+            ciphers=dict(type='list', elements='str'),
         ),
         required_together=[
             ('username', 'password'),
+            ('update_custom_oem_header', 'update_custom_oem_params'),
         ],
         required_one_of=[
             ('username', 'auth_token'),
@@ -703,12 +956,17 @@ def main():
              'token': module.params['auth_token']}
 
     # user to add/modify/delete
-    user = {'account_id': module.params['id'],
-            'account_username': module.params['new_username'],
-            'account_password': module.params['new_password'],
-            'account_roleid': module.params['roleid'],
-            'account_updatename': module.params['update_username'],
-            'account_properties': module.params['account_properties']}
+    user = {
+        'account_id': module.params['id'],
+        'account_username': module.params['new_username'],
+        'account_password': module.params['new_password'],
+        'account_roleid': module.params['roleid'],
+        'account_accounttypes': module.params['account_types'],
+        'account_oemaccounttypes': module.params['oem_account_types'],
+        'account_updatename': module.params['update_username'],
+        'account_properties': module.params['account_properties'],
+        'account_passwordchangerequired': None,
+    }
 
     # timeout
     timeout = module.params['timeout']
@@ -719,9 +977,16 @@ def main():
     # update options
     update_opts = {
         'update_image_uri': module.params['update_image_uri'],
+        'update_image_file': module.params['update_image_file'],
         'update_protocol': module.params['update_protocol'],
         'update_targets': module.params['update_targets'],
-        'update_creds': module.params['update_creds']
+        'update_creds': module.params['update_creds'],
+        'update_apply_time': module.params['update_apply_time'],
+        'update_oem_params': module.params['update_oem_params'],
+        'update_custom_oem_header': module.params['update_custom_oem_header'],
+        'update_custom_oem_params': module.params['update_custom_oem_params'],
+        'update_custom_oem_mime_type': module.params['update_custom_oem_mime_type'],
+        'update_handle': module.params['update_handle'],
     }
 
     # Boot override options
@@ -738,10 +1003,17 @@ def main():
     # Etag options
     strip_etag_quotes = module.params['strip_etag_quotes']
 
+    # BIOS Attributes options
+    bios_attributes = module.params['bios_attributes']
+
+    # ciphers
+    ciphers = module.params['ciphers']
+
     # Build root URI
     root_uri = "https://" + module.params['baseuri']
     rf_utils = RedfishUtils(creds, root_uri, timeout, module,
-                            resource_id=resource_id, data_modification=True, strip_etag_quotes=strip_etag_quotes)
+                            resource_id=resource_id, data_modification=True, strip_etag_quotes=strip_etag_quotes,
+                            ciphers=ciphers)
 
     # Check that Category is valid
     if category not in CATEGORY_COMMANDS_ALL:
@@ -763,16 +1035,23 @@ def main():
             "UpdateUserRole": rf_utils.update_user_role,
             "UpdateUserPassword": rf_utils.update_user_password,
             "UpdateUserName": rf_utils.update_user_name,
+            "UpdateUserAccountTypes": rf_utils.update_user_accounttypes,
             "UpdateAccountServiceProperties": rf_utils.update_accountservice_properties
         }
 
         # execute only if we find an Account service resource
         result = rf_utils._find_accountservice_resource()
         if result['ret'] is False:
-            module.fail_json(msg=to_native(result['msg']))
-
-        for command in command_list:
-            result = ACCOUNTS_COMMANDS[command](user)
+            # If a password change is required and the user is attempting to
+            # modify their password, try to proceed.
+            user['account_passwordchangerequired'] = rf_utils.check_password_change_required(result)
+            if len(command_list) == 1 and command_list[0] == "UpdateUserPassword" and user['account_passwordchangerequired']:
+                result = rf_utils.update_user_password(user)
+            else:
+                module.fail_json(msg=to_native(result['msg']))
+        else:
+            for command in command_list:
+                result = ACCOUNTS_COMMANDS[command](user)
 
     elif category == "Systems":
         # execute only if we find a System resource
@@ -798,6 +1077,8 @@ def main():
                 result = rf_utils.virtual_media_insert(virtual_media, category)
             elif command == 'VirtualMediaEject':
                 result = rf_utils.virtual_media_eject(virtual_media, category)
+            elif command == 'VerifyBiosAttributes':
+                result = rf_utils.verify_bios_attributes(bios_attributes)
 
     elif category == "Chassis":
         result = rf_utils._find_chassis_resource()
@@ -842,13 +1123,15 @@ def main():
                 command = 'PowerGracefulRestart'
 
             if command.startswith('Power'):
-                result = rf_utils.manage_manager_power(command)
+                result = rf_utils.manage_manager_power(command, module.params['wait'], module.params['wait_timeout'])
             elif command == 'ClearLogs':
                 result = rf_utils.clear_logs()
             elif command == 'VirtualMediaInsert':
                 result = rf_utils.virtual_media_insert(virtual_media, category)
             elif command == 'VirtualMediaEject':
                 result = rf_utils.virtual_media_eject(virtual_media, category)
+            elif command == 'ResetToDefaults':
+                result = rf_utils.manager_reset_to_defaults(module.params['reset_to_defaults_mode'])
 
     elif category == "Update":
         # execute only if we find UpdateService resources
@@ -859,6 +1142,14 @@ def main():
         for command in command_list:
             if command == "SimpleUpdate":
                 result = rf_utils.simple_update(update_opts)
+                if 'update_status' in result:
+                    return_values['update_status'] = result['update_status']
+            elif command == "MultipartHTTPPushUpdate":
+                result = rf_utils.multipath_http_push_update(update_opts)
+                if 'update_status' in result:
+                    return_values['update_status'] = result['update_status']
+            elif command == "PerformRequestedOperations":
+                result = rf_utils.perform_requested_update_operations(update_opts['update_handle'])
 
     # Return data back or fail with proper message
     if result['ret'] is True:
@@ -866,7 +1157,8 @@ def main():
         changed = result.get('changed', True)
         session = result.get('session', dict())
         module.exit_json(changed=changed, session=session,
-                         msg='Action was successful')
+                         msg='Action was successful',
+                         return_values=return_values)
     else:
         module.fail_json(msg=to_native(result['msg']))
 

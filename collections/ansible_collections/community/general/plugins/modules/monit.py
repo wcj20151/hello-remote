@@ -9,42 +9,47 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: monit
-short_description: Manage the state of a program monitored via Monit
+short_description: Manage the state of a program monitored using Monit
 description:
-    - Manage the state of a program monitored via I(Monit).
+  - Manage the state of a program monitored using Monit.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   name:
     description:
-      - The name of the I(monit) program/process to manage.
+      - The name of the C(monit) program/process to manage.
     required: true
     type: str
   state:
     description:
       - The state of service.
     required: true
-    choices: [ "present", "started", "stopped", "restarted", "monitored", "unmonitored", "reloaded" ]
+    choices: ["present", "started", "stopped", "restarted", "monitored", "unmonitored", "reloaded"]
     type: str
   timeout:
     description:
-      - If there are pending actions for the service monitored by monit, then Ansible will check
-        for up to this many seconds to verify the requested action has been performed.
-        Ansible will sleep for five seconds between each check.
+      - If there are pending actions for the service monitored by monit, then Ansible will check for up to this many seconds
+        to verify the requested action has been performed. Ansible will sleep for five seconds between each check.
     default: 300
     type: int
 author:
-    - Darryl Stoflet (@dstoflet)
-    - Simon Kelly (@snopoke)
-'''
+  - Darryl Stoflet (@dstoflet)
+  - Simon Kelly (@snopoke)
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Manage the state of program httpd to be in started state
   community.general.monit:
     name: httpd
     state: started
-'''
+"""
 
 import time
 import re
@@ -211,7 +216,7 @@ class Monit(object):
         return running_status
 
     def wait_for_monit_to_stop_pending(self, current_status=None):
-        """Fails this run if there is no status or it's pending/initializing for timeout"""
+        """Fails this run if there is no status or it is pending/initializing for timeout"""
         timeout_time = time.time() + self.timeout
 
         if not current_status:

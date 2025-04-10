@@ -11,23 +11,29 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: catapult
-short_description: Send a sms / mms using the catapult bandwidth api
+short_description: Send a sms / mms using the catapult bandwidth API
 description:
-     - Allows notifications to be sent using sms / mms via the catapult bandwidth api.
+  - Allows notifications to be sent using SMS / MMS using the catapult bandwidth API.
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: none
+  diff_mode:
+    support: none
 options:
   src:
     type: str
     description:
-      - One of your catapult telephone numbers the message should come from (must be in E.164 format, like C(+19195551212)).
+      - One of your catapult telephone numbers the message should come from (must be in E.164 format, like V(+19195551212)).
     required: true
   dest:
     type: list
     elements: str
     description:
-      - The phone number or numbers the message should be sent to (must be in E.164 format, like C(+19195551212)).
+      - The phone number or numbers the message should be sent to (must be in E.164 format, like V(+19195551212)).
     required: true
   msg:
     type: str
@@ -37,31 +43,30 @@ options:
   media:
     type: str
     description:
-      - For MMS messages, a media url to the location of the media to be sent with the message.
+      - For MMS messages, a media URL to the location of the media to be sent with the message.
   user_id:
     type: str
     description:
-      - User Id from Api account page.
+      - User ID from API account page.
     required: true
   api_token:
     type: str
     description:
-      - Api Token from Api account page.
+      - API Token from API account page.
     required: true
   api_secret:
     type: str
     description:
-      - Api Secret from Api account page.
+      - API Secret from API account page.
     required: true
 
 author: "Jonathan Mainguy (@Jmainguy)"
 notes:
-    - Will return changed even if the media url is wrong.
-    - Will return changed if the destination number is invalid.
+  - Will return changed even if the media URL is wrong.
+  - Will return changed if the destination number is invalid.
+"""
 
-'''
-
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Send a mms to multiple users
   community.general.catapult:
     src: "+15035555555"
@@ -82,16 +87,15 @@ EXAMPLES = '''
     user_id: "{{ user_id }}"
     api_token: "{{ api_token }}"
     api_secret: "{{ api_secret }}"
+"""
 
-'''
-
-RETURN = '''
+RETURN = r"""
 changed:
-    description: Whether the api accepted the message.
-    returned: always
-    type: bool
-    sample: true
-'''
+  description: Whether the API accepted the message.
+  returned: always
+  type: bool
+  sample: true
+"""
 
 
 import json

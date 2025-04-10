@@ -7,20 +7,13 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import pytest
-import sys
 
-from ansible.errors import AnsibleError, AnsibleParserError
 from ansible_collections.community.general.plugins.inventory.cobbler import InventoryModule
 
 
 @pytest.fixture(scope="module")
 def inventory():
     return InventoryModule()
-
-
-def test_init_cache(inventory):
-    inventory._init_cache()
-    assert inventory._cache[inventory.cache_key] == {}
 
 
 def test_verify_file(tmp_path, inventory):

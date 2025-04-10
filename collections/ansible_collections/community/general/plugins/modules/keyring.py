@@ -13,19 +13,25 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
----
 module: keyring
 version_added: 5.2.0
 author:
   - Alexander Hussey (@ahussey-redhat)
 short_description: Set or delete a passphrase using the Operating System's native keyring
 description: >-
-  This module uses the L(keyring Python library, https://pypi.org/project/keyring/)
-  to set or delete passphrases for a given service and username from the OS' native keyring.
+  This module uses the L(keyring Python library, https://pypi.org/project/keyring/) to set or delete passphrases for a given
+  service and username from the OS' native keyring.
 requirements:
   - keyring (Python library)
   - gnome-keyring (application - required for headless Gnome keyring access)
   - dbus-run-session (application - required for headless Gnome keyring access)
+extends_documentation_fragment:
+  - community.general.attributes
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   service:
     description: The name of the service.
@@ -99,7 +105,7 @@ def del_passphrase(module):
     try:
         keyring.delete_password(module.params["service"], module.params["username"])
         return None
-    except keyring.errors.KeyringLocked as keyring_locked_err:  # pylint: disable=unused-variable
+    except keyring.errors.KeyringLocked:
         delete_argument = (
             'echo "%s" | gnome-keyring-daemon --unlock\nkeyring del %s %s\n'
             % (
@@ -133,7 +139,7 @@ def set_passphrase(module):
             module.params["user_password"],
         )
         return None
-    except keyring.errors.KeyringLocked as keyring_locked_err:  # pylint: disable=unused-variable
+    except keyring.errors.KeyringLocked:
         set_argument = (
             'echo "%s" | gnome-keyring-daemon --unlock\nkeyring set %s %s\n%s\n'
             % (

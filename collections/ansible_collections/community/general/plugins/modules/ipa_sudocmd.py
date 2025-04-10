@@ -7,23 +7,27 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: ipa_sudocmd
 author: Thomas Krahn (@Nosmoht)
 short_description: Manage FreeIPA sudo command
 description:
-- Add, modify or delete sudo command within FreeIPA server using FreeIPA API.
+  - Add, modify or delete sudo command within FreeIPA server using FreeIPA API.
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 options:
   sudocmd:
     description:
-    - Sudo command.
+      - Sudo command.
     aliases: ['name']
     required: true
     type: str
   description:
     description:
-    - A description of this command.
+      - A description of this command.
     type: str
   state:
     description: State to ensure.
@@ -31,11 +35,11 @@ options:
     choices: ['absent', 'disabled', 'enabled', 'present']
     type: str
 extends_documentation_fragment:
-- community.general.ipa.documentation
+  - community.general.ipa.documentation
+  - community.general.attributes
+"""
 
-'''
-
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Ensure sudo command exists
   community.general.ipa_sudocmd:
     name: su
@@ -51,14 +55,14 @@ EXAMPLES = r'''
     ipa_host: ipa.example.com
     ipa_user: admin
     ipa_pass: topsecret
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 sudocmd:
-  description: Sudo command as return from IPA API
+  description: Sudo command as return from IPA API.
   returned: always
   type: dict
-'''
+"""
 
 import traceback
 

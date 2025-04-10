@@ -6,6 +6,7 @@
 #
 # Copyright (c) 2020, Per Abildgaard Toft <per@minfejl.dk> Search and update function
 # Copyright (c) 2021, Brandon McNama <brandonmcnama@outlook.com> Issue attachment functionality
+# Copyright (c) 2022, Hugo Prudente <hugo.kenshin+oss@gmail.com> Worklog functionality
 #
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
@@ -19,6 +20,14 @@ module: jira
 short_description: Create and modify issues in a JIRA instance
 description:
   - Create and modify issues in a JIRA instance.
+extends_documentation_fragment:
+  - community.general.attributes
+
+attributes:
+  check_mode:
+    support: none
+  diff_mode:
+    support: none
 
 options:
   uri:
@@ -26,89 +35,96 @@ options:
     required: true
     description:
       - Base URI for the JIRA instance.
-
   operation:
     type: str
     required: true
-    aliases: [ command ]
-    choices: [ attach, comment, create, edit, fetch, link, search, transition, update ]
+    aliases: [command]
+    choices: [attach, comment, create, edit, fetch, link, search, transition, update, worklog]
     description:
       - The operation to perform.
-
+      - V(worklog) was added in community.general 6.5.0.
   username:
     type: str
     description:
       - The username to log-in with.
-      - Must be used with I(password). Mutually exclusive with I(token).
-
+      - Must be used with O(password). Mutually exclusive with O(token).
   password:
     type: str
     description:
       - The password to log-in with.
-      - Must be used with I(username).  Mutually exclusive with I(token).
-
+      - Must be used with O(username). Mutually exclusive with O(token).
   token:
     type: str
     description:
       - The personal access token to log-in with.
-      - Mutually exclusive with I(username) and I(password).
+      - Mutually exclusive with O(username) and O(password).
     version_added: 4.2.0
+  client_cert:
+    type: path
+    description:
+      - Client certificate if required.
+      - In addition to O(username) and O(password) or O(token). Not mutually exclusive.
+    version_added: 10.4.0
+  client_key:
+    type: path
+    description:
+      - Client certificate key if required.
+      - In addition to O(username) and O(password) or O(token). Not mutually exclusive.
+    version_added: 10.4.0
 
   project:
     type: str
     required: false
     description:
       - The project for this operation. Required for issue creation.
-
   summary:
     type: str
     required: false
     description:
-     - The issue summary, where appropriate.
-     - Note that JIRA may not allow changing field values on specific transitions or states.
-
+      - The issue summary, where appropriate.
+      - Note that JIRA may not allow changing field values on specific transitions or states.
   description:
     type: str
     required: false
     description:
-     - The issue description, where appropriate.
-     - Note that JIRA may not allow changing field values on specific transitions or states.
-
+      - The issue description, where appropriate.
+      - Note that JIRA may not allow changing field values on specific transitions or states.
   issuetype:
     type: str
     required: false
     description:
-     - The issue type, for issue creation.
-
+      - The issue type, for issue creation.
   issue:
     type: str
     required: false
     description:
-     - An existing issue key to operate on.
+      - An existing issue key to operate on.
     aliases: ['ticket']
 
   comment:
     type: str
     required: false
     description:
-     - The comment text to add.
-     - Note that JIRA may not allow changing field values on specific transitions or states.
-
+      - The comment text to add.
+      - Note that JIRA may not allow changing field values on specific transitions or states.
   comment_visibility:
     type: dict
     description:
-     - Used to specify comment comment visibility.
-     - See U(https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-post) for details.
+      - Used to specify comment comment visibility.
+      - See
+        U(https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-comments/#api-rest-api-2-issue-issueidorkey-comment-post)
+        for details.
     suboptions:
       type:
         description:
-         - Use type to specify which of the JIRA visibility restriction types will be used.
+          - Use type to specify which of the JIRA visibility restriction types will be used.
         type: str
         required: true
         choices: [group, role]
       value:
         description:
-         - Use value to specify value corresponding to the type of visibility restriction. For example name of the group or role.
+          - Use value to specify value corresponding to the type of visibility restriction. For example name of the group
+            or role.
         type: str
         required: true
     version_added: '3.2.0'
@@ -117,64 +133,67 @@ options:
     type: str
     required: false
     description:
-     - Only used when I(operation) is C(transition), and a bit of a misnomer, it actually refers to the transition name.
-
+      - Only used when O(operation) is V(transition), and a bit of a misnomer, it actually refers to the transition name.
+      - This is mutually exclusive with O(status_id).
+  status_id:
+    type: str
+    required: false
+    description:
+      - Only used when O(operation) is V(transition), and refers to the transition ID.
+      - This is mutually exclusive with O(status).
+    version_added: 10.3.0
   assignee:
     type: str
     required: false
     description:
-     - Sets the the assignee when I(operation) is C(create), C(transition) or C(edit).
-     - Recent versions of JIRA no longer accept a user name as a user identifier. In that case, use I(account_id) instead.
-     - Note that JIRA may not allow changing field values on specific transitions or states.
-
+      - Sets the the assignee when O(operation) is V(create), V(transition), or V(edit).
+      - Recent versions of JIRA no longer accept a user name as a user identifier. In that case, use O(account_id) instead.
+      - Note that JIRA may not allow changing field values on specific transitions or states.
   account_id:
     type: str
     description:
-     - Sets the account identifier for the assignee when I(operation) is C(create), C(transition) or C(edit).
-     - Note that JIRA may not allow changing field values on specific transitions or states.
+      - Sets the account identifier for the assignee when O(operation) is V(create), V(transition), or V(edit).
+      - Note that JIRA may not allow changing field values on specific transitions or states.
     version_added: 2.5.0
 
   linktype:
     type: str
     required: false
     description:
-     - Set type of link, when action 'link' selected.
-
+      - Set type of link, when action 'link' selected.
   inwardissue:
     type: str
     required: false
     description:
-     - Set issue from which link will be created.
-
+      - Set issue from which link will be created.
   outwardissue:
     type: str
     required: false
     description:
-     - Set issue to which link will be created.
-
+      - Set issue to which link will be created.
   fields:
     type: dict
     required: false
     description:
-     - This is a free-form data structure that can contain arbitrary data. This is passed directly to the JIRA REST API
-       (possibly after merging with other required data, as when passed to create). See examples for more information,
-       and the JIRA REST API for the structure required for various fields.
-     - When passed to comment, the data structure is merged at the first level since community.general 4.6.0. Useful to add JIRA properties for example.
-     - Note that JIRA may not allow changing field values on specific transitions or states.
+      - This is a free-form data structure that can contain arbitrary data. This is passed directly to the JIRA REST API (possibly
+        after merging with other required data, as when passed to create). See examples for more information, and the JIRA
+        REST API for the structure required for various fields.
+      - When passed to comment, the data structure is merged at the first level since community.general 4.6.0. Useful to add
+        JIRA properties for example.
+      - Note that JIRA may not allow changing field values on specific transitions or states.
     default: {}
-
   jql:
     required: false
     description:
-     - Query JIRA in JQL Syntax, e.g. 'CMDB Hostname'='test.example.com'.
+      - Query JIRA in JQL Syntax, for example V("CMDB Hostname" = test.example.com).
     type: str
     version_added: '0.2.0'
 
   maxresults:
     required: false
     description:
-     - Limit the result of I(operation=search). If no value is specified, the default jira limit will be used.
-     - Used when I(operation=search) only, ignored otherwise.
+      - Limit the result of O(operation=search). If no value is specified, the default jira limit will be used.
+      - Used when O(operation=search) only, ignored otherwise.
     type: int
     version_added: '0.2.0'
 
@@ -188,7 +207,7 @@ options:
   validate_certs:
     required: false
     description:
-      - Require valid SSL certificates (set to C(false) if you'd like to use self-signed certificates)
+      - Require valid SSL certificates (set to V(false) if you would like to use self-signed certificates).
     default: true
     type: bool
 
@@ -202,27 +221,24 @@ options:
         required: true
         type: path
         description:
-          - The path to the file to upload (from the remote node) or, if I(content) is specified,
-            the filename to use for the attachment.
+          - The path to the file to upload (from the remote node) or, if O(attachment.content) is specified, the filename
+            to use for the attachment.
       content:
         type: str
         description:
-          - The Base64 encoded contents of the file to attach. If not specified, the contents of I(filename) will be
-            used instead.
+          - The Base64 encoded contents of the file to attach. If not specified, the contents of O(attachment.filename) will
+            be used instead.
       mimetype:
         type: str
         description:
-          - The MIME type to supply for the upload. If not specified, best-effort detection will be
-            done.
-
+          - The MIME type to supply for the upload. If not specified, best-effort detection will be done.
 notes:
-  - "Currently this only works with basic-auth, or tokens."
-  - "To use with JIRA Cloud, pass the login e-mail as the I(username) and the API token as I(password)."
-
+  - Currently this only works with basic-auth, or tokens.
+  - To use with JIRA Cloud, pass the login e-mail as the O(username) and the API token as O(password).
 author:
-- "Steve Smith (@tarka)"
-- "Per Abildgaard Toft (@pertoft)"
-- "Brandon McNama (@DWSR)"
+  - "Steve Smith (@tarka)"
+  - "Per Abildgaard Toft (@pertoft)"
+  - "Brandon McNama (@DWSR)"
 """
 
 EXAMPLES = r"""
@@ -239,8 +255,8 @@ EXAMPLES = r"""
     issuetype: Task
   args:
     fields:
-        customfield_13225: "test"
-        customfield_12931: {"value": "Test"}
+      customfield_13225: "test"
+      customfield_12931: {"value": "Test"}
   register: issue
 
 - name: Comment on issue
@@ -278,6 +294,47 @@ EXAMPLES = r"""
           value:
             internal: true
 
+# Add an workog to an existing issue
+- name: Worklog on issue
+  community.general.jira:
+    uri: '{{ server }}'
+    username: '{{ user }}'
+    password: '{{ pass }}'
+    issue: '{{ issue.meta.key }}'
+    operation: worklog
+    comment: A worklog added by Ansible
+    fields:
+      timeSpentSeconds: 12000
+
+- name: Workflow on issue with comment restricted visibility
+  community.general.jira:
+    uri: '{{ server }}'
+    username: '{{ user }}'
+    password: '{{ pass }}'
+    issue: '{{ issue.meta.key }}'
+    operation: worklog
+    comment: A worklog added by Ansible
+    comment_visibility:
+      type: role
+      value: Developers
+    fields:
+      timeSpentSeconds: 12000
+
+- name: Workflow on issue with comment property to mark it internal
+  community.general.jira:
+    uri: '{{ server }}'
+    username: '{{ user }}'
+    password: '{{ pass }}'
+    issue: '{{ issue.meta.key }}'
+    operation: worklog
+    comment: A worklog added by Ansible
+    fields:
+      properties:
+        - key: 'sd.public.comment'
+          value:
+            internal: true
+      timeSpentSeconds: 12000
+
 # Assign an existing issue using edit
 - name: Assign an issue using free-form fields
   community.general.jira:
@@ -311,9 +368,9 @@ EXAMPLES = r"""
     operation: edit
   args:
     fields:
-        labels:
-          - autocreated
-          - ansible
+      labels:
+        - autocreated
+        - ansible
 
 # Updating a field using operations: add, set & remove
 - name: Change the value of a Select dropdown
@@ -325,8 +382,8 @@ EXAMPLES = r"""
     operation: update
   args:
     fields:
-      customfield_12931: [ {'set': {'value': 'Virtual'}} ]
-      customfield_13820: [ {'set': {'value':'Manually'}} ]
+      customfield_12931: ['set': {'value': 'Virtual'}]
+      customfield_13820: ['set': {'value': 'Manually'}]
   register: cmdb_issue
   delegate_to: localhost
 
@@ -355,7 +412,7 @@ EXAMPLES = r"""
     jql: project=cmdb AND cf[13225]="test"
   args:
     fields:
-      lastViewed: null
+      lastViewed:
   register: issue
 
 - name: Create a unix account for the reporter
@@ -401,6 +458,23 @@ EXAMPLES = r"""
     operation: attach
     attachment:
       filename: topsecretreport.xlsx
+
+# Use username, password and client certificate authentification
+- name: Create an issue
+  community.general.jira:
+    uri: '{{ server }}'
+    username: '{{ user }}'
+    password: '{{ pass }}'
+    client_cert: '{{ path/to/client-cert }}'
+    client_key: '{{ path/to/client-key }}'
+
+# Use token and client certificate authentification
+- name: Create an issue
+  community.general.jira:
+    uri: '{{ server }}'
+    token: '{{ token }}'
+    client_cert: '{{ path/to/client-cert }}'
+    client_key: '{{ path/to/client-key }}'
 """
 
 import base64
@@ -429,12 +503,14 @@ class JIRA(StateModuleHelper):
             uri=dict(type='str', required=True),
             operation=dict(
                 type='str',
-                choices=['attach', 'create', 'comment', 'edit', 'update', 'fetch', 'transition', 'link', 'search'],
+                choices=['attach', 'create', 'comment', 'edit', 'update', 'fetch', 'transition', 'link', 'search', 'worklog'],
                 aliases=['command'], required=True
             ),
             username=dict(type='str'),
             password=dict(type='str', no_log=True),
             token=dict(type='str', no_log=True),
+            client_cert=dict(type='path'),
+            client_key=dict(type='path'),
             project=dict(type='str', ),
             summary=dict(type='str', ),
             description=dict(type='str', ),
@@ -446,6 +522,7 @@ class JIRA(StateModuleHelper):
                 value=dict(type='str', required=True)
             )),
             status=dict(type='str', ),
+            status_id=dict(type='str', ),
             assignee=dict(type='str', ),
             fields=dict(default={}, type='dict'),
             linktype=dict(type='str', ),
@@ -461,9 +538,11 @@ class JIRA(StateModuleHelper):
             ['username', 'token'],
             ['password', 'token'],
             ['assignee', 'account_id'],
+            ['status', 'status_id']
         ],
         required_together=[
             ['username', 'password'],
+            ['client_cert', 'client_key']
         ],
         required_one_of=[
             ['username', 'token'],
@@ -472,14 +551,16 @@ class JIRA(StateModuleHelper):
             ('operation', 'attach', ['issue', 'attachment']),
             ('operation', 'create', ['project', 'issuetype', 'summary']),
             ('operation', 'comment', ['issue', 'comment']),
+            ('operation', 'workflow', ['issue', 'comment']),
             ('operation', 'fetch', ['issue']),
-            ('operation', 'transition', ['issue', 'status']),
+            ('operation', 'transition', ['issue']),
+            ('operation', 'transition', ['status', 'status_id'], True),
             ('operation', 'link', ['linktype', 'inwardissue', 'outwardissue']),
             ('operation', 'search', ['jql']),
         ),
         supports_check_mode=False
     )
-
+    use_old_vardict = False
     state_param = 'operation'
 
     def __init_module__(self):
@@ -492,7 +573,7 @@ class JIRA(StateModuleHelper):
         self.vars.uri = self.vars.uri.strip('/')
         self.vars.set('restbase', self.vars.uri + '/rest/api/2')
 
-    @cause_changes(on_success=True)
+    @cause_changes(when="success")
     def operation_create(self):
         createfields = {
             'project': {'key': self.vars.project},
@@ -510,7 +591,7 @@ class JIRA(StateModuleHelper):
         url = self.vars.restbase + '/issue/'
         self.vars.meta = self.post(url, data)
 
-    @cause_changes(on_success=True)
+    @cause_changes(when="success")
     def operation_comment(self):
         data = {
             'body': self.vars.comment
@@ -526,7 +607,23 @@ class JIRA(StateModuleHelper):
         url = self.vars.restbase + '/issue/' + self.vars.issue + '/comment'
         self.vars.meta = self.post(url, data)
 
-    @cause_changes(on_success=True)
+    @cause_changes(when="success")
+    def operation_worklog(self):
+        data = {
+            'comment': self.vars.comment
+        }
+        # if comment_visibility is specified restrict visibility
+        if self.vars.comment_visibility is not None:
+            data['visibility'] = self.vars.comment_visibility
+
+        # Use 'fields' to merge in any additional data
+        if self.vars.fields:
+            data.update(self.vars.fields)
+
+        url = self.vars.restbase + '/issue/' + self.vars.issue + '/worklog'
+        self.vars.meta = self.post(url, data)
+
+    @cause_changes(when="success")
     def operation_edit(self):
         data = {
             'fields': self.vars.fields
@@ -534,7 +631,7 @@ class JIRA(StateModuleHelper):
         url = self.vars.restbase + '/issue/' + self.vars.issue
         self.vars.meta = self.put(url, data)
 
-    @cause_changes(on_success=True)
+    @cause_changes(when="success")
     def operation_update(self):
         data = {
             "update": self.vars.fields,
@@ -556,20 +653,33 @@ class JIRA(StateModuleHelper):
 
         self.vars.meta = self.get(url)
 
-    @cause_changes(on_success=True)
+    @cause_changes(when="success")
     def operation_transition(self):
         # Find the transition id
         turl = self.vars.restbase + '/issue/' + self.vars.issue + "/transitions"
         tmeta = self.get(turl)
 
-        target = self.vars.status
         tid = None
+        target = None
+
+        if self.vars.status is not None:
+            target = self.vars.status.strip()
+        elif self.vars.status_id is not None:
+            tid = self.vars.status_id.strip()
+
         for t in tmeta['transitions']:
-            if t['name'] == target:
-                tid = t['id']
-                break
+            if target is not None:
+                if t['name'] == target:
+                    tid = t['id']
+                    break
+            else:
+                if tid == t['id']:
+                    break
         else:
-            raise ValueError("Failed find valid transition for '%s'" % target)
+            if target is not None:
+                raise ValueError("Failed find valid transition for '%s'" % target)
+            else:
+                raise ValueError("Failed find valid transition for ID '%s'" % tid)
 
         fields = dict(self.vars.fields)
         if self.vars.summary is not None:
@@ -589,7 +699,7 @@ class JIRA(StateModuleHelper):
         url = self.vars.restbase + '/issue/' + self.vars.issue + "/transitions"
         self.vars.meta = self.post(url, data)
 
-    @cause_changes(on_success=True)
+    @cause_changes(when="success")
     def operation_link(self):
         data = {
             'type': {'name': self.vars.linktype},
@@ -599,7 +709,7 @@ class JIRA(StateModuleHelper):
         url = self.vars.restbase + '/issueLink/'
         self.vars.meta = self.post(url, data)
 
-    @cause_changes(on_success=True)
+    @cause_changes(when="success")
     def operation_attach(self):
         v = self.vars
         filename = v.attachment.get('filename')
@@ -731,7 +841,7 @@ class JIRA(StateModuleHelper):
                 if msg:
                     self.module.fail_json(msg=', '.join(msg))
                 self.module.fail_json(msg=to_native(error))
-            # Fallback print body, if it cant be decoded
+            # Fallback print body, if it can't be decoded
             self.module.fail_json(msg=to_native(info['body']))
 
         body = response.read()

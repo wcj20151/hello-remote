@@ -14,31 +14,38 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-DOCUMENTATION = '''
----
+DOCUMENTATION = r"""
 module: portage
 short_description: Package manager for Gentoo
 description:
-  - Manages Gentoo packages
+  - Manages Gentoo packages.
+extends_documentation_fragment:
+  - community.general.attributes
+
+attributes:
+  check_mode:
+    support: full
+  diff_mode:
+    support: none
 
 options:
   package:
     description:
-      - Package atom or set, e.g. C(sys-apps/foo) or C(>foo-2.13) or C(@world)
+      - Package atom or set, for example V(sys-apps/foo) or V(>foo-2.13) or V(@world).
     aliases: [name]
     type: list
     elements: str
 
   state:
     description:
-      - State of the package atom
+      - State of the package atom.
     default: "present"
-    choices: [ "present", "installed", "emerged", "absent", "removed", "unmerged", "latest" ]
+    choices: ["present", "installed", "emerged", "absent", "removed", "unmerged", "latest"]
     type: str
 
   update:
     description:
-      - Update packages to the best version available (--update)
+      - Update packages to the best version available (C(--update)).
     type: bool
     default: false
 
@@ -50,74 +57,81 @@ options:
 
   deep:
     description:
-      - Consider the entire dependency tree of packages (--deep)
+      - Consider the entire dependency tree of packages (C(--deep)).
     type: bool
     default: false
 
   newuse:
     description:
-      - Include installed packages where USE flags have changed (--newuse)
+      - Include installed packages where USE flags have changed (C(--newuse)).
     type: bool
     default: false
 
   changed_use:
     description:
-      - Include installed packages where USE flags have changed, except when
-      - flags that the user has not enabled are added or removed
-      - (--changed-use)
+      - Include installed packages where USE flags have changed, except when.
+      - Flags that the user has not enabled are added or removed.
+      - (C(--changed-use)).
     type: bool
     default: false
 
   oneshot:
     description:
-      - Do not add the packages to the world file (--oneshot)
+      - Do not add the packages to the world file (C(--oneshot)).
     type: bool
     default: false
 
   noreplace:
     description:
-      - Do not re-emerge installed packages (--noreplace)
+      - Do not re-emerge installed packages (C(--noreplace)).
     type: bool
     default: true
 
   nodeps:
     description:
-      - Only merge packages but not their dependencies (--nodeps)
+      - Only merge packages but not their dependencies (C(--nodeps)).
     type: bool
     default: false
 
   onlydeps:
     description:
-      - Only merge packages' dependencies but not the packages (--onlydeps)
+      - Only merge packages' dependencies but not the packages (C(--onlydeps)).
     type: bool
     default: false
 
   depclean:
     description:
-      - Remove packages not needed by explicitly merged packages (--depclean)
-      - If no package is specified, clean up the world's dependencies
-      - Otherwise, --depclean serves as a dependency aware version of --unmerge
+      - Remove packages not needed by explicitly merged packages (C(--depclean)).
+      - If no package is specified, clean up the world's dependencies.
+      - Otherwise, C(--depclean) serves as a dependency aware version of C(--unmerge).
     type: bool
     default: false
 
   quiet:
     description:
-      - Run emerge in quiet mode (--quiet)
+      - Run emerge in quiet mode (C(--quiet)).
     type: bool
     default: false
 
   verbose:
     description:
-      - Run emerge in verbose mode (--verbose)
+      - Run emerge in verbose mode (C(--verbose)).
     type: bool
     default: false
 
+  select:
+    description:
+      - If set to V(true), explicitely add the package to the world file.
+      - Please note that this option is not used for idempotency, it is only used when actually installing a package.
+    type: bool
+    version_added: 8.6.0
+
   sync:
     description:
-      - Sync package repositories first
-      - If C(yes), perform "emerge --sync"
-      - If C(web), perform "emerge-webrsync"
-    choices: [ "web", "yes", "no" ]
+      - Sync package repositories first.
+      - If V(yes), perform C(emerge --sync).
+      - If V(web), perform C(emerge-webrsync).
+    choices: ["web", "yes", "no"]
     type: str
 
   getbinpkgonly:
@@ -154,16 +168,14 @@ options:
   jobs:
     description:
       - Specifies the number of packages to build simultaneously.
-      - "Since version 2.6: Value of 0 or False resets any previously added"
-      - --jobs setting values
+      - 'Since version 2.6: Value of V(0) or V(false) resets any previously added C(--jobs) setting values.'
     type: int
 
   loadavg:
     description:
-      - Specifies that no new builds should be started if there are
-      - other builds running and the load average is at least LOAD
-      - "Since version 2.6: Value of 0 or False resets any previously added"
-      - --load-average setting values
+      - Specifies that no new builds should be started if there are other builds running and the load average is at least
+        LOAD.
+      - 'Since version 2.6: Value of 0 or False resets any previously added C(--load-average) setting values.'
     type: float
 
   withbdeps:
@@ -174,26 +186,24 @@ options:
 
   quietbuild:
     description:
-      - Redirect all build output to logs alone, and do not display it
-      - on stdout (--quiet-build)
+      - Redirect all build output to logs alone, and do not display it on stdout (C(--quiet-build)).
     type: bool
     default: false
 
   quietfail:
     description:
-      - Suppresses display of the build log on stdout (--quiet-fail)
-      - Only the die message and the path of the build log will be
-      - displayed on stdout.
+      - Suppresses display of the build log on stdout (--quiet-fail).
+      - Only the die message and the path of the build log will be displayed on stdout.
     type: bool
     default: false
 
 author:
-    - "William L Thomson Jr (@wltjr)"
-    - "Yap Sok Ann (@sayap)"
-    - "Andrew Udvare (@Tatsh)"
-'''
+  - "William L Thomson Jr (@wltjr)"
+  - "Yap Sok Ann (@sayap)"
+  - "Andrew Udvare (@Tatsh)"
+"""
 
-EXAMPLES = '''
+EXAMPLES = r"""
 - name: Make sure package foo is installed
   community.general.portage:
     package: foo
@@ -235,7 +245,7 @@ EXAMPLES = '''
     package: foo
     state: absent
     depclean: true
-'''
+"""
 
 import os
 import re
@@ -324,9 +334,9 @@ def emerge_packages(module, packages):
     """Run emerge command against given list of atoms."""
     p = module.params
 
-    if p['noreplace'] and not (p['update'] or p['state'] == 'latest'):
+    if p['noreplace'] and not p['changed_use'] and not p['newuse'] and not (p['update'] or p['state'] == 'latest'):
         for package in packages:
-            if p['noreplace'] and not query_package(module, package, 'emerge'):
+            if p['noreplace'] and not p['changed_use'] and not p['newuse'] and not query_package(module, package, 'emerge'):
                 break
         else:
             module.exit_json(changed=False, msg='Packages already present.')
@@ -365,6 +375,7 @@ def emerge_packages(module, packages):
         'loadavg': '--load-average',
         'backtrack': '--backtrack',
         'withbdeps': '--with-bdeps',
+        'select': '--select',
     }
 
     for flag, arg in emerge_flags.items():
@@ -374,14 +385,12 @@ def emerge_packages(module, packages):
             """Fallback to default: don't use this argument at all."""
             continue
 
-        if not flag_val:
+        """Add the --flag=value pair."""
+        if isinstance(flag_val, bool):
+            args.extend((arg, to_native('y' if flag_val else 'n')))
+        elif not flag_val:
             """If the value is 0 or 0.0: add the flag, but not the value."""
             args.append(arg)
-            continue
-
-        """Add the --flag=value pair."""
-        if isinstance(p[flag], bool):
-            args.extend((arg, to_native('y' if flag_val else 'n')))
         else:
             args.extend((arg, to_native(flag_val)))
 
@@ -516,6 +525,7 @@ def main():
             nodeps=dict(default=False, type='bool'),
             onlydeps=dict(default=False, type='bool'),
             depclean=dict(default=False, type='bool'),
+            select=dict(default=None, type='bool'),
             quiet=dict(default=False, type='bool'),
             verbose=dict(default=False, type='bool'),
             sync=dict(default=None, choices=['yes', 'web', 'no']),
@@ -536,6 +546,7 @@ def main():
             ['quiet', 'verbose'],
             ['quietbuild', 'verbose'],
             ['quietfail', 'verbose'],
+            ['oneshot', 'select'],
         ],
         supports_check_mode=True,
     )
