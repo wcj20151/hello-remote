@@ -88,6 +88,7 @@
         path: ~/.ssh/config
         block: "{{ my_sshconfig }}"
         state: present
+        marker: # classroom_env managed block
 
     - name: Ensure /etc/bash_completion.d/glab is configured
       become: true
