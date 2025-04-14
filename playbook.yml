@@ -63,7 +63,7 @@
         dest: ~/.vim/bundle/{{ item.split('/')[-1] | regex_replace('\.git$') }}
 
     - name: Render terminal profile template
-      notify: Ensure profile is loaded
+      notify: Reload terminal 
       ansible.builtin.template:
         src: terminal_profile.j2
         dest: /var/tmp/terminal_profile
@@ -140,9 +140,9 @@
       when: "'current 1920 x 1080' not in current_resolution['stdout']"
       ansible.builtin.command: xrandr --size 1920x1080
 
-    # - name: Ensure firefox configuration tasks are included
-    #   ansible.builtin.include_tasks:
-    #     file: tasks/firefox.yml
+    - name: Ensure firefox configuration tasks are included
+      ansible.builtin.include_tasks:
+        file: tasks/firefox.yml
 
     - name: Create an Alt + Tab alternative with Alt + q
       ansible.builtin.shell: >
@@ -153,10 +153,12 @@
   handlers:
     # community.general.dconf was considered but did not behave as expected
     - name: Ensure profile is loaded
+      listen: Reload terminal
       ansible.builtin.shell: dconf load /org/gnome/terminal/ < /var/tmp/terminal_profile
       args:
         creates: /var/tmp/terminal_profile_loaded
 
     - name: Ensure terminal terminates
+      listen: Reload terminal
       ansible.builtin.command: killall gnome-terminal-server
       when: "'gnome-terminal' in lookup('pipe', 'pgrep -l gnome-terminal')"
