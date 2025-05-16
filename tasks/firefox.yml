@@ -11,13 +11,13 @@
   shell: pkill firefox
   ignore_errors: true
 
-# - name: Find Firefox default profile
-#   shell: grep -E '^Path=' ~/.mozilla/firefox/profiles.ini | head -n1 | cut -d= -f2
-#   register: firefox_profile
+- name: Find Firefox default profile
+  shell: grep -E '^Path=' ~/.mozilla/firefox/profiles.ini | head -n1 | cut -d= -f2
+  register: firefox_profile
 
-# - name: Set profile path
-#   set_fact:
-#     firefox_profile_path: "{{ lookup('env','HOME') }}/.mozilla/firefox/{{ firefox_profile.stdout | trim }}"
+- name: Set profile path
+  set_fact:
+    firefox_profile_path: "{{ lookup('env','HOME') }}/.mozilla/firefox/{{ firefox_profile.stdout | trim }}"
 
 - name: Ensure bookmarkbackups directory exists
   file:
