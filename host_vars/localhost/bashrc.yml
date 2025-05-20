@@ -33,7 +33,7 @@ my_bashrc: |
   alias al="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
   alias clustercheck="ssh lab@utility ./wait.sh"
   alias events="oc get events --sort-by='.lastTimestamp' -n \$1"
-  alias podsw='oc get pods -o wide -n \$1'
+  alias podsw="oc get pods -o wide -n \$1"
   alias velero='oc -n openshift-adp exec deployment/velero -c velero -it -- ./velero'
   alias ocd='oc describe'
   alias ocp='oc project'
