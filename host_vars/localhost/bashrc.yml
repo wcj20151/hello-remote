@@ -113,16 +113,28 @@ my_bashrc: |
   # ===============================
 
   get_oc_project() {
-    if [[ -n "$_LAST_OC_PROJECT" && "$(( $(date +%s) - $_LAST_OC_PROJECT_TIME ))" -lt 5 ]]; then
-      echo "$_LAST_OC_PROJECT"
+  if [[ -n "$_LAST_OC_PROJECT" && "$(( $(date +%s) - ${_LAST_OC_PROJECT_TIME:-0} ))" -lt 5 ]]; then
+    echo "$_LAST_OC_PROJECT"
+  else
+    if oc whoami &>/dev/null; then
+      local project
+      project=$(oc project -q 2>/dev/null)
+      if [[ $? -eq 0 && -n "$project" ]]; then
+        _LAST_OC_PROJECT="$project"
+        _LAST_OC_PROJECT_TIME=$(date +%s)
+        echo "$_LAST_OC_PROJECT"
+      else
+        unset _LAST_OC_PROJECT
+        unset _LAST_OC_PROJECT_TIME
+      fi
     else
-      _LAST_OC_PROJECT=$(oc project -q 2>/dev/null)
-      _LAST_OC_PROJECT_TIME=$(date +%s)
-      echo "$_LAST_OC_PROJECT"
+      unset _LAST_OC_PROJECT
+      unset _LAST_OC_PROJECT_TIME
     fi
+  fi
   }
 
-  export PS1='[\u@\h \W$(proj=$(get_oc_project); [[ -n "$proj" ]] && echo " ($proj)")]\$ '
+    export PS1='[\u@\h \W$(proj=$(get_oc_project); [[ -n "$proj" ]] && echo " ($proj)")]\$ '
 
   # ===============================
   # Bash Completion
