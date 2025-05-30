@@ -28,6 +28,7 @@ my_bashrc: |
   # OpenShift Aliases
   # ===============================
   alias lcl="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
+  alias ccl="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
   alias mcl="oc login -u admin -p redhatocp https://api.ocp4-mng.example.com:6443"
   alias dl="oc login -u developer -p developer https://api.ocp4.example.com:6443"
   alias al="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
