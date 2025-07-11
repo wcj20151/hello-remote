@@ -15,8 +15,8 @@
     - name: Terminate playbook if user is not logged in via GUI
       ansible.builtin.assert:
         that:
-          - 'x11' in login_type['stdout'] or 'wayland' in login_type['stdout']
-          - "{{ ansibe_facts['distribution_major_version'] }}" != "10"
+          - "'x11' in login_type['stdout'] or 'wayland' in login_type['stdout']"
+          - "{{ ansible_facts['distribution_major_version'] }}" != "10"
         fail_msg: |
           ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️
 
