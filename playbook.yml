@@ -2,7 +2,7 @@
 - name: Setup classroom environment
   hosts: localhost
   become: false
-  gather_facts: false
+  gather_facts: true
   force_handlers: true
 
   tasks:
@@ -14,13 +14,18 @@
 
     - name: Terminate playbook if user is not logged in via GUI
       ansible.builtin.assert:
-        that: >
-          'x11' in login_type['stdout'] or 'wayland' in login_type['stdout']
+        that:
+          - 'x11' in login_type['stdout'] or 'wayland' in login_type['stdout']
+          - "{{ ansibe_facts['distribution_major_version'] }}" != "10"
         fail_msg: |
           ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️
 
           This playbook must be run from a console session at
           https://rol.redhat.com
+
+          This playbook is currently not supported for RHEL10 
+
+          I will try and get this resolved by mid July
 
           ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️
 
