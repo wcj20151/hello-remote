@@ -6,6 +6,7 @@
   force_handlers: true
 
   tasks:
+
     - name: Check if user is logged in via GUI
       register: login_type
       changed_when: false
@@ -15,7 +16,7 @@
     - name: Terminate playbook if user is not logged in via GUI
       ansible.builtin.assert:
         that:
-          - 'x11' in login_type['stdout'] or 'wayland' in login_type['stdout']
+          - "'x11' in login_type['stdout'] or 'wayland' in login_type['stdout']"
           - ansible_facts['distribution_major_version'] != "10"
         fail_msg: |
           ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️
