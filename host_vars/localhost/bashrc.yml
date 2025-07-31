@@ -17,10 +17,6 @@ my_bashrc: |
   alias ..='cd ..'
   alias ...='cd ../..'
   alias avc='ausearch -m avc -ts recent | aureport -a' 
-  if [[ $- == *i* ]]; then
-    alias scp='echo -e "\n⚠️  Stop using scp!\n\n🔗 See: https://www.redhat.com/en/blog/openssh-scp-deprecation-rhel-9-what-you-need-know\n\n💡 Use rsync -a instead.\n"'
-  fi
-  alias scp='echo -e "\nStop using scp\n\nSee https://www.redhat.com/en/blog/openssh-scp-deprecation-rhel-9-what-you-need-know\n\nUse rsync -a instead\n"'
   alias decomment='egrep -v "^[[:space:]]*((#|;|//).*)?$" '
   alias please='sudo !!'
 
@@ -43,6 +39,8 @@ my_bashrc: |
   alias vcon='virtctl console'
   alias showtaints='oc get nodes -o jsonpath=''{range .items[*]}{.metadata.name}{"\t"}{.spec.taints[*].key}{":"}{.spec.taints[*].value}{":"}{.spec.taints[*].effect}{"\n"}{end}'''
   alias showpods='oc get pods -A -o jsonpath=''{range .items[*]}{.metadata.name} {.spec.nodeName}{"\n"}{end}'''
+  alias showcapacity='oc get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu,Memory:.status.capacity.memory'
+  alias showallocatable='oc get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.allocatable.cpu,Memory:.status.allocatable.memory'
 
   # ===============================
   # Ansible Aliases

@@ -130,13 +130,6 @@
         scope: global
         value: "cache --timeout=10800"
 
-    - name: Ensure lab timings cronjob is enabled
-      ansible.builtin.cron:
-        name: "Send lab data to api"
-        minute: "0"
-        hour: "17"
-        job: ~/bin/upload_timings
-
     - name: Ensure resolution is obtained
       register: current_resolution
       changed_when: false
