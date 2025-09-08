@@ -48,11 +48,6 @@ config_files:
     dest: ~/.ansible-navigator.yml
     perms: '0644'
 
-  upload_timings:
-    file: upload_timings
-    dest: ~/bin/upload_timings
-    permissions: '0755'
-
 regularfont_uuid: "{{ lookup('pipe', 'uuidgen') }}" 
 mediumfont_uuid: "{{ lookup('pipe', 'uuidgen') }}"
 largefont_uuid: "{{ lookup('pipe', 'uuidgen') }}"

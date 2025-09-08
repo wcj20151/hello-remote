@@ -1,7 +1,6 @@
 ---
 - name: Setup classroom environment
   hosts: localhost
-  become: false
   gather_facts: true
   force_handlers: true
 
@@ -24,9 +23,9 @@
           This playbook must be run from a console session at
           https://rol.redhat.com
 
-          This playbook is currently not supported for RHEL10 
-
-          I will try and get this resolved by mid July
+          This playbook is currently not supported for RHEL10 due to
+          a bug in the training environment. Support will be enabled
+          when the bug is fixed.
 
           ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️
 
