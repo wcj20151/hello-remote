@@ -37,8 +37,8 @@ my_bashrc: |
   alias ocg='oc get'
   alias ocl='oc logs'
   alias vcon='virtctl console'
-  alias showtaints='oc get nodes -o jsonpath=\'\'{range .items[*]}{.metadata.name}{"\t"}{.spec.taints[*].key}{":"}{.spec.taints[*].value}{":"}{.spec.taints[*].effect}{"\n"}{end}\'\''
-  alias showpods='oc get pods -A -o jsonpath=\'\'{range .items[*]}{.metadata.name} {.spec.nodeName}{"\n"}{end}\'\''
+  alias showtaints='oc get nodes -o jsonpath="{range .items[*]}{.metadata.name}{\"\t\"}{range $i, $t := .spec.taints}{if $i}{\",\"}{end}{$t.key}:{$t.value}:{$t.effect}{end}{\"\n\"}{end}"'
+  alias showpods='oc get pods -A -o custom-columns="NAMESPACE:.metadata.namespace,POD:.metadata.name,NODE:.spec.nodeName,READY:.status.containerStatuses[*].ready" --no-headers'
   alias showcapacity='oc get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu,Memory:.status.capacity.memory'
   alias showallocatable='oc get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.allocatable.cpu,Memory:.status.allocatable.memory'
 
