@@ -84,6 +84,19 @@ my_bashrc: |
     oc get group "$group" -o json | jq -r '.users[]'
   }
 
+pwgen (){
+  tr -dc 'A-Za-z0-9@#%+=' </dev/urandom | head -c ${1:-16}; echo
+}
+
+plogs () {
+  if [[ $# -eq 1 ]]; then
+    ns=$(oc project -q 2>/dev/null)
+    oc logs -f -n "$ns" "$1"
+  else
+    oc logs -f "$@"
+  fi
+}
+
   mcd (){
     mkdir -pv "$1"
     cd "$1" || return
