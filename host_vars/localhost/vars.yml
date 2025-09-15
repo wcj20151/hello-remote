@@ -15,7 +15,7 @@ repo_list:
 config_files:
   vim:
     file: vimrc
-    dest: ~/.vimrc
+    dest: /etc/vimrc
     perms: '0644'
 
   nano:

@@ -16,7 +16,7 @@ my_bashrc: |
   # ===============================
   alias ..='cd ..'
   alias ...='cd ../..'
-  alias avc='ausearch -m avc -ts recent | aureport -a' 
+  alias avc='ausearch -m avc -ts recent | aureport -a'
   alias decomment='egrep -v "^[[:space:]]*((#|;|//).*)?$" '
   alias please='sudo !!'
 
@@ -146,9 +146,9 @@ my_bashrc: |
     fi
   }
 
-  load_completion oc
-  load_completion kubectl
-  load_completion virtctl
-  load_completion helm
+  for i in oc kubectl virtctl helm
+    do
+      load_completion $i
+    done
 
   {% endraw %}
