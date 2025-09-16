@@ -13,10 +13,6 @@ repo_list:
   - https://github.com/dense-analysis/ale.git
 
 config_files:
-  vim:
-    file: vimrc
-    dest: /etc/vimrc
-    perms: '0644'
 
   nano:
     file: nanorc
