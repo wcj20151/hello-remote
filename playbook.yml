@@ -144,9 +144,9 @@
       when: "'current 1920 x 1080' not in current_resolution['stdout']"
       ansible.builtin.command: xrandr --size 1920x1080
 
-    - name: Ensure firefox configuration tasks are included
-      ansible.builtin.include_tasks:
-        file: tasks/firefox.yml
+#    - name: Ensure firefox configuration tasks are included
+#      ansible.builtin.include_tasks:
+#        file: tasks/firefox.yml
 
     - name: Create an Alt + Tab alternative with Alt + q
       ansible.builtin.shell: >

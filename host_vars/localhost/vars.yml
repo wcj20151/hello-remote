@@ -11,6 +11,7 @@ repo_list:
   - https://github.com/Yggdroot/indentLine.git
   - https://github.com/pedrohdz/vim-yaml-folds.git
   - https://github.com/dense-analysis/ale.git
+  - https://tpope.io/vim/commentary.git
 
 config_files:
 
