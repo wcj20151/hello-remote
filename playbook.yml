@@ -88,12 +88,6 @@
         block: "{{ my_bashrc }}"
         state: present
 
-    - name: Ensure /etc/vimrc is configured
-      become: true
-      ansible.builtin.copy:
-        src: vimrc
-        dest: /etc/vimrc
-
     - name: Ensure ~/.ssh/config is configured
       ansible.builtin.blockinfile:
         path: ~/.ssh/config
