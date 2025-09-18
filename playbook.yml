@@ -32,9 +32,7 @@
     - name: Ensure needed packages are installed
       become: true
       ansible.builtin.dnf:
-        name:
-          - sqlite
-          - "https://gitlab.com/gitlab-org/cli/-/releases/v1.47.0/downloads/glab_1.47.0_linux_amd64.rpm"
+        name: "{{ rpm_packages }}"
         state: installed
         disable_gpg_check: true
 
@@ -46,29 +44,26 @@
 
     - name: Ensure needed python packages are installed
       ansible.builtin.pip:
-        name: yamllint
+        name: "{{ python_packages }}"
         state: present
         extra_args: --user
 
-    - name: Ensure needed directories are present
-      loop: "{{ dir_list }}"
+    - name: Ensure needed system directories are present
+      become: true
+      loop: "{{ system_dir_list }}"
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
 
-    - name: Ensure pathogen is downloaded
-      ansible.builtin.get_url:
-        url: https://tpo.pe/pathogen.vim
-        dest: ~/.vim/autoload/pathogen.vim
-
     - name: Ensure plugin repos are cloned
-      loop: "{{ repo_list }}"
+      become: true
+      loop: "{{ vim_plugins_list }}"
       ansible.builtin.git:
         repo: "{{ item }}"
-        dest: ~/.vim/bundle/{{ item.split('/')[-1] | regex_replace('\.git$') }}
+        dest: /usr/share/vim/vimfiles/pack/vendor/start/{{ item.split('/')[-1] | regex_replace('\.git$') }}
 
     - name: Render terminal profile template
-      notify: Reload terminal 
+      notify: Reload terminal
       ansible.builtin.template:
         src: terminal_profile.j2
         dest: /var/tmp/terminal_profile

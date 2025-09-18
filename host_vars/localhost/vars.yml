@@ -1,17 +1,25 @@
-ansible_python_interpreter: /usr/bin/python3 
+ansible_python_interpreter: /usr/bin/python3
 ansible_become_password: student
 
-dir_list:
-  - ~/.vim/autoload
-  - ~/.vim/bundle
-  - ~/.config/yamllint
-  - ~/bin
+rpm_packages:
+  - "https://gitlab.com/gitlab-org/cli/-/releases/v1.47.0/downloads/glab_1.47.0_linux_amd64.rpm"
+  - sqlite
 
-repo_list:
+python_packages:
+  - yamllint
+  - ansible-lint
+
+system_dir_list:
+  - /usr/share/vim/vimfiles/pack/vendor/start
+  - /usr/share/vim/vimfiles/pack/vendor/opt
+
+vim_plugins_list:
   - https://github.com/Yggdroot/indentLine.git
   - https://github.com/pedrohdz/vim-yaml-folds.git
   - https://github.com/dense-analysis/ale.git
   - https://tpope.io/vim/commentary.git
+  - https://github.com/vim-airline/vim-airline.git
+  - https://github.com/pearofducks/ansible-vim.git
 
 config_files:
 
@@ -23,11 +31,6 @@ config_files:
   nano:
     file: nanorc
     dest: ~/.nanorc
-    perms: '0644'
-
-  yamllint:
-    file: config
-    dest: ~/.config/yamllint/config
     perms: '0644'
 
   tmux:
@@ -50,6 +53,6 @@ config_files:
     dest: ~/.ansible-navigator.yml
     perms: '0644'
 
-regularfont_uuid: "{{ lookup('pipe', 'uuidgen') }}" 
-mediumfont_uuid: "{{ lookup('pipe', 'uuidgen') }}"
-largefont_uuid: "{{ lookup('pipe', 'uuidgen') }}"
+regularfont_uuid: F69A6B60-AD40-4530-84E1-F8260A26B40C
+mediumfont_uuid: 76A4B99C-AFAC-4DE5-B0B2-C433303F1699
+largefont_uuid: F28FF536-5DA1-4C8B-BE71-B38F5B51653F

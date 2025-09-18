@@ -28,6 +28,7 @@ my_bashrc: |
   alias mcl="oc login -u admin -p redhatocp https://api.ocp4-mng.example.com:6443"
   alias dl="oc login -u developer -p developer https://api.ocp4.example.com:6443"
   alias al="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
+  alias vl="oc login -u vt-admin -p vt-redhatocp https://api.ocp4.example.com:6443"
   alias clustercheck="ssh lab@utility ./wait.sh"
   alias events="oc get events --sort-by='.lastTimestamp' -n \$1"
   alias podsw="oc get pods -o wide -n \$1"
@@ -37,8 +38,8 @@ my_bashrc: |
   alias ocg='oc get'
   alias ocl='oc logs'
   alias vcon='virtctl console'
-  alias showtaints='oc get nodes -o jsonpath="{range .items[*]}{.metadata.name}{\"\t\"}{range $i, $t := .spec.taints}{if $i}{\",\"}{end}{$t.key}:{$t.value}:{$t.effect}{end}{\"\n\"}{end}"'
-  alias showpods='oc get pods -A -o custom-columns="NAMESPACE:.metadata.namespace,POD:.metadata.name,NODE:.spec.nodeName,READY:.status.containerStatuses[*].ready" --no-headers'
+  alias showtaints="oc get nodes -o jsonpath='{range .items[*]}{.metadata.name}{\"\t\"}{range .spec.taints[*]}{.key}:{.value}:{.effect}{\" \"}{end}{\"\n\"}{end}'"
+  alias showpods='oc get pods -A -o custom-columns="NAMESPACE:.metadata.namespace,POD:.metadata.name,NODE:.spec.nodeName,READY:.status.containerStatuses[*].ready"'
   alias showcapacity='oc get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu,Memory:.status.capacity.memory'
   alias showallocatable='oc get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.allocatable.cpu,Memory:.status.allocatable.memory'
 
