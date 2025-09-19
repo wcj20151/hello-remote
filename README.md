@@ -56,7 +56,7 @@ These settings benefit all users, regardless of technology focus.
 
 Shows the current OpenShift project when logged in:
 ```bash
-[user@host folder (my-namespace)]$
+[user@host folder (my-namespace)] $
 ```
 ---
 
@@ -112,6 +112,11 @@ Auto-generated in `~/.ssh/config`:
 
 ```ssh
 Host vm/*
+    ProxyCommand virtctl port-forward --stdio=true %h %p
+    IdentityFile ~/.ssh/lab_rsa
+    User cloud-user
+
+Host vmi/*
     ProxyCommand virtctl port-forward --stdio=true %h %p
     IdentityFile ~/.ssh/lab_rsa
     User cloud-user
