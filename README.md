@@ -1,6 +1,8 @@
 ## Contributing
 
-If you have ideas or requests - mail me at rdacosta@redhat.com
+🔗 https://gitlab.com/rgdacosta/classroom_env/-/wikis/home
+
+✉️ If you have ideas or requests - mail me at rdacosta@redhat.com
 
 If you fancy contributing:
 
