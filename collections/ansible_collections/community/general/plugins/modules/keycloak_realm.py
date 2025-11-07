@@ -39,8 +39,8 @@ options:
   state:
     description:
       - State of the realm.
-      - On V(present), the realm will be created (or updated if it exists already).
-      - On V(absent), the realm will be removed if it exists.
+      - On V(present), the realm is created (or updated if it exists already).
+      - On V(absent), the realm is removed if it exists.
     choices: ['present', 'absent']
     default: 'present'
     type: str
@@ -141,6 +141,14 @@ options:
     aliases:
       - bruteForceProtected
     type: bool
+  brute_force_strategy:
+    description:
+      - The realm brute force strategy.
+    aliases:
+      - bruteForceStrategy
+    choices: ['LINEAR', 'MULTIPLE']
+    type: str
+    version_added: 11.2.0
   client_authentication_flow:
     description:
       - The realm client authentication flow.
@@ -302,6 +310,13 @@ options:
     aliases:
       - maxFailureWaitSeconds
     type: int
+  max_temporary_lockouts:
+    description:
+      - The realm max temporary lockouts.
+    aliases:
+      - maxTemporaryLockouts
+    type: int
+    version_added: 11.2.0
   minimum_quick_login_wait_seconds:
     description:
       - The realm minimum quick login wait in seconds.
@@ -510,6 +525,208 @@ options:
     aliases:
       - waitIncrementSeconds
     type: int
+  client_session_idle_timeout:
+    description:
+      - All Clients will inherit from this setting, time a session is allowed to be idle before it expires.
+    aliases:
+      - clientSessionIdleTimeout
+    type: int
+    version_added: 11.2.0
+  client_session_max_lifespan:
+    description:
+      - All Clients will inherit from this setting, max time before a session is expired.
+    aliases:
+      - clientSessionMaxLifespan
+    type: int
+    version_added: 11.2.0
+  client_offline_session_idle_timeout:
+    description:
+      - All Clients will inherit from this setting, time an offline session is allowed to be idle before it expires.
+    aliases:
+      - clientOfflineSessionIdleTimeout
+    type: int
+    version_added: 11.2.0
+  client_offline_session_max_lifespan:
+    description:
+      - All Clients will inherit from this setting, max time before an offline session is expired regardless of activity.
+    aliases:
+      - clientOfflineSessionMaxLifespan
+    type: int
+    version_added: 11.2.0
+  oauth2_device_code_lifespan:
+    description:
+      - Max time before the device code and user code are expired.
+    aliases:
+      - oauth2DeviceCodeLifespan
+    type: int
+    version_added: 11.2.0
+  oauth2_device_polling_interval:
+    description:
+      - The minimum amount of time in seconds that the client should wait between polling requests to the token endpoint.
+    aliases:
+      - oauth2DevicePollingInterval
+    type: int
+    version_added: 11.2.0
+  web_authn_policy_rp_entity_name:
+    description:
+      - WebAuthn Relying Party Entity Name.
+    aliases:
+      - webAuthnPolicyRpEntityName
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_signature_algorithms:
+    description:
+      - List of acceptable WebAuthn signature algorithms.
+    aliases:
+      - webAuthnPolicySignatureAlgorithms
+    type: list
+    version_added: 11.3.0
+    elements: str
+  web_authn_policy_rp_id:
+    description:
+      - WebAuthn Relying Party ID (domain). Empty string means use request host.
+    aliases:
+      - webAuthnPolicyRpId
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_attestation_conveyance_preference:
+    description:
+      - Attestation conveyance preference for WebAuthn.
+    aliases:
+      - webAuthnPolicyAttestationConveyancePreference
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_authenticator_attachment:
+    description:
+      - Authenticator attachment preference for WebAuthn authenticators.
+    aliases:
+      - webAuthnPolicyAuthenticatorAttachment
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_require_resident_key:
+    description:
+      - Whether resident keys are required for WebAuthn (Yes/No/not specified).
+    aliases:
+      - webAuthnPolicyRequireResidentKey
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_user_verification_requirement:
+    description:
+      - User verification requirement for WebAuthn.
+    aliases:
+      - webAuthnPolicyUserVerificationRequirement
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_create_timeout:
+    description:
+      - Timeout for WebAuthn credential creation (ms).
+    aliases:
+      - webAuthnPolicyCreateTimeout
+    type: int
+    version_added: 11.3.0
+  web_authn_policy_avoid_same_authenticator_register:
+    description:
+      - Avoid registering the same authenticator multiple times.
+    aliases:
+      - webAuthnPolicyAvoidSameAuthenticatorRegister
+    type: bool
+    version_added: 11.3.0
+  web_authn_policy_acceptable_aaguids:
+    description:
+      - List of acceptable AAGUIDs for WebAuthn authenticators.
+    aliases:
+      - webAuthnPolicyAcceptableAaguids
+    type: list
+    version_added: 11.3.0
+    elements: str
+  web_authn_policy_extra_origins:
+    description:
+      - Additional acceptable origins for WebAuthn requests.
+    aliases:
+      - webAuthnPolicyExtraOrigins
+    type: list
+    version_added: 11.3.0
+    elements: str
+  web_authn_policy_passwordless_rp_entity_name:
+    description:
+      - WebAuthn Passwordless Relying Party Entity Name.
+    aliases:
+      - webAuthnPolicyPasswordlessRpEntityName
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_passwordless_signature_algorithms:
+    description:
+      - List of acceptable WebAuthn signature algorithms for passwordless.
+    aliases:
+      - webAuthnPolicyPasswordlessSignatureAlgorithms
+    type: list
+    version_added: 11.3.0
+    elements: str
+  web_authn_policy_passwordless_rp_id:
+    description:
+      - WebAuthn Passwordless Relying Party ID (domain).
+    aliases:
+      - webAuthnPolicyPasswordlessRpId
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_passwordless_attestation_conveyance_preference:
+    description:
+      - Attestation conveyance preference for WebAuthn passwordless.
+    aliases:
+      - webAuthnPolicyPasswordlessAttestationConveyancePreference
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_passwordless_authenticator_attachment:
+    description:
+      - Authenticator attachment for WebAuthn passwordless.
+    aliases:
+      - webAuthnPolicyPasswordlessAuthenticatorAttachment
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_passwordless_require_resident_key:
+    description:
+      - Whether resident keys are required for WebAuthn passwordless (V(Yes)/V(No)/V(not specified)).
+    aliases:
+      - webAuthnPolicyPasswordlessRequireResidentKey
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_passwordless_user_verification_requirement:
+    description:
+      - User verification requirement for WebAuthn passwordless.
+    aliases:
+      - webAuthnPolicyPasswordlessUserVerificationRequirement
+    type: str
+    version_added: 11.3.0
+  web_authn_policy_passwordless_create_timeout:
+    description:
+      - Timeout for WebAuthn passwordless credential creation (ms).
+    aliases:
+      - webAuthnPolicyPasswordlessCreateTimeout
+    type: int
+    version_added: 11.3.0
+  web_authn_policy_passwordless_avoid_same_authenticator_register:
+    description:
+      - Avoid registering the same authenticator multiple times for passwordless.
+    aliases:
+      - webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister
+    type: bool
+    version_added: 11.3.0
+  web_authn_policy_passwordless_acceptable_aaguids:
+    description:
+      - List of acceptable AAGUIDs for WebAuthn passwordless authenticators.
+    aliases:
+      - webAuthnPolicyPasswordlessAcceptableAaguids
+    type: list
+    version_added: 11.3.0
+    elements: str
+  web_authn_policy_passwordless_extra_origins:
+    description:
+      - Additional acceptable origins for WebAuthn passwordless requests.
+    aliases:
+      - webAuthnPolicyPasswordlessExtraOrigins
+    type: list
+    version_added: 11.3.0
+    elements: str
 
 extends_documentation_fragment:
   - community.general.keycloak
@@ -553,19 +770,31 @@ proposed:
   description: Representation of proposed realm.
   returned: always
   type: dict
-  sample: {realm: "test"}
+  sample: {"realm": "test"}
 
 existing:
   description: Representation of existing realm (sample is truncated).
   returned: always
   type: dict
-  sample: {"adminUrl": "http://www.example.com/admin_url", "attributes": {"request.object.signature.alg": "RS256"}}
+  sample:
+    {
+      "adminUrl": "http://www.example.com/admin_url",
+      "attributes": {
+        "request.object.signature.alg": "RS256"
+      }
+    }
 
 end_state:
   description: Representation of realm after module execution (sample is truncated).
   returned: on success
   type: dict
-  sample: {"adminUrl": "http://www.example.com/admin_url", "attributes": {"request.object.signature.alg": "RS256"}}
+  sample:
+    {
+      "adminUrl": "http://www.example.com/admin_url",
+      "attributes": {
+        "request.object.signature.alg": "RS256"
+      }
+    }
 """
 
 from ansible_collections.community.general.plugins.module_utils.identity.keycloak.keycloak import KeycloakAPI, camel, \
@@ -638,6 +867,7 @@ def main():
         browser_flow=dict(type='str', aliases=['browserFlow']),
         browser_security_headers=dict(type='dict', aliases=['browserSecurityHeaders']),
         brute_force_protected=dict(type='bool', aliases=['bruteForceProtected']),
+        brute_force_strategy=dict(type='str', choices=['LINEAR', 'MULTIPLE'], aliases=['bruteForceStrategy']),
         client_authentication_flow=dict(type='str', aliases=['clientAuthenticationFlow']),
         client_scope_mappings=dict(type='dict', aliases=['clientScopeMappings']),
         default_default_client_scopes=dict(type='list', elements='str', aliases=['defaultDefaultClientScopes']),
@@ -664,6 +894,7 @@ def main():
         login_with_email_allowed=dict(type='bool', aliases=['loginWithEmailAllowed']),
         max_delta_time_seconds=dict(type='int', aliases=['maxDeltaTimeSeconds']),
         max_failure_wait_seconds=dict(type='int', aliases=['maxFailureWaitSeconds']),
+        max_temporary_lockouts=dict(type='int', aliases=['maxTemporaryLockouts']),
         minimum_quick_login_wait_seconds=dict(type='int', aliases=['minimumQuickLoginWaitSeconds']),
         not_before=dict(type='int', aliases=['notBefore']),
         offline_session_idle_timeout=dict(type='int', aliases=['offlineSessionIdleTimeout']),
@@ -698,6 +929,48 @@ def main():
         user_managed_access_allowed=dict(type='bool', aliases=['userManagedAccessAllowed']),
         verify_email=dict(type='bool', aliases=['verifyEmail']),
         wait_increment_seconds=dict(type='int', aliases=['waitIncrementSeconds']),
+        client_session_idle_timeout=dict(type='int', aliases=['clientSessionIdleTimeout']),
+        client_session_max_lifespan=dict(type='int', aliases=['clientSessionMaxLifespan']),
+        client_offline_session_idle_timeout=dict(type='int', aliases=['clientOfflineSessionIdleTimeout']),
+        client_offline_session_max_lifespan=dict(type='int', aliases=['clientOfflineSessionMaxLifespan']),
+        oauth2_device_code_lifespan=dict(type='int', aliases=['oauth2DeviceCodeLifespan']),
+        oauth2_device_polling_interval=dict(type='int', aliases=['oauth2DevicePollingInterval']),
+        web_authn_policy_rp_entity_name=dict(type='str', aliases=['webAuthnPolicyRpEntityName']),
+        web_authn_policy_signature_algorithms=dict(type='list', elements='str', aliases=['webAuthnPolicySignatureAlgorithms']),
+        web_authn_policy_rp_id=dict(type='str', aliases=['webAuthnPolicyRpId']),
+        web_authn_policy_attestation_conveyance_preference=dict(type='str', aliases=['webAuthnPolicyAttestationConveyancePreference']),
+        web_authn_policy_authenticator_attachment=dict(type='str', aliases=['webAuthnPolicyAuthenticatorAttachment']),
+        web_authn_policy_require_resident_key=dict(type='str', aliases=['webAuthnPolicyRequireResidentKey'], no_log=False),
+        web_authn_policy_user_verification_requirement=dict(type='str', aliases=['webAuthnPolicyUserVerificationRequirement']),
+        web_authn_policy_create_timeout=dict(type='int', aliases=['webAuthnPolicyCreateTimeout']),
+        web_authn_policy_avoid_same_authenticator_register=dict(type='bool', aliases=['webAuthnPolicyAvoidSameAuthenticatorRegister']),
+        web_authn_policy_acceptable_aaguids=dict(type='list', elements='str', aliases=['webAuthnPolicyAcceptableAaguids']),
+        web_authn_policy_extra_origins=dict(type='list', elements='str', aliases=['webAuthnPolicyExtraOrigins']),
+        web_authn_policy_passwordless_rp_entity_name=dict(type='str', aliases=['webAuthnPolicyPasswordlessRpEntityName']),
+        web_authn_policy_passwordless_signature_algorithms=dict(
+            type='list', elements='str', aliases=['webAuthnPolicyPasswordlessSignatureAlgorithms'], no_log=False
+        ),
+        web_authn_policy_passwordless_rp_id=dict(type='str', aliases=['webAuthnPolicyPasswordlessRpId']),
+        web_authn_policy_passwordless_attestation_conveyance_preference=dict(
+            type='str', aliases=['webAuthnPolicyPasswordlessAttestationConveyancePreference'], no_log=False
+        ),
+        web_authn_policy_passwordless_authenticator_attachment=dict(
+            type='str', aliases=['webAuthnPolicyPasswordlessAuthenticatorAttachment'], no_log=False
+        ),
+        web_authn_policy_passwordless_require_resident_key=dict(
+            type='str', aliases=['webAuthnPolicyPasswordlessRequireResidentKey'], no_log=False
+        ),
+        web_authn_policy_passwordless_user_verification_requirement=dict(
+            type='str', aliases=['webAuthnPolicyPasswordlessUserVerificationRequirement'], no_log=False
+        ),
+        web_authn_policy_passwordless_create_timeout=dict(type='int', aliases=['webAuthnPolicyPasswordlessCreateTimeout']),
+        web_authn_policy_passwordless_avoid_same_authenticator_register=dict(type='bool', aliases=['webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister']),
+        web_authn_policy_passwordless_acceptable_aaguids=dict(
+            type='list', elements='str', aliases=['webAuthnPolicyPasswordlessAcceptableAaguids'], no_log=False
+        ),
+        web_authn_policy_passwordless_extra_origins=dict(
+            type='list', elements='str', aliases=['webAuthnPolicyPasswordlessExtraOrigins'], no_log=False
+        ),
     )
 
     argument_spec.update(meta_args)
@@ -705,8 +978,8 @@ def main():
     module = AnsibleModule(argument_spec=argument_spec,
                            supports_check_mode=True,
                            required_one_of=([['id', 'realm', 'enabled'],
-                                             ['token', 'auth_realm', 'auth_username', 'auth_password']]),
-                           required_together=([['auth_realm', 'auth_username', 'auth_password']]),
+                                             ['token', 'auth_realm', 'auth_username', 'auth_password', 'auth_client_id', 'auth_client_secret']]),
+                           required_together=([['auth_username', 'auth_password']]),
                            required_by={'refresh_token': 'auth_realm'},
                            )
 

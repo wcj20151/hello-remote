@@ -20,12 +20,15 @@ description:
 extends_documentation_fragment:
   - community.general.scaleway
   - community.general.attributes
+  - community.general.scaleway.actiongroup_scaleway
 
 attributes:
   check_mode:
     support: full
   diff_mode:
     support: none
+  action_group:
+    version_added: 11.3.0
 
 options:
   state:
@@ -51,12 +54,17 @@ options:
     choices:
       - ams1
       - EMEA-NL-EVS
+      - ams2
+      - ams3
       - par1
       - EMEA-FR-PAR1
       - par2
       - EMEA-FR-PAR2
+      - par3
       - waw1
       - EMEA-PL-WAW1
+      - waw2
+      - waw3
 
   id:
     type: str
@@ -90,23 +98,24 @@ EXAMPLES = r"""
 
 RETURN = r"""
 data:
-    description: This is only present when O(state=present).
-    returned: when O(state=present)
-    type: dict
-    sample: {
+  description: This is only present when O(state=present).
+  returned: when O(state=present)
+  type: dict
+  sample:
+    {
       "ips": [
         {
-            "organization": "951df375-e094-4d26-97c1-ba548eeb9c42",
-            "reverse": null,
-            "id": "dd9e8df6-6775-4863-b517-e0b0ee3d7477",
-            "server": {
-                "id": "3f1568ca-b1a2-4e98-b6f7-31a0588157f1",
-                "name": "ansible_tuto-1"
-            },
-            "address": "212.47.232.136"
+          "organization": "951df375-e094-4d26-97c1-ba548eeb9c42",
+          "reverse": null,
+          "id": "dd9e8df6-6775-4863-b517-e0b0ee3d7477",
+          "server": {
+            "id": "3f1568ca-b1a2-4e98-b6f7-31a0588157f1",
+            "name": "ansible_tuto-1"
+          },
+          "address": "212.47.232.136"
         }
-    ]
-  }
+      ]
+    }
 """
 
 from ansible_collections.community.general.plugins.module_utils.scaleway import SCALEWAY_LOCATION, scaleway_argument_spec, Scaleway

@@ -12,19 +12,19 @@ class ModuleDocFragment(object):
 options:
   venv:
     description:
-      - Use the the Python interpreter from this virtual environment.
+      - Use the Python interpreter from this virtual environment.
       - Pass the path to the root of the virtualenv, not the C(bin/) directory nor the C(python) executable.
     type: path
   settings:
     description:
       - Specifies the settings module to use.
-      - The value will be passed as is to the C(--settings) argument in C(django-admin).
+      - The value is passed as is to the C(--settings) argument in C(django-admin).
     type: str
     required: true
   pythonpath:
     description:
       - Adds the given filesystem path to the Python import search path.
-      - The value will be passed as is to the C(--pythonpath) argument in C(django-admin).
+      - The value is passed as is to the C(--pythonpath) argument in C(django-admin).
     type: path
   traceback:
     description:
@@ -58,4 +58,25 @@ options:
       - Specify the database to be used.
     type: str
     default: default
+"""
+
+    DATA = r"""
+options:
+  excludes:
+    description:
+      - Applications or models to be excluded.
+      - Format must be either V(app_label) or V(app_label.ModelName).
+    type: list
+    elements: str
+  format:
+    description:
+      - Serialization format of the output data.
+    type: str
+    default: json
+    choices: [xml, json, jsonl, yaml]
+notes:
+  - As it is now, the module is B(not idempotent). Ensuring idempotency for this case can be a bit tricky, because it would
+    amount to ensuring beforehand that all the data in the fixture file is already in the database, which is not a trivial feat.
+    Unfortunately, neither C(django loaddata) nor C(django dumpdata) have a C(--dry-run) option, so the only way to know whether
+    there is a change or not is to actually load or dump the data.
 """

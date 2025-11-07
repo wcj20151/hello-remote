@@ -75,8 +75,8 @@ options:
   managed_filters_merge_mode:
     type: str
     description:
-      - In merge mode existing categories are kept or updated, new categories are added.
-      - In replace mode all categories will be replaced with the supplied O(managed_filters).
+      - In V(merge) mode existing categories are kept or updated, new categories are added.
+      - In V(replace) mode all categories are replaced with the supplied O(managed_filters).
     choices: [merge, replace]
     default: replace
   belongsto_filters:
@@ -251,7 +251,7 @@ class ManageIQgroup(object):
                 if not tenant_res:
                     self.module.fail_json(msg="Tenant '%s' not found in manageiq" % tenant_name)
                 if len(tenant_res) > 1:
-                    self.module.fail_json(msg="Multiple tenants found in manageiq with name '%s" % tenant_name)
+                    self.module.fail_json(msg="Multiple tenants found in manageiq with name '%s'" % tenant_name)
                 tenant = tenant_res[0]
                 return tenant
             else:
@@ -276,7 +276,7 @@ class ManageIQgroup(object):
                 if not role_res:
                     self.module.fail_json(msg="Role '%s' not found in manageiq" % role_name)
                 if len(role_res) > 1:
-                    self.module.fail_json(msg="Multiple roles found in manageiq with name '%s" % role_name)
+                    self.module.fail_json(msg="Multiple roles found in manageiq with name '%s'" % role_name)
                 return role_res[0]
             else:
                 # No role name or role id supplied
@@ -570,14 +570,14 @@ def main():
     argument_spec = dict(
         description=dict(required=True, type='str'),
         state=dict(choices=['absent', 'present'], default='present'),
-        role_id=dict(required=False, type='int'),
-        role=dict(required=False, type='str'),
-        tenant_id=dict(required=False, type='int'),
-        tenant=dict(required=False, type='str'),
-        managed_filters=dict(required=False, type='dict'),
-        managed_filters_merge_mode=dict(required=False, choices=['merge', 'replace'], default='replace'),
-        belongsto_filters=dict(required=False, type='list', elements='str'),
-        belongsto_filters_merge_mode=dict(required=False, choices=['merge', 'replace'], default='replace'),
+        role_id=dict(type='int'),
+        role=dict(type='str'),
+        tenant_id=dict(type='int'),
+        tenant=dict(type='str'),
+        managed_filters=dict(type='dict'),
+        managed_filters_merge_mode=dict(choices=['merge', 'replace'], default='replace'),
+        belongsto_filters=dict(type='list', elements='str'),
+        belongsto_filters_merge_mode=dict(choices=['merge', 'replace'], default='replace'),
     )
     # add the manageiq connection arguments to the arguments
     argument_spec.update(manageiq_argument_spec())

@@ -126,30 +126,31 @@ RETURN = r"""
 # Returns the downtime JSON dictionary from the API response under the C(downtime) key.
 # See https://docs.datadoghq.com/api/v1/downtimes/#schedule-a-downtime for more details.
 downtime:
-    description: The downtime returned by the API.
-    type: dict
-    returned: always
-    sample: {
-        "active": true,
-        "canceled": null,
-        "creator_id": 1445416,
-        "disabled": false,
-        "downtime_type": 2,
-        "end": null,
-        "id": 1055751000,
-        "message": "Downtime for foo:bar",
-        "monitor_id": null,
-        "monitor_tags": [
-            "foo:bar"
-        ],
-        "parent_id": null,
-        "recurrence": null,
-        "scope": [
-            "test"
-        ],
-        "start": 1607015009,
-        "timezone": "UTC",
-        "updater_id": null
+  description: The downtime returned by the API.
+  type: dict
+  returned: always
+  sample:
+    {
+      "active": true,
+      "canceled": null,
+      "creator_id": 1445416,
+      "disabled": false,
+      "downtime_type": 2,
+      "end": null,
+      "id": 1055751000,
+      "message": "Downtime for foo:bar",
+      "monitor_id": null,
+      "monitor_tags": [
+        "foo:bar"
+      ],
+      "parent_id": null,
+      "recurrence": null,
+      "scope": [
+        "test"
+      ],
+      "start": 1607015009,
+      "timezone": "UTC",
+      "updater_id": null
     }
 """
 
@@ -174,18 +175,18 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             api_key=dict(required=True, no_log=True),
-            api_host=dict(required=False, default="https://api.datadoghq.com"),
+            api_host=dict(default="https://api.datadoghq.com"),
             app_key=dict(required=True, no_log=True),
-            state=dict(required=False, choices=["present", "absent"], default="present"),
-            monitor_tags=dict(required=False, type="list", elements="str"),
-            scope=dict(required=False, type="list", elements="str"),
-            monitor_id=dict(required=False, type="int"),
-            downtime_message=dict(required=False, no_log=True),
-            start=dict(required=False, type="int"),
-            end=dict(required=False, type="int"),
-            timezone=dict(required=False, type="str"),
-            rrule=dict(required=False, type="str"),
-            id=dict(required=False, type="int"),
+            state=dict(choices=["present", "absent"], default="present"),
+            monitor_tags=dict(type="list", elements="str"),
+            scope=dict(type="list", elements="str"),
+            monitor_id=dict(type="int"),
+            downtime_message=dict(no_log=True),
+            start=dict(type="int"),
+            end=dict(type="int"),
+            timezone=dict(type="str"),
+            rrule=dict(type="str"),
+            id=dict(type="int"),
         )
     )
 

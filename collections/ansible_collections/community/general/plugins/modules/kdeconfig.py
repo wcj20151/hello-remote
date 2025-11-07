@@ -17,12 +17,12 @@ description:
 options:
   path:
     description:
-      - Path to the config file. If the file does not exist it will be created.
+      - Path to the config file. If the file does not exist it is created.
     type: path
     required: true
   kwriteconfig_path:
     description:
-      - Path to the kwriteconfig executable. If not specified, Ansible will try to discover it.
+      - Path to the kwriteconfig executable. If not specified, Ansible tries to discover it.
     type: path
   values:
     description:
@@ -141,7 +141,7 @@ def run_kwriteconfig(module, cmd, path, groups, key, value):
         else:
             args.append('false')
     else:
-        args.append(value)
+        args.extend(['--', value])
     module.run_command(args, check_rc=True)
 
 
@@ -257,7 +257,7 @@ def main():
     if module.params['kwriteconfig_path'] is not None:
         kwriteconfig = module.get_bin_path(module.params['kwriteconfig_path'], required=True)
     else:
-        for progname in ('kwriteconfig5', 'kwriteconfig', 'kwriteconfig4'):
+        for progname in ('kwriteconfig6', 'kwriteconfig5', 'kwriteconfig', 'kwriteconfig4'):
             kwriteconfig = module.get_bin_path(progname)
             if kwriteconfig is not None:
                 break

@@ -17,7 +17,7 @@ options:
   _uri:
     required: true
     description:
-      - Path in which the cache plugin will save the files.
+      - Path in which the cache plugin saves the files.
     env:
       - name: ANSIBLE_CACHE_PLUGIN_CONNECTION
     ini:
@@ -48,7 +48,6 @@ try:
 except ImportError:
     import pickle
 
-from ansible.module_utils.six import PY3
 from ansible.plugins.cache import BaseFileCacheModule
 
 
@@ -56,14 +55,12 @@ class CacheModule(BaseFileCacheModule):
     """
     A caching module backed by pickle files.
     """
+    _persistent = False  # prevent unnecessary JSON serialization and key munging
 
     def _load(self, filepath):
         # Pickle is a binary format
         with open(filepath, 'rb') as f:
-            if PY3:
-                return pickle.load(f, encoding='bytes')
-            else:
-                return pickle.load(f)
+            return pickle.load(f, encoding='bytes')
 
     def _dump(self, value, filepath):
         with open(filepath, 'wb') as f:

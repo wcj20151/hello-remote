@@ -104,6 +104,7 @@ URL_IDENTITY_PROVIDERS = "{url}/admin/realms/{realm}/identity-provider/instances
 URL_IDENTITY_PROVIDER = "{url}/admin/realms/{realm}/identity-provider/instances/{alias}"
 URL_IDENTITY_PROVIDER_MAPPERS = "{url}/admin/realms/{realm}/identity-provider/instances/{alias}/mappers"
 URL_IDENTITY_PROVIDER_MAPPER = "{url}/admin/realms/{realm}/identity-provider/instances/{alias}/mappers/{id}"
+URL_IDENTITY_PROVIDER_IMPORT = "{url}/admin/realms/{realm}/identity-provider/import-config"
 
 URL_COMPONENTS = "{url}/admin/realms/{realm}/components"
 URL_COMPONENT = "{url}/admin/realms/{realm}/components/{id}"
@@ -248,6 +249,29 @@ def _request_token_using_refresh_token(module_params):
     return _token_request(module_params, payload)
 
 
+def _request_token_using_client_credentials(module_params):
+    """ Obtains connection header with token for the authentication,
+    using the provided auth_client_id and auth_client_secret by grant_type
+    client_credentials. Ensure that the used client uses client authorization
+    with service account roles enabled and required service roles assigned.
+    :param module_params: parameters of the module. Must include 'auth_client_id'
+    and 'auth_client_secret'..
+    :return: connection header
+    """
+    client_id = module_params.get('auth_client_id')
+    client_secret = module_params.get('auth_client_secret')
+
+    temp_payload = {
+        'grant_type': 'client_credentials',
+        'client_id': client_id,
+        'client_secret': client_secret,
+    }
+    # Remove empty items, for instance missing client_secret
+    payload = {k: v for k, v in temp_payload.items() if v is not None}
+
+    return _token_request(module_params, payload)
+
+
 def get_token(module_params):
     """ Obtains connection header with token for the authentication,
     token already given or obtained from credentials
@@ -257,7 +281,13 @@ def get_token(module_params):
     token = module_params.get('token')
 
     if token is None:
-        token = _request_token_using_credentials(module_params)
+        auth_client_id = module_params.get('auth_client_id')
+        auth_client_secret = module_params.get('auth_client_secret')
+        auth_username = module_params.get('auth_username')
+        if auth_client_id is not None and auth_client_secret is not None and auth_username is None:
+            token = _request_token_using_client_credentials(module_params)
+        else:
+            token = _request_token_using_credentials(module_params)
 
     return {
         'Authorization': 'Bearer ' + token,
@@ -386,6 +416,21 @@ class KeycloakAPI(object):
                 self.restheaders['Authorization'] = 'Bearer ' + token
 
                 r = make_request_catching_401()
+
+        if isinstance(r, Exception):
+            # Try to re-auth with client_id and client_secret, if available
+            auth_client_id = self.module.params.get('auth_client_id')
+            auth_client_secret = self.module.params.get('auth_client_secret')
+            if auth_client_id is not None and auth_client_secret is not None:
+                try:
+                    token = _request_token_using_client_credentials(self.module.params)
+                    self.restheaders['Authorization'] = 'Bearer ' + token
+
+                    r = make_request_catching_401()
+                except KeycloakError as e:
+                    # Token refresh returns 400 if token is expired/invalid, so continue on if we get a 400
+                    if e.authError is not None and e.authError.code != 400:
+                        raise e
 
         if isinstance(r, Exception):
             # Either no re-auth options were available, or they all failed
@@ -1551,7 +1596,7 @@ class KeycloakAPI(object):
             if parent['subGroupCount'] == 0:
                 group_children = []
             else:
-                group_children_url = URL_GROUP_CHILDREN.format(url=self.baseurl, realm=realm, groupid=parent['id'])
+                group_children_url = URL_GROUP_CHILDREN.format(url=self.baseurl, realm=realm, groupid=parent['id']) + "?max=" + str(parent['subGroupCount'])
                 group_children = self._request_and_deserialize(group_children_url, method="GET")
             subgroups = group_children
         else:
@@ -1626,7 +1671,7 @@ class KeycloakAPI(object):
             return None
 
         for p in name_chain[1:]:
-            for sg in self.get_subgroups(tmp):
+            for sg in self.get_subgroups(tmp, realm):
                 pv, is_id = self._get_normed_group_parent(p)
 
                 if is_id:
@@ -1917,7 +1962,7 @@ class KeycloakAPI(object):
                             and composite["name"] == existing_composite["name"]):
                         composite_found = True
                         break
-            if (not composite_found and ('state' not in composite or composite['state'] == 'present')):
+            if not composite_found and ('state' not in composite or composite['state'] == 'present'):
                 if "client_id" in composite and composite['client_id'] is not None:
                     client_roles = self.get_client_roles(clientid=composite['client_id'], realm=realm)
                     for client_role in client_roles:
@@ -2224,6 +2269,23 @@ class KeycloakAPI(object):
         except Exception as e:
             self.fail_request(e, msg="Unable to add authenticationConfig %s: %s" % (executionId, str(e)))
 
+    def delete_authentication_config(self, configId, realm='master'):
+        """ Delete authenticator config
+
+        :param configId: id of authentication config
+        :param realm: realm of authentication config to be deleted
+        """
+        try:
+            # Send a DELETE request to remove the specified authentication config from the Keycloak server.
+            self._request(
+                URL_AUTHENTICATION_CONFIG.format(
+                    url=self.baseurl,
+                    realm=realm,
+                    id=configId),
+                method='DELETE')
+        except Exception as e:
+            self.fail_request(e, msg="Unable to delete authentication config %s: %s" % (configId, str(e)))
+
     def create_subflow(self, subflowName, flowAlias, realm='master', flowType='basic-flow'):
         """ Create new sublow on the flow
 
@@ -2519,6 +2581,23 @@ class KeycloakAPI(object):
             self.fail_request(e, msg='Could not obtain list of identity provider mappers for idp %s in realm %s: %s'
                                      % (alias, realm, str(e)))
 
+    def fetch_idp_endpoints_import_config_url(self, fromUrl, providerId='oidc', realm='master'):
+        """ Import an identity provider configuration through Keycloak server from a well-known URL.
+        :param fromUrl: URL to import the identity provider configuration from.
+        "param providerId: Provider ID of the identity provider to import, default 'oidc'.
+        :param realm: Realm
+        :return: IDP endpoins.
+        """
+        try:
+            payload = {
+                "providerId": providerId,
+                "fromUrl": fromUrl
+            }
+            idps_url = URL_IDENTITY_PROVIDER_IMPORT.format(url=self.baseurl, realm=realm)
+            return self._request_and_deserialize(idps_url, method='POST', data=json.dumps(payload))
+        except Exception as e:
+            self.fail_request(e, msg='Could not import the IdP config in realm %s: %s' % (realm, str(e)))
+
     def get_identity_provider_mapper(self, mid, alias, realm='master'):
         """ Fetch identity provider representation from a realm using the idp's alias.
         If the identity provider does not exist, None is returned.
@@ -2810,29 +2889,33 @@ class KeycloakAPI(object):
 
     def get_user_groups(self, user_id, realm='master'):
         """
-        Get groups for a user.
+        Get the group names for a user.
         :param user_id: User ID
         :param realm: Realm
-        :return: Representation of the client groups.
+        :return: The client group names as a list of strings.
+        """
+        user_groups = self.get_user_group_details(user_id, realm)
+        return [user_group['name'] for user_group in user_groups if 'name' in user_group]
+
+    def get_user_group_details(self, user_id, realm='master'):
+        """
+        Get the group details for a user.
+        :param user_id: User ID
+        :param realm: Realm
+        :return: The client group details as a list of dictionaries.
         """
         try:
-            groups = []
-            user_groups_url = URL_USER_GROUPS.format(
-                url=self.baseurl,
-                realm=realm,
-                id=user_id)
-            user_groups = json.load(
-                self._request(
-                    user_groups_url,
-                    method='GET'))
-            for user_group in user_groups:
-                groups.append(user_group["name"])
-            return groups
+            user_groups_url = URL_USER_GROUPS.format(url=self.baseurl, realm=realm, id=user_id)
+            return self._request_and_deserialize(user_groups_url, method='GET')
         except Exception as e:
             self.fail_request(e, msg='Could not get groups for user %s in realm %s: %s'
                                      % (user_id, realm, str(e)))
 
     def add_user_in_group(self, user_id, group_id, realm='master'):
+        """DEPRECATED: Call add_user_to_group(...) instead. This method is scheduled for removal in community.general 13.0.0."""
+        return self.add_user_to_group(user_id, group_id, realm)
+
+    def add_user_to_group(self, user_id, group_id, realm='master'):
         """
         Add a user to a group.
         :param user_id: User ID
@@ -2850,7 +2933,7 @@ class KeycloakAPI(object):
                 user_group_url,
                 method='PUT')
         except Exception as e:
-            self.fail_request(e, msg='Could not add user %s in group %s in realm %s: %s'
+            self.fail_request(e, msg='Could not add user %s to group %s in realm %s: %s'
                                      % (user_id, group_id, realm, str(e)))
 
     def remove_user_from_group(self, user_id, group_id, realm='master'):
@@ -2881,49 +2964,72 @@ class KeycloakAPI(object):
         :param realm: Realm
         :return: True if group membership has been changed. False Otherwise.
         """
-        changed = False
         try:
-            user_existing_groups = self.get_user_groups(
-                user_id=userrep['id'],
-                realm=realm)
-            groups_to_add_and_remove = self.extract_groups_to_add_to_and_remove_from_user(groups)
-            # If group membership need to be changed
-            if not is_struct_included(groups_to_add_and_remove['add'], user_existing_groups):
-                # Get available groups in the realm
-                realm_groups = self.get_groups(realm=realm)
-                for realm_group in realm_groups:
-                    if "name" in realm_group and realm_group["name"] in groups_to_add_and_remove['add']:
-                        self.add_user_in_group(
-                            user_id=userrep["id"],
-                            group_id=realm_group["id"],
-                            realm=realm)
-                        changed = True
-                    elif "name" in realm_group and realm_group['name'] in groups_to_add_and_remove['remove']:
-                        self.remove_user_from_group(
-                            user_id=userrep['id'],
-                            group_id=realm_group['id'],
-                            realm=realm)
-                        changed = True
-            return changed
+            groups_to_add, groups_to_remove = self.extract_groups_to_add_to_and_remove_from_user(groups)
+            if not groups_to_add and not groups_to_remove:
+                return False
+
+            user_groups = self.get_user_group_details(user_id=userrep['id'], realm=realm)
+            user_group_names = [user_group['name'] for user_group in user_groups if 'name' in user_group]
+            user_group_paths = [user_group['path'] for user_group in user_groups if 'path' in user_group]
+
+            groups_to_add = [group_to_add for group_to_add in groups_to_add
+                             if group_to_add not in user_group_names and group_to_add not in user_group_paths]
+            groups_to_remove = [group_to_remove for group_to_remove in groups_to_remove
+                                if group_to_remove in user_group_names or group_to_remove in user_group_paths]
+            if not groups_to_add and not groups_to_remove:
+                return False
+
+            for group_to_add in groups_to_add:
+                realm_group = self.find_group_by_path(group_to_add, realm=realm)
+                if realm_group:
+                    self.add_user_to_group(user_id=userrep['id'], group_id=realm_group['id'], realm=realm)
+
+            for group_to_remove in groups_to_remove:
+                realm_group = self.find_group_by_path(group_to_remove, realm=realm)
+                if realm_group:
+                    self.remove_user_from_group(user_id=userrep['id'], group_id=realm_group['id'], realm=realm)
+
+            return True
         except Exception as e:
             self.module.fail_json(msg='Could not update group membership for user %s in realm %s: %s'
-                                      % (userrep['id]'], realm, str(e)))
+                                      % (userrep['username'], realm, e))
 
     def extract_groups_to_add_to_and_remove_from_user(self, groups):
-        groups_extract = {}
         groups_to_add = []
         groups_to_remove = []
-        if isinstance(groups, list) and len(groups) > 0:
+        if isinstance(groups, list):
             for group in groups:
                 group_name = group['name'] if isinstance(group, dict) and 'name' in group else group
-                if isinstance(group, dict) and ('state' not in group or group['state'] == 'present'):
-                    groups_to_add.append(group_name)
-                else:
-                    groups_to_remove.append(group_name)
-        groups_extract['add'] = groups_to_add
-        groups_extract['remove'] = groups_to_remove
+                if isinstance(group, dict):
+                    if 'state' not in group or group['state'] == 'present':
+                        groups_to_add.append(group_name)
+                    else:
+                        groups_to_remove.append(group_name)
+        return groups_to_add, groups_to_remove
 
-        return groups_extract
+    def find_group_by_path(self, target, realm='master'):
+        """
+        Finds a realm group by path, e.g. '/my/group'.
+        The path is formed by prepending a '/' character to `target` unless it's already present.
+        This adds support for finding top level groups by name and subgroups by path.
+        """
+        groups = self.get_groups(realm=realm)
+        path = target if target.startswith('/') else '/' + target
+        for segment in path.split('/'):
+            if not segment:
+                continue
+            abort = True
+            for group in groups:
+                if group['path'] == path:
+                    return self.get_group_by_groupid(group['id'], realm=realm)
+                if group['name'] == segment:
+                    groups = self.get_subgroups(group, realm=realm)
+                    abort = False
+                    break
+            if abort:
+                break
+        return None
 
     def convert_user_group_list_of_str_to_list_of_dict(self, groups):
         list_of_groups = []

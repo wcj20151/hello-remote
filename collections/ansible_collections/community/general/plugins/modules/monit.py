@@ -35,8 +35,8 @@ options:
     type: str
   timeout:
     description:
-      - If there are pending actions for the service monitored by monit, then Ansible will check for up to this many seconds
-        to verify the requested action has been performed. Ansible will sleep for five seconds between each check.
+      - If there are pending actions for the service monitored by monit, then it checks for up to this many seconds to verify
+        the requested action has been performed. The module sleeps for five seconds between each check.
     default: 300
     type: int
 author:
@@ -174,7 +174,11 @@ class Monit(object):
             status_val = status_val.split(' | ')[0]
         if ' - ' not in status_val:
             status_val = status_val.replace(' ', '_')
-            return getattr(Status, status_val)
+            try:
+                return getattr(Status, status_val)
+            except AttributeError:
+                self.module.warn("Unknown monit status '%s', treating as execution failed" % status_val)
+                return Status.EXECUTION_FAILED
         else:
             status_val, substatus = status_val.split(' - ')
             action, state = substatus.split()

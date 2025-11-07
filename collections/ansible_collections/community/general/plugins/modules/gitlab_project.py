@@ -13,9 +13,9 @@ DOCUMENTATION = r"""
 module: gitlab_project
 short_description: Creates/updates/deletes GitLab Projects
 description:
-  - When the project does not exist in GitLab, it will be created.
-  - When the project does exist and O(state=absent), the project will be deleted.
-  - When changes are made to the project, the project will be updated.
+  - When the project does not exist in GitLab, it is created.
+  - When the project does exist and O(state=absent), the project is deleted.
+  - When changes are made to the project, the project is updated.
 author:
   - Werner Dijkerman (@dj-wasabi)
   - Guillaume Martinez (@Lunik)
@@ -44,6 +44,12 @@ options:
       - This option is only used on creation, not for updates.
     type: path
     version_added: "4.2.0"
+  build_timeout:
+    description:
+      - Maximum number of seconds a CI job can run.
+      - If not specified on creation, GitLab imposes a default value.
+    type: int
+    version_added: "10.6.0"
   builds_access_level:
     description:
       - V(private) means that repository CI/CD is allowed only to project members.
@@ -142,7 +148,7 @@ options:
     type: str
   import_url:
     description:
-      - Git repository which will be imported into gitlab.
+      - Git repository which is imported into gitlab.
       - GitLab server needs read access to this git repository.
     required: false
     type: str
@@ -156,7 +162,7 @@ options:
     version_added: "6.4.0"
   initialize_with_readme:
     description:
-      - Will initialize the project with a default C(README.md).
+      - Initializes the project with a default C(README.md).
       - Is only used when the project is created, and ignored otherwise.
     type: bool
     default: false
@@ -242,8 +248,8 @@ options:
     version_added: "9.3.0"
   path:
     description:
-      - The path of the project you want to create, this will be server_url/<group>/path.
-      - If not supplied, name will be used.
+      - The path of the project you want to create, this is server_url/O(group)/O(path).
+      - If not supplied, O(name) is used.
     type: str
   releases_access_level:
     description:
@@ -430,6 +436,7 @@ class GitLabProject(object):
         project_options = {
             'allow_merge_on_skipped_pipeline': options['allow_merge_on_skipped_pipeline'],
             'builds_access_level': options['builds_access_level'],
+            'build_timeout': options['build_timeout'],
             'ci_config_path': options['ci_config_path'],
             'container_expiration_policy': options['container_expiration_policy'],
             'container_registry_access_level': options['container_registry_access_level'],
@@ -591,8 +598,9 @@ def main():
         allow_merge_on_skipped_pipeline=dict(type='bool'),
         avatar_path=dict(type='path'),
         builds_access_level=dict(type='str', choices=['private', 'disabled', 'enabled']),
+        build_timeout=dict(type='int'),
         ci_config_path=dict(type='str'),
-        container_expiration_policy=dict(type='dict', default=None, options=dict(
+        container_expiration_policy=dict(type='dict', options=dict(
             cadence=dict(type='str', choices=["1d", "7d", "14d", "1month", "3month"]),
             enabled=dict(type='bool'),
             keep_n=dict(type='int', choices=[0, 1, 5, 10, 25, 50, 100]),
@@ -664,6 +672,7 @@ def main():
     allow_merge_on_skipped_pipeline = module.params['allow_merge_on_skipped_pipeline']
     avatar_path = module.params['avatar_path']
     builds_access_level = module.params['builds_access_level']
+    build_timeout = module.params['build_timeout']
     ci_config_path = module.params['ci_config_path']
     container_expiration_policy = module.params['container_expiration_policy']
     container_registry_access_level = module.params['container_registry_access_level']
@@ -748,6 +757,7 @@ def main():
             "allow_merge_on_skipped_pipeline": allow_merge_on_skipped_pipeline,
             "avatar_path": avatar_path,
             "builds_access_level": builds_access_level,
+            "build_timeout": build_timeout,
             "ci_config_path": ci_config_path,
             "container_expiration_policy": container_expiration_policy,
             "container_registry_access_level": container_registry_access_level,

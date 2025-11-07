@@ -23,15 +23,15 @@ notes:
     that is available using the other various execution contexts, such as playbook, play, task, and so on so forth.
   - Options being set by their respective variable input can only be set using the variable if the variable was set in a context
     that is available to the respective callback. Use the C(ansible_callback_diy) dictionary to see what is available to a
-    callback. Additionally, C(ansible_callback_diy.top_level_var_names) will output the top level variable names available
+    callback. Additionally, C(ansible_callback_diy.top_level_var_names) outputs the top level variable names available
     to the callback.
   - Each option value is rendered as a template before being evaluated. This allows for the dynamic usage of an option. For
-    example, C("{{ 'yellow' if ansible_callback_diy.result.is_changed else 'bright green' }}").
-  - 'B(Condition) for all C(msg) options: if value C(is None or omit), then the option is not being used. B(Effect): use
-    of the C(default) callback plugin for output.'
-  - 'B(Condition) for all C(msg) options: if value C(is not None and not omit and length is not greater than 0), then the
+    example, V("{{ 'yellow' if ansible_callback_diy.result.is_changed else 'bright green' }}").
+  - 'B(Condition) for all C(msg) options: if value V(is None or omit), then the option is not being used. B(Effect): use of
+    the C(default) callback plugin for output.'
+  - 'B(Condition) for all C(msg) options: if value V(is not None and not omit and length is not greater than 0), then the
     option is being used without output. B(Effect): suppress output.'
-  - 'B(Condition) for all C(msg) options: if value C(is not None and not omit and length is greater than 0), then the option
+  - 'B(Condition) for all C(msg) options: if value V(is not None and not omit and length is greater than 0), then the option
     is being used with output. B(Effect): render value as template and output.'
   - 'Valid color values: V(black), V(bright gray), V(blue), V(white), V(green), V(bright blue), V(cyan), V(bright green),
     V(red), V(bright cyan), V(purple), V(bright red), V(yellow), V(bright purple), V(dark gray), V(bright yellow), V(magenta),
@@ -785,6 +785,12 @@ from ansible.vars.manager import VariableManager
 from ansible.plugins.callback.default import CallbackModule as Default
 from ansible.module_utils.common.text.converters import to_text
 
+try:
+    from ansible.template import trust_as_template  # noqa: F401, pylint: disable=unused-import
+    SUPPORTS_DATA_TAGGING = True
+except ImportError:
+    SUPPORTS_DATA_TAGGING = False
+
 
 class DummyStdout(object):
     def flush(self):
@@ -838,7 +844,10 @@ class CallbackModule(Default):
         return _ret
 
     def _using_diy(self, spec):
-        return (spec['msg'] is not None) and (spec['msg'] != spec['vars']['omit'])
+        sentinel = object()
+        omit = spec['vars'].get('omit', sentinel)
+        # With Data Tagging, omit is sentinel
+        return (spec['msg'] is not None) and (spec['msg'] != omit or omit is sentinel)
 
     def _parent_has_callback(self):
         return hasattr(super(CallbackModule, self), sys._getframe(1).f_code.co_name)
@@ -894,7 +903,7 @@ class CallbackModule(Default):
             )
         _ret.update(_all)
 
-        _ret.update(_ret.get(self.DIY_NS, {self.DIY_NS: CallbackDIYDict()}))
+        _ret.update(_ret.get(self.DIY_NS, {self.DIY_NS: {} if SUPPORTS_DATA_TAGGING else CallbackDIYDict()}))
 
         _ret[self.DIY_NS].update({'playbook': {}})
         _playbook_attributes = ['entries', 'file_name', 'basedir']

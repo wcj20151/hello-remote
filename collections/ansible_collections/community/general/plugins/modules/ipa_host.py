@@ -42,9 +42,9 @@ options:
   mac_address:
     description:
       - List of Hardware MAC address(es) off this host.
-      - If option is omitted MAC addresses will not be checked or changed.
-      - If an empty list is passed all assigned MAC addresses will be removed.
-      - MAC addresses that are already assigned but not passed will be removed.
+      - If option is omitted MAC addresses are not checked nor changed.
+      - If an empty list is passed all assigned MAC addresses are removed.
+      - MAC addresses that are already assigned but not passed are removed.
     aliases: ["macaddress"]
     type: list
     elements: str
@@ -66,9 +66,9 @@ options:
   user_certificate:
     description:
       - List of Base-64 encoded server certificates.
-      - If option is omitted certificates will not be checked or changed.
-      - If an empty list is passed all assigned certificates will be removed.
-      - Certificates already assigned but not passed will be removed.
+      - If option is omitted certificates are not checked nor changed.
+      - If an empty list is passed all assigned certificates are removed.
+      - Certificates already assigned but not passed are removed.
     aliases: ["usercertificate"]
     type: list
     elements: str
@@ -94,6 +94,7 @@ options:
     type: bool
 extends_documentation_fragment:
   - community.general.ipa.documentation
+  - community.general.ipa.connection_notes
   - community.general.attributes
 """
 
@@ -290,19 +291,21 @@ def ensure(module, client):
 
 def main():
     argument_spec = ipa_argument_spec()
-    argument_spec.update(description=dict(type='str'),
-                         fqdn=dict(type='str', required=True, aliases=['name']),
-                         force=dict(type='bool'),
-                         ip_address=dict(type='str'),
-                         ns_host_location=dict(type='str', aliases=['nshostlocation']),
-                         ns_hardware_platform=dict(type='str', aliases=['nshardwareplatform']),
-                         ns_os_version=dict(type='str', aliases=['nsosversion']),
-                         user_certificate=dict(type='list', aliases=['usercertificate'], elements='str'),
-                         mac_address=dict(type='list', aliases=['macaddress'], elements='str'),
-                         update_dns=dict(type='bool'),
-                         state=dict(type='str', default='present', choices=['present', 'absent', 'enabled', 'disabled']),
-                         random_password=dict(type='bool', no_log=False),
-                         force_creation=dict(type='bool', default=True),)
+    argument_spec.update(
+        description=dict(type='str'),
+        fqdn=dict(type='str', required=True, aliases=['name']),
+        force=dict(type='bool'),
+        ip_address=dict(type='str'),
+        ns_host_location=dict(type='str', aliases=['nshostlocation']),
+        ns_hardware_platform=dict(type='str', aliases=['nshardwareplatform']),
+        ns_os_version=dict(type='str', aliases=['nsosversion']),
+        user_certificate=dict(type='list', aliases=['usercertificate'], elements='str'),
+        mac_address=dict(type='list', aliases=['macaddress'], elements='str'),
+        update_dns=dict(type='bool'),
+        state=dict(type='str', default='present', choices=['present', 'absent', 'enabled', 'disabled']),
+        random_password=dict(type='bool', no_log=False),
+        force_creation=dict(type='bool', default=True)
+    )
 
     module = AnsibleModule(argument_spec=argument_spec,
                            supports_check_mode=True)

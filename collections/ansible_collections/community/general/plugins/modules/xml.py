@@ -301,7 +301,9 @@ EXAMPLES = r"""
 # Attributes
           name: Scumm bar
           location: Monkey island
-# Subnodes
+          # Value
+          +value: unreal
+          # Subnodes
           _:
             - floor: Pirate hall
             - floor: Grog storage
@@ -331,12 +333,15 @@ actions:
   description: A dictionary with the original xpath, namespaces and state.
   type: dict
   returned: success
-  sample: {xpath: xpath, namespaces: [namespace1, namespace2], state: present}
-backup_file:
-  description: The name of the backup file that was created.
-  type: str
-  returned: when O(backup=true)
-  sample: /path/to/file.xml.1942.2017-08-24@14:16:01~
+  sample:
+    {
+      "xpath": "xpath",
+      "namespaces": [
+        "namespace1",
+        "namespace2"
+      ],
+      "state": "present"
+    }
 count:
   description: The count of xpath matches.
   type: int
@@ -346,10 +351,6 @@ matches:
   description: The xpath matches found.
   type: list
   returned: when parameter O(print_match) is set
-msg:
-  description: A message related to the performed action(s).
-  type: str
-  returned: always
 xmlstring:
   description: An XML string of the resulting output.
   type: str
@@ -376,8 +377,8 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule, json_dict_bytes_to_unicode, missing_required_lib
 from ansible.module_utils.six import iteritems, string_types
+from ansible.module_utils.six.moves.collections_abc import MutableMapping
 from ansible.module_utils.common.text.converters import to_bytes, to_native
-from ansible.module_utils.common._collections_compat import MutableMapping
 
 _IDENT = r"[a-zA-Z-][a-zA-Z0-9_\-\.]*"
 _NSIDENT = _IDENT + "|" + _IDENT + ":" + _IDENT
@@ -633,7 +634,7 @@ def check_or_make_target(module, tree, xpath, namespaces):
                 # module.fail_json(msg="now tree=%s" % etree.tostring(tree, pretty_print=True))
             elif eoa == "":
                 for node in tree.xpath(inner_xpath, namespaces=namespaces):
-                    if (node.text != eoa_value):
+                    if node.text != eoa_value:
                         node.text = eoa_value
                         changed = True
 
@@ -756,6 +757,7 @@ def child_to_element(module, child, in_type):
             (key, value) = next(iteritems(child))
             if isinstance(value, MutableMapping):
                 children = value.pop('_', None)
+                child_value = value.pop('+value', None)
 
                 node = etree.Element(key, value)
 
@@ -765,6 +767,9 @@ def child_to_element(module, child, in_type):
 
                     subnodes = children_to_nodes(module, children)
                     node.extend(subnodes)
+
+                if child_value is not None:
+                    node.text = child_value
             else:
                 node = etree.Element(key)
                 node.text = value

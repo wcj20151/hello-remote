@@ -35,9 +35,9 @@ options:
     type: bool
     default: false
     description:
-      - If O(force) is V(true) and O(state) is V(absent), the module will delete the organization, no matter if it contains
-        users or not. By default O(force) is V(false), which will cause the module to fail the deletion of the organization
-        when it contains users.
+      - If O(force) is V(true) and O(state) is V(absent), the module deletes the organization, no matter if it contains users
+        or not. By default O(force) is V(false), which causes the module to fail the deletion of the organization when it
+        contains users.
   state:
     type: str
     default: 'present'
@@ -63,18 +63,18 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: JSON representation of a Pritunl Organization.
-    returned: success
-    type: dict
-    sample:
-        {
-            "auth_api": false,
-            "name": "Foo",
-            "auth_token": null,
-            "user_count": 0,
-            "auth_secret": null,
-            "id": "csftwlu6uhralzi2dpmhekz3",
-        }
+  description: JSON representation of a Pritunl Organization.
+  returned: success
+  type: dict
+  sample:
+    {
+      "auth_api": false,
+      "name": "Foo",
+      "auth_token": null,
+      "user_count": 0,
+      "auth_secret": null,
+      "id": "csftwlu6uhralzi2dpmhekz3"
+    }
 """
 
 
@@ -176,10 +176,8 @@ def main():
     argument_spec.update(
         dict(
             name=dict(required=True, type="str", aliases=["org"]),
-            force=dict(required=False, type="bool", default=False),
-            state=dict(
-                required=False, choices=["present", "absent"], default="present"
-            ),
+            force=dict(type="bool", default=False),
+            state=dict(choices=["present", "absent"], default="present"),
         )
     )
 

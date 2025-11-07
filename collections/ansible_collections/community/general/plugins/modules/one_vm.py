@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2017, Milan Ilic <milani@nordeus.com>
 # Copyright (c) 2019, Jan Meerkamp <meerkamp@dvv.de>
+# Copyright (c) 2025, Tom Paine <github@aioue.net>
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -38,7 +39,7 @@ options:
   api_password:
     description:
       - Password of the user to login into OpenNebula RPC server. If not set then the value of the E(ONE_PASSWORD) environment
-        variable is used. if both O(api_username) or O(api_password) are not set, then it will try authenticate with ONE auth
+        variable is used. if both O(api_username) or O(api_password) are not set, then it tries to authenticate with ONE auth
         file. Default path is C(~/.one/one_auth).
       - Set environment variable E(ONE_AUTH) to override this path.
     type: str
@@ -52,7 +53,7 @@ options:
     type: int
   vm_start_on_hold:
     description:
-      - Set to true to put vm on hold while creating.
+      - Set to true to put VM on hold while creating.
     default: false
     type: bool
   instance_ids:
@@ -79,7 +80,7 @@ options:
   wait:
     description:
       - Wait for the instance to reach its desired state before returning. Keep in mind if you are waiting for instance to
-        be in running state it does not mean that you will be able to SSH on that machine only that boot process have started
+        be in running state it does not mean that you are able to SSH on that machine only that boot process have started
         on that instance. See the example using the M(ansible.builtin.wait_for) module for details.
     default: true
     type: bool
@@ -93,9 +94,9 @@ options:
       - A dictionary of key/value attributes to add to new instances, or for setting C(state) of instances with these attributes.
       - Keys are case insensitive and OpenNebula automatically converts them to upper case.
       - Be aware V(NAME) is a special attribute which sets the name of the VM when it is deployed.
-      - C(#) character(s) can be appended to the C(NAME) and the module will automatically add indexes to the names of VMs.
+      - C(#) character(s) can be appended to the C(NAME) and the module automatically adds indexes to the names of VMs.
       - 'For example: V(NAME: foo-###) would create VMs with names V(foo-000), V(foo-001),...'
-      - When used with O(count_attributes) and O(exact_count) the module will match the base name without the index part.
+      - When used with O(count_attributes) and O(exact_count) the module matches the base name without the index part.
     default: {}
     type: dict
   labels:
@@ -125,7 +126,7 @@ options:
     description:
       - Indicates how many instances that match O(count_attributes) and O(count_labels) parameters should be deployed. Instances
         are either created or terminated based on this value.
-      - B(NOTE:) Instances with the least IDs will be terminated first.
+      - B(NOTE:) Instances with the least IDs are terminated first.
     type: int
   mode:
     description:
@@ -134,11 +135,11 @@ options:
     type: str
   owner_id:
     description:
-      - ID of the user which will be set as the owner of the instance.
+      - ID of the user which is set as the owner of the instance.
     type: int
   group_id:
     description:
-      - ID of the group which will be set as the group of the instance.
+      - ID of the group which is set as the group of the instance.
     type: int
   memory:
     description:
@@ -156,7 +157,7 @@ options:
     type: float
   vcpu:
     description:
-      - Number of CPUs (cores) new VM will have.
+      - Number of CPUs (cores) the new VM uses.
     type: int
   networks:
     description:
@@ -169,9 +170,9 @@ options:
       - Creates an image from a VM disk.
       - It is a dictionary where you have to specify C(name) of the new image.
       - Optionally you can specify C(disk_id) of the disk you want to save. By default C(disk_id) is 0.
-      - B(NOTE:) This operation will only be performed on the first VM (if more than one VM ID is passed) and the VM has to
-        be in the C(poweredoff) state.
-      - Also this operation will fail if an image with specified C(name) already exists.
+      - B(NOTE:) This operation is only performed on the first VM (if more than one VM ID is passed) and the VM has to be
+        in the C(poweredoff) state.
+      - Also this operation fails if an image with specified C(name) already exists.
     type: dict
   persistent:
     description:
@@ -194,6 +195,18 @@ options:
       - When O(instance_ids) is provided, updates running VMs with the C(updateconf) API call.
       - When new VMs are being created, emulates the C(updateconf) API call using direct template merge.
       - Allows for complete modifications of the C(CONTEXT) attribute.
+      - 'Supported attributes include:'
+      - B(BACKUP_CONFIG:) V(BACKUP_VOLATILE), V(FS_FREEZE), V(INCREMENT_MODE), V(KEEP_LAST), V(MODE);
+      - B(CONTEXT:) (Any value, except V(ETH*). Variable substitutions are made);
+      - B(CPU_MODEL:) V(FEATURES), V(MODEL);
+      - B(FEATURES:) V(ACPI), V(APIC), V(GUEST_AGENT), V(HYPERV), V(IOTHREADS), V(LOCALTIME), V(PAE), V(VIRTIO_BLK_QUEUES),
+        V(VIRTIO_SCSI_QUEUES);
+      - B(GRAPHICS:) V(COMMAND), V(KEYMAP), V(LISTEN), V(PASSWD), V(PORT), V(TYPE);
+      - B(INPUT:) V(BUS), V(TYPE);
+      - B(OS:) V(ARCH), V(BOOT), V(BOOTLOADER), V(FIRMWARE), V(INITRD), V(KERNEL), V(KERNEL_CMD), V(MACHINE), V(ROOT), V(SD_DISK_BUS),
+        V(UUID);
+      - B(RAW:) V(DATA), V(DATA_VMX), V(TYPE), V(VALIDATE);
+      - B(VIDEO:) V(ATS), V(IOMMU), V(RESOLUTION), V(TYPE), V(VRAM).
     type: dict
     version_added: 6.3.0
 author:
@@ -442,35 +455,35 @@ instances:
   returned: success
   contains:
     vm_id:
-      description: Vm ID.
+      description: VM ID.
       type: int
       sample: 153
     vm_name:
-      description: Vm name.
+      description: VM name.
       type: str
       sample: foo
     template_id:
-      description: Vm's template ID.
+      description: VM's template ID.
       type: int
       sample: 153
     group_id:
-      description: Vm's group ID.
+      description: VM's group ID.
       type: int
       sample: 1
     group_name:
-      description: Vm's group name.
+      description: VM's group name.
       type: str
       sample: one-users
     owner_id:
-      description: Vm's owner ID.
+      description: VM's owner ID.
       type: int
       sample: 143
     owner_name:
-      description: Vm's owner name.
+      description: VM's owner name.
       type: str
       sample: app-user
     mode:
-      description: Vm's mode.
+      description: VM's mode.
       type: str
       returned: success
       sample: 660
@@ -501,20 +514,21 @@ instances:
     networks:
       description: A list of dictionaries with info about IP, NAME, MAC, SECURITY_GROUPS for each NIC.
       type: list
-      sample: [
-        {
-          "ip": "10.120.5.33",
-          "mac": "02:00:0a:78:05:21",
-          "name": "default-test-private",
-          "security_groups": "0,10"
-        },
-        {
-          "ip": "10.120.5.34",
-          "mac": "02:00:0a:78:05:22",
-          "name": "default-test-private",
-          "security_groups": "0"
-        }
-      ]
+      sample:
+        [
+          {
+            "ip": "10.120.5.33",
+            "mac": "02:00:0a:78:05:21",
+            "name": "default-test-private",
+            "security_groups": "0,10"
+          },
+          {
+            "ip": "10.120.5.34",
+            "mac": "02:00:0a:78:05:22",
+            "name": "default-test-private",
+            "security_groups": "0"
+          }
+        ]
     uptime_h:
       description: Uptime of the instance in hours.
       type: int
@@ -526,23 +540,27 @@ instances:
     attributes:
       description: A dictionary of key/values attributes that are associated with the instance.
       type: dict
-      sample: {
-        "HYPERVISOR": "kvm",
-        "LOGO": "images/logos/centos.png",
-        "TE_GALAXY": "bar",
-        "USER_INPUTS": null
-      }
+      sample:
+        {
+          "HYPERVISOR": "kvm",
+          "LOGO": "images/logos/centos.png",
+          "TE_GALAXY": "bar",
+          "USER_INPUTS": null
+        }
     updateconf:
       description: A dictionary of key/values attributes that are set with the updateconf API call.
       type: dict
       version_added: 6.3.0
-      sample: {
-        "OS": { "ARCH": "x86_64" },
-        "CONTEXT": {
-          "START_SCRIPT": "ip r r 169.254.16.86/32 dev eth0",
-          "SSH_PUBLIC_KEY": "ssh-rsa ...\\nssh-ed25519 ..."
+      sample:
+        {
+          "OS": {
+            "ARCH": "x86_64"
+          },
+          "CONTEXT": {
+            "START_SCRIPT": "ip r r 169.254.16.86/32 dev eth0",
+            "SSH_PUBLIC_KEY": "ssh-rsa ...\\nssh-ed25519 ..."
+          }
         }
-      }
 tagged_instances:
   description:
     - A list of instances info based on a specific attributes and/or labels that are specified with O(count_attributes) and
@@ -551,35 +569,35 @@ tagged_instances:
   returned: success
   contains:
     vm_id:
-      description: Vm ID.
+      description: VM ID.
       type: int
       sample: 153
     vm_name:
-      description: Vm name.
+      description: VM name.
       type: str
       sample: foo
     template_id:
-      description: Vm's template ID.
+      description: VM's template ID.
       type: int
       sample: 153
     group_id:
-      description: Vm's group ID.
+      description: VM's group ID.
       type: int
       sample: 1
     group_name:
-      description: Vm's group name.
+      description: VM's group name.
       type: str
       sample: one-users
     owner_id:
-      description: Vm's user ID.
+      description: VM's user ID.
       type: int
       sample: 143
     owner_name:
-      description: Vm's user name.
+      description: VM's user name.
       type: str
       sample: app-user
     mode:
-      description: Vm's mode.
+      description: VM's mode.
       type: str
       returned: success
       sample: 660
@@ -610,20 +628,21 @@ tagged_instances:
     networks:
       description: A list of dictionaries with info about IP, NAME, MAC, SECURITY_GROUPS for each NIC.
       type: list
-      sample: [
-        {
-          "ip": "10.120.5.33",
-          "mac": "02:00:0a:78:05:21",
-          "name": "default-test-private",
-          "security_groups": "0,10"
-        },
-        {
-          "ip": "10.120.5.34",
-          "mac": "02:00:0a:78:05:22",
-          "name": "default-test-private",
-          "security_groups": "0"
-        }
-      ]
+      sample:
+        [
+          {
+            "ip": "10.120.5.33",
+            "mac": "02:00:0a:78:05:21",
+            "name": "default-test-private",
+            "security_groups": "0,10"
+          },
+          {
+            "ip": "10.120.5.34",
+            "mac": "02:00:0a:78:05:22",
+            "name": "default-test-private",
+            "security_groups": "0"
+          }
+        ]
     uptime_h:
       description: Uptime of the instance in hours.
       type: int
@@ -635,12 +654,27 @@ tagged_instances:
     attributes:
       description: A dictionary of key/values attributes that are associated with the instance.
       type: dict
-      sample: {"HYPERVISOR": "kvm", "LOGO": "images/logos/centos.png", "TE_GALAXY": "bar", "USER_INPUTS": null}
+      sample:
+        {
+          "HYPERVISOR": "kvm",
+          "LOGO": "images/logos/centos.png",
+          "TE_GALAXY": "bar",
+          "USER_INPUTS": null
+        }
     updateconf:
       description: A dictionary of key/values attributes that are set with the updateconf API call.
       type: dict
       version_added: 6.3.0
-      sample: {"OS": {"ARCH": "x86_64"}, "CONTEXT": {"START_SCRIPT": "ip r r 169.254.16.86/32 dev eth0", "SSH_PUBLIC_KEY": "ssh-rsa ...\\nssh-ed25519 ..."}}
+      sample:
+        {
+          "OS": {
+            "ARCH": "x86_64"
+          },
+          "CONTEXT": {
+            "START_SCRIPT": "ip r r 169.254.16.86/32 dev eth0",
+            "SSH_PUBLIC_KEY": "ssh-rsa ...\\nssh-ed25519 ..."
+          }
+        }
 """
 
 try:
@@ -658,13 +692,17 @@ from ansible.module_utils.common.dict_transformations import dict_merge
 from ansible_collections.community.general.plugins.module_utils.opennebula import flatten, render
 
 
+# Updateconf attributes documentation: https://docs.opennebula.io/6.10/integration_and_development/system_interfaces/api.html#one-vm-updateconf
 UPDATECONF_ATTRIBUTES = {
-    "OS": ["ARCH", "MACHINE", "KERNEL", "INITRD", "BOOTLOADER", "BOOT", "SD_DISK_BUS", "UUID"],
-    "FEATURES": ["ACPI", "PAE", "APIC", "LOCALTIME", "HYPERV", "GUEST_AGENT"],
+    "OS": ["ARCH", "MACHINE", "KERNEL", "INITRD", "BOOTLOADER", "BOOT", "SD_DISK_BUS", "UUID", "FIRMWARE"],
+    "CPU_MODEL": ["MODEL", "FEATURES"],
+    "FEATURES": ["ACPI", "PAE", "APIC", "LOCALTIME", "HYPERV", "GUEST_AGENT", "VIRTIO_BLK_QUEUES", "VIRTIO_SCSI_QUEUES", "IOTHREADS"],
     "INPUT": ["TYPE", "BUS"],
-    "GRAPHICS": ["TYPE", "LISTEN", "PASSWD", "KEYMAP"],
-    "RAW": ["DATA", "DATA_VMX", "TYPE"],
+    "GRAPHICS": ["TYPE", "LISTEN", "PORT", "PASSWD", "KEYMAP", "COMMAND"],
+    "VIDEO": ["ATS", "IOMMU", "RESOLUTION", "TYPE", "VRAM"],
+    "RAW": ["DATA", "DATA_VMX", "TYPE", "VALIDATE"],
     "CONTEXT": [],
+    "BACKUP_CONFIG": ["FS_FREEZE", "KEEP_LAST", "BACKUP_VOLATILE", "MODE", "INCREMENT_MODE"],
 }
 
 
@@ -1108,7 +1146,7 @@ def create_count_of_vms(module, client,
         base_name = vm_name[:len(vm_name) - num_sign_cnt]
         vm_name = base_name
         # Make list which contains used indexes in format ['000', '001',...]
-        vm_filled_indexes_list = list((vm.NAME[len(base_name):].zfill(num_sign_cnt)) for vm in vm_list)
+        vm_filled_indexes_list = [vm.NAME[len(base_name):].zfill(num_sign_cnt) for vm in vm_list]
 
     while count > 0:
         new_vm_name = vm_name

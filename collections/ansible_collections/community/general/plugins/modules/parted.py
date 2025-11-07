@@ -50,7 +50,7 @@ options:
     type: int
   unit:
     description:
-      - Selects the current default unit that Parted will use to display locations and capacities on the disk and to interpret
+      - Selects the current default unit that Parted uses to display locations and capacities on the disk and to interpret
         those given by the user if they are not suffixed by an unit.
       - When fetching information about a disk, it is recommended to always specify a unit.
     type: str
@@ -59,8 +59,7 @@ options:
   label:
     description:
       - Disk label type or partition table to use.
-      - If O(device) already contains a different label, it will be changed to O(label) and any previous partitions will be
-        lost.
+      - If O(device) already contains a different label, it is changed to O(label) and any previous partitions are lost.
       - A O(name) must be specified for a V(gpt) partition table.
     type: str
     choices: [aix, amiga, bsd, dvh, gpt, loop, mac, msdos, pc98, sun]
@@ -74,8 +73,8 @@ options:
     default: primary
   part_start:
     description:
-      - Where the partition will start as offset from the beginning of the disk, that is, the "distance" from the start of
-        the disk. Negative numbers specify distance from the end of the disk.
+      - Where the partition starts as offset from the beginning of the disk, that is, the "distance" from the start of the
+        disk. Negative numbers specify distance from the end of the disk.
       - The distance can be specified with all the units supported by parted (except compat) and it is case sensitive, for
         example V(10GiB), V(15%).
       - Using negative values may require setting of O(fs_type) (see notes).
@@ -83,8 +82,8 @@ options:
     default: 0%
   part_end:
     description:
-      - Where the partition will end as offset from the beginning of the disk, that is, the "distance" from the start of the
-        disk. Negative numbers specify distance from the end of the disk.
+      - Where the partition ends as offset from the beginning of the disk, that is, the "distance" from the start of the disk.
+        Negative numbers specify distance from the end of the disk.
       - The distance can be specified with all the units supported by parted (except compat) and it is case sensitive, for
         example V(10GiB), V(15%).
     type: str
@@ -100,13 +99,13 @@ options:
   state:
     description:
       - Whether to create or delete a partition.
-      - If set to V(info) the module will only return the device information.
+      - If set to V(info) the module only returns the device information.
     type: str
     choices: [absent, present, info]
     default: info
   fs_type:
     description:
-      - If specified and the partition does not exist, will set filesystem type to given partition.
+      - If specified and the partition does not exist, sets filesystem type to given partition.
       - Parameter optional, but see notes below about negative O(part_start) values.
     type: str
     version_added: '0.2.0'
@@ -140,35 +139,31 @@ partition_info:
     script:
       description: Parted script executed by module.
       type: str
-  sample: {
-      "disk": {
-        "dev": "/dev/sdb",
-        "logical_block": 512,
-        "model": "VMware Virtual disk",
-        "physical_block": 512,
-        "size": 5.0,
-        "table": "msdos",
-        "unit": "gib"
-      },
-      "partitions": [{
-        "begin": 0.0,
-        "end": 1.0,
-        "flags": ["boot", "lvm"],
-        "fstype": "",
-        "name": "",
-        "num": 1,
+  sample:
+    "disk":
+      "dev": "/dev/sdb"
+      "logical_block": 512
+      "model": "VMware Virtual disk"
+      "physical_block": 512
+      "size": 5.0
+      "table": "msdos"
+      "unit": "gib"
+    "partitions":
+      - "begin": 0.0
+        "end": 1.0
+        "flags": ["boot", "lvm"]
+        "fstype": ""
+        "name": ""
+        "num": 1
         "size": 1.0
-      }, {
-        "begin": 1.0,
-        "end": 5.0,
-        "flags": [],
-        "fstype": "",
-        "name": "",
-        "num": 2,
+      - "begin": 1.0
+        "end": 5.0
+        "flags": []
+        "fstype": ""
+        "name": ""
+        "num": 2
         "size": 4.0
-      }],
-      "script": "unit KiB print "
-    }
+    "script": "unit KiB print "
 """
 
 EXAMPLES = r"""
@@ -557,9 +552,9 @@ def parted(script, device, align):
     """
     global module, parted_exec  # pylint: disable=global-variable-not-assigned
 
-    align_option = '-a %s' % align
+    align_option = ['-a', align]
     if align == 'undefined':
-        align_option = ''
+        align_option = []
 
     """
     Use option --fix (-f) if available. Versions prior
@@ -567,18 +562,17 @@ def parted(script, device, align):
     http://savannah.gnu.org/news/?id=10114
     """
     if parted_version() >= (3, 4, 64):
-        script_option = '-s -f'
+        script_option = ['-s', '-f']
     else:
-        script_option = '-s'
+        script_option = ['-s']
 
     if script and not module.check_mode:
-        # TODO: convert run_comand() argument to list!
-        command = "%s %s -m %s %s -- %s" % (parted_exec, script_option, align_option, device, script)
+        command = [parted_exec] + script_option + ['-m'] + align_option + [device, '--'] + script
         rc, out, err = module.run_command(command)
 
         if rc != 0:
             module.fail_json(
-                msg="Error while running parted script: %s" % command.strip(),
+                msg="Error while running parted script: %s" % " ".join(command).strip(),
                 rc=rc, out=out, err=err
             )
 
@@ -599,10 +593,7 @@ def part_exists(partitions, attribute, number):
     Looks if a partition that has a specific value for a specific attribute
     actually exists.
     """
-    return any(
-        part[attribute] and
-        part[attribute] == number for part in partitions
-    )
+    return any(part.get(attribute) == number for part in partitions)
 
 
 def check_size_format(size_str):
@@ -617,8 +608,8 @@ def main():
     global module, units_si, units_iec, parted_exec  # pylint: disable=global-variable-not-assigned
 
     changed = False
-    output_script = ""
-    script = ""
+    output_script = []
+    script = []
     module = AnsibleModule(
         argument_spec=dict(
             device=dict(type='str', required=True),
@@ -700,20 +691,19 @@ def main():
         # Assign label if required
         mklabel_needed = current_device['generic'].get('table', None) != label
         if mklabel_needed:
-            script += "mklabel %s " % label
+            script += ["mklabel", label]
 
         # Create partition if required
         if part_type and (mklabel_needed or not part_exists(current_parts, 'num', number)):
-            script += "mkpart %s %s%s %s " % (
-                part_type,
-                '%s ' % fs_type if fs_type is not None else '',
-                part_start,
-                part_end
-            )
+            script += ["mkpart"]
+            script += [part_type]
+            if fs_type is not None:
+                script += [fs_type]
+            script += [part_start, part_end]
 
         # Set the unit of the run
         if unit and script:
-            script = "unit %s %s" % (unit, script)
+            script = ["unit", unit] + script
 
         # If partition exists, try to resize
         if resize and part_exists(current_parts, 'num', number):
@@ -729,10 +719,7 @@ def main():
             desired_part_end = convert_to_bytes(size, parsed_unit)
 
             if current_part_end != desired_part_end:
-                script += "resizepart %s %s " % (
-                    number,
-                    part_end
-                )
+                script += ["resizepart", str(number), part_end]
 
         # Execute the script and update the data structure.
         # This will create the partition for the next steps
@@ -740,7 +727,7 @@ def main():
             output_script += script
             parted(script, device, align)
             changed = True
-            script = ""
+            script = []
 
             if not module.check_mode:
                 current_parts = get_device_info(device, unit)['partitions']
@@ -753,10 +740,8 @@ def main():
 
             # Assign name to the partition
             if name is not None and partition.get('name', None) != name:
-                # Wrap double quotes in single quotes so the shell doesn't strip
-                # the double quotes as those need to be included in the arg
-                # passed to parted
-                script += 'name %s \'"%s"\' ' % (number, name)
+                # The double quotes need to be included in the arg passed to parted
+                script += ['name', str(number), '"%s"' % name]
 
             # Manage flags
             if flags:
@@ -770,14 +755,14 @@ def main():
                 flags_on = list(set(flags) - set(partition['flags']))
 
                 for f in flags_on:
-                    script += "set %s %s on " % (number, f)
+                    script += ["set", str(number), f, "on"]
 
                 for f in flags_off:
-                    script += "set %s %s off " % (number, f)
+                    script += ["set", str(number), f, "off"]
 
         # Set the unit of the run
         if unit and script:
-            script = "unit %s %s" % (unit, script)
+            script = ["unit", unit] + script
 
         # Execute the script
         if script:
@@ -788,21 +773,20 @@ def main():
     elif state == 'absent':
         # Remove the partition
         if part_exists(current_parts, 'num', number) or module.check_mode:
-            script = "rm %s " % number
+            script = ["rm", str(number)]
             output_script += script
             changed = True
             parted(script, device, align)
 
     elif state == 'info':
-        output_script = "unit '%s' print " % unit
-
+        output_script = ["unit", unit, "print"]
     # Final status of the device
     final_device_status = get_device_info(device, unit)
     module.exit_json(
         changed=changed,
         disk=final_device_status['generic'],
         partitions=final_device_status['partitions'],
-        script=output_script.strip()
+        script=output_script
     )
 
 

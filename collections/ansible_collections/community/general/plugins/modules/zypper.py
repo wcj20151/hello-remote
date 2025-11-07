@@ -82,6 +82,14 @@ options:
     required: false
     default: false
     type: bool
+  auto_import_keys:
+    description:
+      - Whether to automatically import new repository signing keys. Adds C(--gpg-auto-import-keys) option to I(zypper).
+      - Is only used when installing.
+    required: false
+    default: false
+    type: bool
+    version_added: 11.3.0
   disable_recommends:
     description:
       - Corresponds to the C(--no-recommends) option for I(zypper). Default behavior (V(true)) modifies zypper's default behavior;
@@ -158,6 +166,13 @@ options:
     description:
       - Adds C(--quiet) option to I(zypper) install/update command.
     version_added: '10.2.0'
+  skip_post_errors:
+    type: bool
+    required: false
+    default: false
+    description:
+      - When set to V(true), ignore I(zypper) return code 107 (post install script errors).
+    version_added: '10.6.0'
 notes:
   - When used with a C(loop:) each package is processed individually, it is much more efficient to pass the list directly
     to the O(name) option.
@@ -248,6 +263,12 @@ EXAMPLES = r"""
     state: present
   environment:
     ZYPP_LOCK_TIMEOUT: 20
+
+- name: Install the package with post-install error without failing
+  community.general.zypper:
+    name: <package_with_post_install_error>
+    state: present
+    skip_post_errors: true
 """
 
 import os.path
@@ -344,12 +365,13 @@ def parse_zypper_xml(m, cmd, fail_not_found=True, packages=None):
             m.fail_json(msg=errmsg, rc=rc, stdout=stdout, stderr=stderr, cmd=cmd)
         else:
             return {}, rc, stdout, stderr
-    elif rc in [0, 102, 103, 106]:
+    elif rc in [0, 102, 103, 106, 107]:
         # zypper exit codes
         # 0: success
         # 106: signature verification failed
         # 102: ZYPPER_EXIT_INF_REBOOT_NEEDED - Returned after a successful installation of a patch which requires reboot of computer.
         # 103: zypper was upgraded, run same command again
+        # 107: ZYPPER_EXIT_INF_RPM_SCRIPT_FAILED -  Some of the packages %post install scripts returned an error, but package is installed.
         if packages is None:
             firstrun = True
             packages = {}
@@ -368,14 +390,18 @@ def parse_zypper_xml(m, cmd, fail_not_found=True, packages=None):
             # if this was the first run and it failed with 103
             # run zypper again with the same command to complete update
             return parse_zypper_xml(m, cmd, fail_not_found=fail_not_found, packages=packages)
+        if rc == 107 and m.params['skip_post_errors'] and firstrun:
+            # if this was the first run and it failed with 107 with skip_post_errors flag
+            # run zypper again with the same command to complete update
+            return parse_zypper_xml(m, cmd, fail_not_found=fail_not_found, packages=packages)
 
-        # apply simple_errors logic to rc 0,102,103,106
+        # apply simple_errors logic to rc 0,102,103,106,107
         if m.params['simple_errors']:
             stdout = get_simple_errors(dom) or stdout
 
         return packages, rc, stdout, stderr
 
-    # apply simple_errors logic to rc other than 0,102,103,106
+    # apply simple_errors logic to rc other than 0,102,103,106,107
     if m.params['simple_errors']:
         stdout = get_simple_errors(dom) or stdout
 
@@ -409,6 +435,8 @@ def get_cmd(m, subcommand):
     # add global options before zypper command
     if (is_install or is_refresh) and m.params['disable_gpg_check']:
         cmd.append('--no-gpg-checks')
+    if is_install and m.params['auto_import_keys']:
+        cmd.append('--gpg-auto-import-keys')
 
     if subcommand == 'search':
         cmd.append('--disable-repositories')
@@ -587,21 +615,23 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(required=True, aliases=['pkg'], type='list', elements='str'),
-            state=dict(required=False, default='present', choices=['absent', 'installed', 'latest', 'present', 'removed', 'dist-upgrade']),
-            type=dict(required=False, default='package', choices=['package', 'patch', 'pattern', 'product', 'srcpackage', 'application']),
-            extra_args_precommand=dict(required=False, default=None),
-            disable_gpg_check=dict(required=False, default=False, type='bool'),
-            disable_recommends=dict(required=False, default=True, type='bool'),
-            force=dict(required=False, default=False, type='bool'),
-            force_resolution=dict(required=False, default=False, type='bool'),
-            update_cache=dict(required=False, aliases=['refresh'], default=False, type='bool'),
-            oldpackage=dict(required=False, default=False, type='bool'),
-            extra_args=dict(required=False, default=None),
-            allow_vendor_change=dict(required=False, default=False, type='bool'),
-            replacefiles=dict(required=False, default=False, type='bool'),
-            clean_deps=dict(required=False, default=False, type='bool'),
-            simple_errors=dict(required=False, default=False, type='bool'),
-            quiet=dict(required=False, default=True, type='bool'),
+            state=dict(default='present', choices=['absent', 'installed', 'latest', 'present', 'removed', 'dist-upgrade']),
+            type=dict(default='package', choices=['package', 'patch', 'pattern', 'product', 'srcpackage', 'application']),
+            extra_args_precommand=dict(),
+            disable_gpg_check=dict(default=False, type='bool'),
+            auto_import_keys=dict(default=False, type='bool'),
+            disable_recommends=dict(default=True, type='bool'),
+            force=dict(default=False, type='bool'),
+            force_resolution=dict(default=False, type='bool'),
+            update_cache=dict(aliases=['refresh'], default=False, type='bool'),
+            oldpackage=dict(default=False, type='bool'),
+            extra_args=dict(),
+            allow_vendor_change=dict(default=False, type='bool'),
+            replacefiles=dict(default=False, type='bool'),
+            clean_deps=dict(default=False, type='bool'),
+            simple_errors=dict(default=False, type='bool'),
+            quiet=dict(default=True, type='bool'),
+            skip_post_errors=dict(default=False, type='bool'),
         ),
         supports_check_mode=True
     )

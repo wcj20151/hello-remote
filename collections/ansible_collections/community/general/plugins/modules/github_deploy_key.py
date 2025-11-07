@@ -57,8 +57,8 @@ options:
     type: str
   read_only:
     description:
-      - If V(true), the deploy key will only be able to read repository contents. Otherwise, the deploy key will be able to
-        read and write.
+      - If V(true), the deploy key is only able to read repository contents. Otherwise, the deploy key is able to read and
+        write.
     type: bool
     default: true
   state:
@@ -259,7 +259,12 @@ class GithubDeployKey(object):
             key_id = response_body["id"]
             self.module.exit_json(changed=True, msg="Deploy key successfully added", id=key_id)
         elif status_code == 422:
-            self.module.exit_json(changed=False, msg="Deploy key already exists")
+            # there might be multiple reasons for a 422
+            # so we must check if the reason is that the key already exists
+            if self.get_existing_key():
+                self.module.exit_json(changed=False, msg="Deploy key already exists")
+            else:
+                self.handle_error(method="POST", info=info)
         else:
             self.handle_error(method="POST", info=info)
 
@@ -279,6 +284,8 @@ class GithubDeployKey(object):
         body = info.get('body')
         if body:
             err = self.module.from_json(body)['message']
+        else:
+            err = None
 
         if status_code == 401:
             self.module.fail_json(msg="Failed to connect to {0} due to invalid credentials".format(self.github_url), http_status_code=status_code, error=err)
@@ -296,18 +303,18 @@ class GithubDeployKey(object):
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            github_url=dict(required=False, type='str', default="https://api.github.com"),
+            github_url=dict(type='str', default="https://api.github.com"),
             owner=dict(required=True, type='str', aliases=['account', 'organization']),
             repo=dict(required=True, type='str', aliases=['repository']),
             name=dict(required=True, type='str', aliases=['title', 'label']),
             key=dict(required=True, type='str', no_log=False),
-            read_only=dict(required=False, type='bool', default=True),
+            read_only=dict(type='bool', default=True),
             state=dict(default='present', choices=['present', 'absent']),
-            force=dict(required=False, type='bool', default=False),
-            username=dict(required=False, type='str'),
-            password=dict(required=False, type='str', no_log=True),
-            otp=dict(required=False, type='int', no_log=True),
-            token=dict(required=False, type='str', no_log=True)
+            force=dict(type='bool', default=False),
+            username=dict(type='str'),
+            password=dict(type='str', no_log=True),
+            otp=dict(type='int', no_log=True),
+            token=dict(type='str', no_log=True)
         ),
         mutually_exclusive=[
             ['password', 'token']

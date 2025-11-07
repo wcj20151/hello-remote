@@ -37,13 +37,13 @@ online_user_info:
   returned: success
   type: dict
   sample:
-    "online_user_info": {
-        "company": "foobar LLC",
-        "email": "foobar@example.com",
-        "first_name": "foo",
-        "id": 42,
-        "last_name": "bar",
-        "login": "foobar"
+    {
+      "company": "foobar LLC",
+      "email": "foobar@example.com",
+      "first_name": "foo",
+      "id": 42,
+      "last_name": "bar",
+      "login": "foobar"
     }
 """
 

@@ -48,7 +48,7 @@ options:
   repository:
     type: str
     description:
-      - The repository from which the gem will be installed.
+      - The repository from which the gem is installed.
     required: false
     aliases: [source]
   user_install:
@@ -65,7 +65,7 @@ options:
   install_dir:
     type: path
     description:
-      - Install the gems into a specific directory. These gems will be independent from the global installed ones. Specifying
+      - Install the gems into a specific directory. These gems are independent from the global installed ones. Specifying
         this requires user_install to be false.
     required: false
   bindir:
@@ -243,7 +243,7 @@ def uninstall(module):
     if module.params['force']:
         cmd.append('--force')
     cmd.append(module.params['name'])
-    module.run_command(cmd, environ_update=environ, check_rc=True)
+    return module.run_command(cmd, environ_update=environ, check_rc=True)
 
 
 def install(module):
@@ -295,22 +295,22 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            executable=dict(required=False, type='path'),
-            gem_source=dict(required=False, type='path'),
-            include_dependencies=dict(required=False, default=True, type='bool'),
+            executable=dict(type='path'),
+            gem_source=dict(type='path'),
+            include_dependencies=dict(default=True, type='bool'),
             name=dict(required=True, type='str'),
-            repository=dict(required=False, aliases=['source'], type='str'),
-            state=dict(required=False, default='present', choices=['present', 'absent', 'latest'], type='str'),
-            user_install=dict(required=False, default=True, type='bool'),
-            install_dir=dict(required=False, type='path'),
+            repository=dict(aliases=['source'], type='str'),
+            state=dict(default='present', choices=['present', 'absent', 'latest'], type='str'),
+            user_install=dict(default=True, type='bool'),
+            install_dir=dict(type='path'),
             bindir=dict(type='path'),
             norc=dict(type='bool', default=True),
-            pre_release=dict(required=False, default=False, type='bool'),
-            include_doc=dict(required=False, default=False, type='bool'),
-            env_shebang=dict(required=False, default=False, type='bool'),
-            version=dict(required=False, type='str'),
-            build_flags=dict(required=False, type='str'),
-            force=dict(required=False, default=False, type='bool'),
+            pre_release=dict(default=False, type='bool'),
+            include_doc=dict(default=False, type='bool'),
+            env_shebang=dict(default=False, type='bool'),
+            version=dict(type='str'),
+            build_flags=dict(type='str'),
+            force=dict(default=False, type='bool'),
         ),
         supports_check_mode=True,
         mutually_exclusive=[['gem_source', 'repository'], ['gem_source', 'version']],
@@ -334,9 +334,21 @@ def main():
             changed = True
     elif module.params['state'] == 'absent':
         if exists(module):
-            uninstall(module)
-            changed = True
-
+            command_output = uninstall(module)
+            if command_output is not None and exists(module):
+                rc, out, err = command_output
+                module.fail_json(
+                    msg=(
+                        "Failed to uninstall gem '%s': it is still present after 'gem uninstall'. "
+                        "This usually happens with default or system gems provided by the OS, "
+                        "which cannot be removed with the gem command."
+                    ) % module.params['name'],
+                    rc=rc,
+                    stdout=out,
+                    stderr=err
+                )
+            else:
+                changed = True
     result = {}
     result['name'] = module.params['name']
     result['state'] = module.params['state']

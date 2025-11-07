@@ -8,20 +8,19 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-DOCUMENTATION = r'''
----
+DOCUMENTATION = r"""
 module: systemd_info
 short_description: Gather C(systemd) unit info
 description:
   - This module gathers info about systemd units (services, targets, sockets, mounts, timers).
   - Timer units are supported since community.general 10.5.0.
-  - It runs C(systemctl list-units) (or processes selected units) and collects properties
-    for each unit using C(systemctl show).
-  - In case a unit has multiple properties with the same name, only the value of the first one will be collected.
-  - Even if a unit has a RV(units.loadstate) of V(not-found) or V(masked), it is returned,
-    but only with the minimal properties (RV(units.name), RV(units.loadstate), RV(units.activestate), RV(units.substate)).
-  - When O(unitname) and O(extra_properties) are used, the module first checks if the unit exists,
-    then check if properties exist. If not, the module fails.
+  - It runs C(systemctl list-units) (or processes selected units) and collects properties for each unit using C(systemctl
+    show).
+  - In case a unit has multiple properties with the same name, only the value of the first one is collected.
+  - Even if a unit has a RV(units.loadstate) of V(not-found) or V(masked), it is returned, but only with the minimal properties
+    (RV(units.name), RV(units.loadstate), RV(units.activestate), RV(units.substate)).
+  - When O(unitname) and O(extra_properties) are used, the module first checks if the unit exists, then check if properties
+    exist. If not, the module fails.
   - When O(unitname) is used with wildcard expressions, the module checks for units that match the indicated expressions,
     if units are not present for all the indicated expressions, the module fails.
 version_added: "10.4.0"
@@ -48,9 +47,9 @@ author:
 extends_documentation_fragment:
   - community.general.attributes
   - community.general.attributes.info_module
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 ---
 # Gather info for all systemd services, targets, sockets, mount and timer
 - name: Gather all systemd unit info
@@ -84,13 +83,13 @@ EXAMPLES = r'''
     extra_properties:
       - AccuracyUSec
   register: results
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 units:
   description:
     - Dictionary of systemd unit info keyed by unit name.
-    - Additional fields will be returned depending on the value of O(extra_properties).
+    - Additional fields are returned depending on the value of O(extra_properties).
   returned: success
   type: dict
   elements: dict
@@ -117,7 +116,8 @@ units:
     substate:
       description:
         - The detailed sub state of the unit.
-        - The most common values are V(running), V(dead), V(exited), V(failed), V(listening), V(active), and V(mounted), but other values are possible as well.
+        - The most common values are V(running), V(dead), V(exited), V(failed), V(listening), V(active), and V(mounted), but
+          other values are possible as well.
       returned: always
       type: str
       sample: running
@@ -170,8 +170,9 @@ units:
       returned: only for C(.mount) units.
       type: str
       sample: /
-  sample: {
-    "-.mount": {
+  sample:
+    {
+      "-.mount": {
         "activestate": "active",
         "description": "Root Mount",
         "loadstate": "loaded",
@@ -181,8 +182,8 @@ units:
         "type": "xfs",
         "what": "/dev/mapper/cs-root",
         "where": "/"
-    },
-    "sshd-keygen.target": {
+      },
+      "sshd-keygen.target": {
         "activestate": "active",
         "description": "sshd-keygen.target",
         "fragmentpath": "/usr/lib/systemd/system/sshd-keygen.target",
@@ -191,8 +192,8 @@ units:
         "substate": "active",
         "unitfilepreset": "disabled",
         "unitfilestate": "static"
-    },
-    "systemd-journald.service": {
+      },
+      "systemd-journald.service": {
         "activestate": "active",
         "description": "Journal Service",
         "execmainpid": "613",
@@ -203,8 +204,8 @@ units:
         "substate": "running",
         "unitfilepreset": "disabled",
         "unitfilestate": "static"
-    },
-    "systemd-journald.socket": {
+      },
+      "systemd-journald.socket": {
         "activestate": "active",
         "description": "Journal Socket",
         "fragmentpath": "/usr/lib/systemd/system/systemd-journald.socket",
@@ -213,9 +214,9 @@ units:
         "substate": "running",
         "unitfilepreset": "disabled",
         "unitfilestate": "static"
+      }
     }
-  }
-'''
+"""
 
 import fnmatch
 from ansible.module_utils.basic import AnsibleModule

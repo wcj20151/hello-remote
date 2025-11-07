@@ -2,3 +2,6 @@
 *-artifact-*
 .*.swp
 ansible-navigator.log
+.ansible/**
+.history/**
+.vscode/**

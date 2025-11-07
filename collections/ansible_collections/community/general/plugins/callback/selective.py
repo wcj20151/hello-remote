@@ -12,7 +12,7 @@ name: selective
 type: stdout
 requirements:
   - set as main display callback
-short_description: only print certain tasks
+short_description: Only print certain tasks
 description:
   - This callback only prints tasks that have been tagged with C(print_action) or that have failed. This allows operators
     to focus on the tasks that provide value only.
@@ -208,7 +208,7 @@ class CallbackModule(CallbackBase):
                     stderr = [r.get('exception', None), r.get('module_stderr', None)]
                     stderr = "\n".join([e for e in stderr if e]).strip()
 
-                    self._print_host_or_item(r['item'],
+                    self._print_host_or_item(r[r['ansible_loop_var']],
                                              r.get('changed', False),
                                              to_text(r.get('msg', '')),
                                              r.get('diff', None),

@@ -29,8 +29,21 @@ options:
     description:
       - The type of the resource to obtain the profile for.
     required: true
-    choices: ['provider', 'host', 'vm', 'blueprint', 'category', 'cluster', 'data store', 'group', 'resource pool', 'service',
-      'service template', 'template', 'tenant', 'user']
+    choices:
+      - provider
+      - host
+      - vm
+      - blueprint
+      - category
+      - cluster
+      - data store
+      - group
+      - resource pool
+      - service
+      - service template
+      - template
+      - tenant
+      - user
   resource_name:
     type: str
     description:
@@ -83,8 +96,8 @@ from ansible_collections.community.general.plugins.module_utils.manageiq import 
 
 def main():
     argument_spec = dict(
-        resource_id=dict(required=False, type='int'),
-        resource_name=dict(required=False, type='str'),
+        resource_id=dict(type='int'),
+        resource_name=dict(type='str'),
         resource_type=dict(required=True, type='str',
                            choices=list(manageiq_entities().keys())),
     )

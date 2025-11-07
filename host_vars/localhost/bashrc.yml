@@ -160,7 +160,7 @@ my_bashrc: |
     fi
   }
 
-  for i in oc kubectl virtctl helm
+  for i in oc kubectl virtctl helm glab
     do
       load_completion $i
     done

@@ -28,7 +28,7 @@ extends_documentation_fragment:
   - community.general.attributes
 notes:
   - Access tokens can not be changed. If a parameter needs to be changed, an acceess token has to be recreated. Whether tokens
-    will be recreated is controlled by the O(recreate) option, which defaults to V(never).
+    are recreated or not is controlled by the O(recreate) option, which defaults to V(never).
   - Token string is contained in the result only when access token is created or recreated. It can not be fetched afterwards.
   - Token matching is done by comparing O(name) option.
 attributes:
@@ -51,18 +51,32 @@ options:
   scopes:
     description:
       - Scope of the access token.
+      - The values V(read_virtual_registry), V(write_virtual_registry), V(manage_runner), and V(self_rotate) were added in community.general 11.3.0.
     required: true
     type: list
     elements: str
     aliases: ["scope"]
-    choices: ["api", "read_api", "read_registry", "write_registry", "read_repository", "write_repository", "create_runner",
-      "ai_features", "k8s_proxy"]
+    choices:
+      - api
+      - read_api
+      - read_registry
+      - write_registry
+      - read_virtual_registry
+      - write_virtual_registry
+      - read_repository
+      - write_repository
+      - create_runner
+      - manage_runner
+      - ai_features
+      - k8s_proxy
+      - self_rotate
   access_level:
     description:
       - Access level of the access token.
+      - The value V(planner) was added in community.general 11.3.0.
     type: str
     default: maintainer
-    choices: ["guest", "reporter", "developer", "maintainer", "owner"]
+    choices: ["guest", "planner", "reporter", "developer", "maintainer", "owner"]
   expires_at:
     description:
       - Expiration date of the access token in C(YYYY-MM-DD) format.
@@ -71,17 +85,17 @@ options:
     required: true
   recreate:
     description:
-      - Whether the access token will be recreated if it already exists.
-      - When V(never) the token will never be recreated.
-      - When V(always) the token will always be recreated.
-      - When V(state_change) the token will be recreated if there is a difference between desired state and actual state.
+      - Whether the access token is recreated if it already exists.
+      - When V(never) the token is never recreated.
+      - When V(always) the token is always recreated.
+      - When V(state_change) the token is recreated if there is a difference between desired state and actual state.
     type: str
     choices: ["never", "always", "state_change"]
     default: never
   state:
     description:
-      - When V(present) the access token will be added to the group if it does not exist.
-      - When V(absent) it will be removed from the group if it exists.
+      - When V(present) the access token is added to the group if it does not exist.
+      - When V(absent) it is removed from the group if it exists.
     default: present
     type: str
     choices: ["present", "absent"]
@@ -152,7 +166,7 @@ from ansible_collections.community.general.plugins.module_utils.gitlab import (
     auth_argument_spec, find_group, gitlab_authentication, gitlab
 )
 
-ACCESS_LEVELS = dict(guest=10, reporter=20, developer=30, maintainer=40, owner=50)
+ACCESS_LEVELS = dict(guest=10, planner=15, reporter=20, developer=30, maintainer=40, owner=50)
 
 
 class GitLabGroupAccessToken(object):
@@ -185,9 +199,9 @@ class GitLabGroupAccessToken(object):
     @param name of the access token
     '''
     def find_access_token(self, group, name):
-        access_tokens = group.access_tokens.list(all=True)
+        access_tokens = [x for x in group.access_tokens.list(all=True) if not getattr(x, 'revoked', False)]
         for access_token in access_tokens:
-            if (access_token.name == name):
+            if access_token.name == name:
                 self.access_token_object = access_token
                 return False
         return False
@@ -232,12 +246,16 @@ def main():
                              'read_api',
                              'read_registry',
                              'write_registry',
+                             'read_virtual_registry',
+                             'write_virtual_registry',
                              'read_repository',
                              'write_repository',
                              'create_runner',
+                             'manage_runner',
                              'ai_features',
-                             'k8s_proxy']),
-        access_level=dict(type='str', required=False, default='maintainer', choices=['guest', 'reporter', 'developer', 'maintainer', 'owner']),
+                             'k8s_proxy',
+                             'self_rotate']),
+        access_level=dict(type='str', default='maintainer', choices=['guest', 'planner', 'reporter', 'developer', 'maintainer', 'owner']),
         expires_at=dict(type='str', required=True),
         recreate=dict(type='str', default='never', choices=['never', 'always', 'state_change'])
     ))

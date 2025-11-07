@@ -5,27 +5,37 @@
   force_handlers: true
 
   tasks:
-
     - name: Check if user is logged in via GUI
       register: login_type
       changed_when: false
       ansible.builtin.shell: >
         loginctl show-session $(loginctl --no-legend | awk '{print $1}') -p Type --value
 
+    - name: Ensure message about maximizing terminal window is displayed
+      ansible.builtin.debug:
+        msg: |
+
+          ⚠️ ️                 ⚠️                  ⚠️                  ⚠️                  ⚠️
+
+          Please ensure that your terminal window is maximized for the best experience.
+
+          Clue: Double click the title bar.
+
+          ⚠️ ️                 ⚠️                  ⚠️                  ⚠️                  ⚠️
+
+    - name: Ensure 5 second pause to read message
+      ansible.builtin.pause:
+        seconds: 5
+
     - name: Terminate playbook if user is not logged in via GUI
       ansible.builtin.assert:
         that:
           - "'x11' in login_type['stdout'] or 'wayland' in login_type['stdout']"
-          - ansible_facts['distribution_major_version'] != "10"
         fail_msg: |
           ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️
 
           This playbook must be run from a console session at
           https://rol.redhat.com
-
-          This playbook is currently not supported for RHEL10 due to
-          a bug in the training environment. Support will be enabled
-          when the bug is fixed.
 
           ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️      ⛔️
 
@@ -63,7 +73,6 @@
         dest: /usr/share/vim/vimfiles/pack/vendor/start/{{ item.split('/')[-1] | regex_replace('\.git$') }}
 
     - name: Render terminal profile template
-      notify: Reload terminal
       ansible.builtin.template:
         src: terminal_profile.j2
         dest: /var/tmp/terminal_profile
@@ -71,7 +80,7 @@
 
     - name: Ensure config files are copied
       loop: "{{ lookup('dict', config_files) }}"
-      notify: Ensure terminal terminates
+      notify: Reload terminal
       ansible.builtin.copy:
         src: "{{ item['value']['file'] }}"
         dest: "{{ item['value']['dest'] }}"
@@ -90,68 +99,67 @@
         state: present
         marker: "# {mark} classroom_env managed block"
 
-    - name: Ensure /etc/bash_completion.d/glab is configured
-      become: true
-      ansible.builtin.shell: >
-        glab completion -s bash > /etc/bash_completion.d/glab
-      args:
-        creates: /etc/bash_completion.d/glab
-
-    - name: Ensure my git config is set (mail)
-      tags:
-        - never
-        - ricardo
-      community.general.git_config:
-        name: user.email
-        scope: global
-        value: rgdacosta@gmail.com
-
-    - name: Ensure my git config is set (name)
-      tags:
-        - never
-        - ricardo
-      community.general.git_config:
-        name: user.name
-        scope: global
-        value: Ricardo da Costa
-
-    - name: Ensure my git config is set (credentials cache)
-      tags:
-        - never
-        - ricardo
-      community.general.git_config:
-        name: credential.helper
-        scope: global
-        value: "cache --timeout=10800"
-
-    - name: Ensure resolution is obtained
-      register: current_resolution
-      changed_when: false
-      ansible.builtin.command: xrandr
-
-    - name: Ensure resolution is set
-      when: "'current 1920 x 1080' not in current_resolution['stdout']"
-      ansible.builtin.command: xrandr --size 1920x1080
-
-#    - name: Ensure firefox configuration tasks are included
-#      ansible.builtin.include_tasks:
-#        file: tasks/firefox.yml
-
     - name: Create an Alt + Tab alternative with Alt + q
       ansible.builtin.shell: >
         gsettings set org.gnome.desktop.wm.keybindings switch-windows "['<Alt>q']"
       changed_when: false
       when: "'<Alt>q' not in lookup('pipe', 'gsettings get org.gnome.desktop.wm.keybindings switch-windows')"
 
+    - name: Create motd file with wiki URL
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/profile.d/classroom_env.sh
+        content: "{{ classroom_env_motd }}"
+        mode: "0755"
+
+    - name: Ensure RHEL9 tasks are included
+      when: ansible_facts['distribution_major_version'] == "9"
+      ansible.builtin.include_tasks:
+        file: tasks/rhel9_tasks.yml
+
+    - name: Ensure RHEL10 tasks are included
+      when: ansible_facts['distribution_major_version'] == "10"
+      ansible.builtin.include_tasks:
+        file: tasks/rhel10_tasks.yml
+
+    - name: Ensure git tasks are included
+      tags:
+        - rdc
+        - never
+      ansible.builtin.include_tasks:
+        file: tasks/rdc_git.yml
+        apply:
+          tags:
+            - rdc
+
+    - name: Ensure zerotier tasks are included
+      tags:
+        - zerotier
+        - never
+      loop:
+        - tasks/zerotier.yml
+        - tasks/firewall.yml
+      ansible.builtin.include_tasks:
+        file: "{{ item }}"
+        apply:
+          tags:
+            - zerotier
+
   handlers:
     # community.general.dconf was considered but did not behave as expected
     - name: Ensure profile is loaded
+      when: ansible_facts['distribution_major_version'] == "9"
       listen: Reload terminal
       ansible.builtin.shell: dconf load /org/gnome/terminal/ < /var/tmp/terminal_profile
       args:
         creates: /var/tmp/terminal_profile_loaded
 
-    - name: Ensure terminal terminates
+    - name: Ensure terminal terminates RHEL9
+      when: ansible_facts['distribution_major_version'] == "9"
       listen: Reload terminal
       ansible.builtin.command: killall gnome-terminal-server
-      when: "'gnome-terminal' in lookup('pipe', 'pgrep -l gnome-terminal')"
+
+    - name: Ensure network service is restarted
+      ansible.builtin.service:
+        name: network
+        state: restarted

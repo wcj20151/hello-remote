@@ -77,6 +77,8 @@ files:
   $callbacks/opentelemetry.py:
     keywords: opentelemetry observability
     maintainers: v1v
+  $callbacks/print_task.py:
+    maintainers: demonpig
   $callbacks/say.py:
     keywords: brew cask darwin homebrew macosx macports osx
     labels: macos say
@@ -90,6 +92,8 @@ files:
     maintainers: ryancurrah
   $callbacks/syslog_json.py:
     maintainers: imjoseangel
+  $callbacks/tasks_only.py:
+    maintainers: felixfontein
   $callbacks/timestamp.py:
     maintainers: kurokobo
   $callbacks/unixy.py:
@@ -111,20 +115,17 @@ files:
   $connections/lxd.py:
     labels: lxd
     maintainers: mattclay
-  $connections/proxmox_pct_remote.py:
-    labels: proxmox
-    maintainers: mietzen
   $connections/qubes.py:
     maintainers: kushaldas
   $connections/saltstack.py:
     labels: saltstack
     maintainers: mscherer
+  $connections/wsl.py:
+    maintainers: rgl
   $connections/zone.py:
     maintainers: $team_ansible_core
   $doc_fragments/:
     labels: docs_fragments
-  $doc_fragments/clc.py:
-    maintainers: clc-runner russoz
   $doc_fragments/django.py:
     maintainers: russoz
   $doc_fragments/hpe3par.py:
@@ -208,12 +209,20 @@ files:
     maintainers: resmo
   $filters/to_months.yml:
     maintainers: resmo
+  $filters/to_nice_yaml.yml:
+    maintainers: felixfontein
+  $filters/to_prettytable.py:
+    maintainers: tgadiev
   $filters/to_seconds.yml:
     maintainers: resmo
   $filters/to_time_unit.yml:
     maintainers: resmo
   $filters/to_weeks.yml:
     maintainers: resmo
+  $filters/to_yaml.py:
+    maintainers: felixfontein
+  $filters/to_yaml.yml:
+    maintainers: felixfontein
   $filters/to_years.yml:
     maintainers: resmo
   $filters/unicode_normalize.py:
@@ -243,18 +252,16 @@ files:
     keywords: opennebula dynamic inventory script
     labels: cloud opennebula
     maintainers: feldsam
-  $inventories/proxmox.py:
-    maintainers: $team_virt ilijamt krauthosting
   $inventories/scaleway.py:
     labels: cloud scaleway
     maintainers: $team_scaleway
-  $inventories/stackpath_compute.py:
-    maintainers: shayrybak
   $inventories/virtualbox.py: {}
   $inventories/xen_orchestra.py:
     maintainers: ddelnano shinuza
   $lookups/:
     labels: lookups
+  $lookups/binary_file.py:
+    maintainers: felixfontein
   $lookups/bitwarden_secrets_manager.py:
     maintainers: jantari
   $lookups/bitwarden.py:
@@ -286,16 +293,13 @@ files:
     maintainers: dagwieers
   $lookups/flattened.py: {}
   $lookups/github_app_access_token.py:
-    maintainers: weisheng-p
+    maintainers: weisheng-p blavoie
   $lookups/hiera.py:
     maintainers: jparrill
   $lookups/keyring.py: {}
   $lookups/lastpass.py: {}
   $lookups/lmdb_kv.py:
     maintainers: jpmens
-  $lookups/manifold.py:
-    labels: manifold
-    maintainers: galanoff
   $lookups/merge_variables.py:
     maintainers: rlenferink m-a-r-k-e alpex8
   $lookups/onepass:
@@ -383,6 +387,8 @@ files:
   $module_utils/pipx.py:
     labels: pipx
     maintainers: russoz
+  $module_utils/pkg_req.py:
+    maintainers: russoz
   $module_utils/python_runner.py:
     maintainers: russoz
   $module_utils/puppet.py:
@@ -417,6 +423,8 @@ files:
   $module_utils/wdc_redfish_utils.py:
     labels: wdc_redfish_utils
     maintainers: $team_wdc
+  $module_utils/xdg_mime.py:
+    maintainers: mhalano
   $module_utils/xenserver.py:
     labels: xenserver
     maintainers: bvitnik
@@ -500,8 +508,6 @@ files:
     maintainers: NickatEpic
   $modules/cisco_webex.py:
     maintainers: drew-russell
-  $modules/clc_:
-    maintainers: clc-runner
   $modules/cloud_init_data_facts.py:
     maintainers: resmo
   $modules/cloudflare_dns.py:
@@ -549,6 +555,10 @@ files:
   $modules/django_command.py:
     maintainers: russoz
   $modules/django_createcachetable.py:
+    maintainers: russoz
+  $modules/django_dumpdata.py:
+    maintainers: russoz
+  $modules/django_loaddata.py:
     maintainers: russoz
   $modules/django_manage.py:
     ignore: scottanderson42 tastychutney
@@ -660,8 +670,6 @@ files:
     maintainers: marns93
   $modules/hg.py:
     maintainers: yeukhon
-  $modules/hipchat.py:
-    maintainers: pb8226 shirou
   $modules/homebrew.py:
     ignore: ryansb
     keywords: brew cask darwin homebrew macosx macports osx
@@ -787,6 +795,8 @@ files:
     maintainers: brettmilford unnecessary-username juanmcasanova
   $modules/jenkins_build_info.py:
     maintainers: juanmcasanova
+  $modules/jenkins_credential.py:
+    maintainers: YoussefKhalidAli
   $modules/jenkins_job.py:
     maintainers: sermilrod
   $modules/jenkins_job_info.py:
@@ -903,6 +913,10 @@ files:
     maintainers: nerzhul
   $modules/lvg.py:
     maintainers: abulimov
+  $modules/lvm_pv.py:
+    maintainers: klention
+  $modules/lvm_pv_move_data.py:
+    maintainers: klention
   $modules/lvg_rename.py:
     maintainers: lszomor
   $modules/lvol.py:
@@ -1057,8 +1071,12 @@ files:
   $modules/ovh_monthly_billing.py:
     maintainers: fraff
   $modules/pacemaker_cluster.py:
-    maintainers: matbu
+    maintainers: matbu munchtoast
+  $modules/pacemaker_info.py:
+    maintainers: munchtoast
   $modules/pacemaker_resource.py:
+    maintainers: munchtoast
+  $modules/pacemaker_stonith.py:
     maintainers: munchtoast
   $modules/packet_:
     maintainers: nurfet-becirevic t0mk
@@ -1135,36 +1153,6 @@ files:
     maintainers: $team_bsd berenddeboer
   $modules/pritunl_:
     maintainers: Lowess
-  $modules/profitbricks:
-    maintainers: baldwinSPC
-  $modules/proxmox:
-    keywords: kvm libvirt proxmox qemu
-    labels: proxmox virt
-    maintainers: $team_virt UnderGreen krauthosting
-    ignore: tleguern
-  $modules/proxmox.py:
-    ignore: skvidal
-    maintainers: UnderGreen krauthosting
-  $modules/proxmox_disk.py:
-    maintainers: castorsky krauthosting
-  $modules/proxmox_kvm.py:
-    ignore: skvidal
-    maintainers: helldorado krauthosting
-  $modules/proxmox_backup.py:
-    maintainers: IamLunchbox
-  $modules/proxmox_backup_info.py:
-    maintainers: raoufnezhad mmayabi
-  $modules/proxmox_nic.py:
-    maintainers: Kogelvis krauthosting
-  $modules/proxmox_node_info.py:
-    maintainers: jwbernin krauthosting
-  $modules/proxmox_storage_contents_info.py:
-    maintainers: l00ptr krauthosting
-  $modules/proxmox_tasks_info:
-    maintainers: paginabianca krauthosting
-  $modules/proxmox_template.py:
-    ignore: skvidal
-    maintainers: UnderGreen krauthosting
   $modules/pubnub_blocks.py:
     maintainers: parfeon pubnub
   $modules/pulp_repo.py:
@@ -1235,9 +1223,9 @@ files:
   $modules/scaleway_compute_private_network.py:
     maintainers: pastral
   $modules/scaleway_container.py:
-     maintainers: Lunik
+    maintainers: Lunik
   $modules/scaleway_container_info.py:
-     maintainers: Lunik
+    maintainers: Lunik
   $modules/scaleway_container_namespace.py:
     maintainers: Lunik
   $modules/scaleway_container_namespace_info.py:
@@ -1445,6 +1433,8 @@ files:
     maintainers: dinoocch the-maldridge
   $modules/xcc_:
     maintainers: panyy3 renxulei
+  $modules/xdg_mime.py:
+    maintainers: mhalano
   $modules/xenserver_:
     maintainers: bvitnik
   $modules/xenserver_facts.py:
@@ -1477,6 +1467,8 @@ files:
     maintainers: natefoo
   $modules/znode.py:
     maintainers: treyperry
+  $modules/zpool.py:
+    maintainers: tomhesse
   $modules/zpool_facts:
     keywords: beadm dladm illumos ipadm nexenta omnios openindiana pfexec smartos solaris sunos zfs zpool
     labels: solaris
@@ -1543,6 +1535,22 @@ files:
     maintainers: russoz
   docs/docsite/rst/guide_deps.rst:
     maintainers: russoz
+  docs/docsite/rst/guide_iocage.rst:
+    maintainers: russoz felixfontein
+  docs/docsite/rst/guide_iocage_inventory.rst:
+    maintainers: vbotka
+  docs/docsite/rst/guide_iocage_inventory_aliases.rst:
+    maintainers: vbotka
+  docs/docsite/rst/guide_iocage_inventory_basics.rst:
+    maintainers: vbotka
+  docs/docsite/rst/guide_iocage_inventory_dhcp.rst:
+    maintainers: vbotka
+  docs/docsite/rst/guide_iocage_inventory_hooks.rst:
+    maintainers: vbotka
+  docs/docsite/rst/guide_iocage_inventory_properties.rst:
+    maintainers: vbotka
+  docs/docsite/rst/guide_iocage_inventory_tags.rst:
+    maintainers: vbotka
   docs/docsite/rst/guide_modulehelper.rst:
     maintainers: russoz
   docs/docsite/rst/guide_online.rst:

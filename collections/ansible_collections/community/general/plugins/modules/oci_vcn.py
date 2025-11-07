@@ -11,6 +11,10 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 module: oci_vcn
 short_description: Manage Virtual Cloud Networks(VCN) in OCI
+deprecated:
+  removed_in: 13.0.0
+  why: Superseded by official Oracle collection.
+  alternative: Use module C(oci_network_vcn) from the C(oracle.oci) collection.
 description:
   - This module allows the user to create, delete and update virtual cloud networks(VCNs) in OCI. The complete Oracle Cloud
     Infrastructure Ansible Modules can be downloaded from U(https://github.com/oracle/oci-ansible-modules/releases).
@@ -78,22 +82,23 @@ EXAMPLES = r"""
 
 RETURN = r"""
 vcn:
-    description: Information about the VCN
-    returned: On successful create and update operation
-    type: dict
-    sample: {
-            "cidr_block": "10.0.0.0/16",
-            compartment_id": "ocid1.compartment.oc1..xxxxxEXAMPLExxxxx",
-            "default_dhcp_options_id": "ocid1.dhcpoptions.oc1.phx.xxxxxEXAMPLExxxxx",
-            "default_route_table_id": "ocid1.routetable.oc1.phx.xxxxxEXAMPLExxxxx",
-            "default_security_list_id": "ocid1.securitylist.oc1.phx.xxxxxEXAMPLExxxxx",
-            "display_name": "ansible_vcn",
-            "dns_label": "ansiblevcn",
-            "id": "ocid1.vcn.oc1.phx.xxxxxEXAMPLExxxxx",
-            "lifecycle_state": "AVAILABLE",
-            "time_created": "2017-11-13T20:22:40.626000+00:00",
-            "vcn_domain_name": "ansiblevcn.oraclevcn.com"
-        }
+  description: Information about the VCN.
+  returned: On successful create and update operation
+  type: dict
+  sample:
+    {
+      "cidr_block": "10.0.0.0/16",
+      "compartment_id\"": "ocid1.compartment.oc1..xxxxxEXAMPLExxxxx",
+      "default_dhcp_options_id": "ocid1.dhcpoptions.oc1.phx.xxxxxEXAMPLExxxxx",
+      "default_route_table_id": "ocid1.routetable.oc1.phx.xxxxxEXAMPLExxxxx",
+      "default_security_list_id": "ocid1.securitylist.oc1.phx.xxxxxEXAMPLExxxxx",
+      "display_name": "ansible_vcn",
+      "dns_label": "ansiblevcn",
+      "id": "ocid1.vcn.oc1.phx.xxxxxEXAMPLExxxxx",
+      "lifecycle_state": "AVAILABLE",
+      "time_created": "2017-11-13T20:22:40.626000+00:00",
+      "vcn_domain_name": "ansiblevcn.oraclevcn.com"
+    }
 """
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
@@ -161,17 +166,12 @@ def main():
     )
     module_args.update(
         dict(
-            cidr_block=dict(type="str", required=False),
-            compartment_id=dict(type="str", required=False),
-            display_name=dict(type="str", required=False, aliases=["name"]),
-            dns_label=dict(type="str", required=False),
-            state=dict(
-                type="str",
-                required=False,
-                default="present",
-                choices=["absent", "present"],
-            ),
-            vcn_id=dict(type="str", required=False, aliases=["id"]),
+            cidr_block=dict(type="str"),
+            compartment_id=dict(type="str"),
+            display_name=dict(type="str", aliases=["name"]),
+            dns_label=dict(type="str"),
+            state=dict(type="str", default="present", choices=["absent", "present"]),
+            vcn_id=dict(type="str", aliases=["id"]),
         )
     )
 

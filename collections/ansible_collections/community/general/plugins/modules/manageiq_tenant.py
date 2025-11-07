@@ -214,7 +214,7 @@ class ManageIQTenant(object):
                     self.module.fail_json(msg="Parent tenant '%s' not found in manageiq" % parent)
 
                 if len(parent_tenant_res) > 1:
-                    self.module.fail_json(msg="Multiple parent tenants not found in manageiq with name '%s" % parent)
+                    self.module.fail_json(msg="Multiple parent tenants not found in manageiq with name '%s'" % parent)
 
                 parent_tenant = parent_tenant_res[0]
                 parent_id = int(parent_tenant['id'])
@@ -482,8 +482,8 @@ def main():
     argument_spec = dict(
         name=dict(required=True, type='str'),
         description=dict(required=True, type='str'),
-        parent_id=dict(required=False, type='int'),
-        parent=dict(required=False, type='str'),
+        parent_id=dict(type='int'),
+        parent=dict(type='str'),
         state=dict(choices=['absent', 'present'], default='present'),
         quotas=dict(type='dict', default={})
     )

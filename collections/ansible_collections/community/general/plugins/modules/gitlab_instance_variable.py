@@ -16,10 +16,10 @@ short_description: Creates, updates, or deletes GitLab instance variables
 version_added: 7.1.0
 description:
   - Creates a instance variable if it does not exist.
-  - When a instance variable does exist, its value will be updated if the values are different.
+  - When a instance variable does exist, its value is updated if the values are different.
   - Support for instance variables requires GitLab >= 13.0.
-  - Variables which are not mentioned in the modules options, but are present on the GitLab instance, will either stay (O(purge=false))
-    or will be deleted (O(purge=true)).
+  - Variables which are not mentioned in the modules options, but are present on the GitLab instance, either stay (O(purge=false))
+    or are deleted (O(purge=true)).
 author:
   - Benedikt Braunger (@benibr)
 requirements:
@@ -64,6 +64,12 @@ options:
           - The variable value.
           - Required when O(state=present).
         type: str
+      description:
+        description:
+          - A description for the variable.
+          - Support for descriptions requires GitLab >= 16.8.
+        type: str
+        version_added: '11.4.0'
       masked:
         description:
           - Whether variable value is masked or not.
@@ -124,22 +130,22 @@ instance_variable:
       description: A list of variables which were created.
       returned: always
       type: list
-      sample: ['ACCESS_KEY_ID', 'SECRET_ACCESS_KEY']
+      sample: ["ACCESS_KEY_ID", "SECRET_ACCESS_KEY"]
     untouched:
       description: A list of variables which exist.
       returned: always
       type: list
-      sample: ['ACCESS_KEY_ID', 'SECRET_ACCESS_KEY']
+      sample: ["ACCESS_KEY_ID", "SECRET_ACCESS_KEY"]
     removed:
       description: A list of variables which were deleted.
       returned: always
       type: list
-      sample: ['ACCESS_KEY_ID', 'SECRET_ACCESS_KEY']
+      sample: ["ACCESS_KEY_ID", "SECRET_ACCESS_KEY"]
     updated:
       description: A list pre-existing variables whose values have been set.
       returned: always
       type: list
-      sample: ['ACCESS_KEY_ID', 'SECRET_ACCESS_KEY']
+      sample: ["ACCESS_KEY_ID", "SECRET_ACCESS_KEY"]
 """
 
 from ansible.module_utils.basic import AnsibleModule
@@ -165,6 +171,7 @@ class GitlabInstanceVariables(object):
         var = {
             "key": var_obj.get('key'),
             "value": var_obj.get('value'),
+            "description": var_obj.get('description'),
             "masked": var_obj.get('masked'),
             "protected": var_obj.get('protected'),
             "raw": var_obj.get('raw'),
@@ -265,14 +272,13 @@ def native_python_main(this_gitlab, purge, requested_variables, state, module):
                     return_value['removed'].append(item)
 
     elif state == 'absent':
-        # value does not matter on removing variables.
-        # key and environment scope are sufficient
-        for item in existing_variables:
-            item.pop('value')
-            item.pop('variable_type')
-        for item in requested_variables:
-            item.pop('value')
-            item.pop('variable_type')
+        # value, type, and description do not matter on removing variables.
+        keys_ignored_on_deletion = ['value', 'variable_type', 'description']
+        for key in keys_ignored_on_deletion:
+            for item in existing_variables:
+                item.pop(key)
+            for item in requested_variables:
+                item.pop(key)
 
         if not purge:
             remove_requested = [x for x in requested_variables if x in existing_variables]
@@ -301,10 +307,11 @@ def main():
     argument_spec = basic_auth_argument_spec()
     argument_spec.update(auth_argument_spec())
     argument_spec.update(
-        purge=dict(type='bool', required=False, default=False),
-        variables=dict(type='list', elements='dict', required=False, default=list(), options=dict(
+        purge=dict(type='bool', default=False),
+        variables=dict(type='list', elements='dict', default=list(), options=dict(
             name=dict(type='str', required=True),
             value=dict(type='str', no_log=True),
+            description=dict(type='str'),
             masked=dict(type='bool', default=False),
             protected=dict(type='bool', default=False),
             raw=dict(type='bool', default=False),

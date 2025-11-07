@@ -1,0 +1,131 @@
+---
+- name: Tasks block for firewall
+  become: true
+  block:
+
+  - name: Ensure IP forwarding is enabled
+    ansible.posix.sysctl:
+      name: net.ipv4.ip_forward
+      value: '1'
+      sysctl_set: true
+      state: present
+      reload: true
+
+  - name: Ensure ZeroTier interface is discovered
+    ansible.builtin.setup:
+      gather_subset:
+        - network
+
+  - name: Ensure eth0 is in public zone
+    ansible.posix.firewalld:
+      interface: eth0
+      zone: public
+      state: enabled
+      permanent: true
+      immediate: true
+
+  - name: Ensure ZeroTier interface is in trusted zone
+    ansible.posix.firewalld:
+      interface: "{{ zerotier_interface }}"
+      zone: trusted
+      state: enabled
+      permanent: true
+      immediate: true
+
+  - name: Enable masquerading for public and trusted zones
+    loop:
+      - public
+      - trusted
+    loop_control:
+      loop_var: zone
+    ansible.posix.firewalld:
+      zone: "{{ zone }}"
+      masquerade: true
+      permanent: true
+      immediate: true
+      state: enabled
+
+  - name: Set the public zone target to ACCEPT (allows forwarding)
+    ansible.posix.firewalld:
+      zone: public
+      target: ACCEPT
+      permanent: true
+      state: enabled
+
+  - name: Ensure rich rules for ZeroTier to lab networks exist
+    loop: "{{ lab_networks }}"
+    loop_control:
+      loop_var: network
+    ansible.posix.firewalld:
+      zone: public
+      rich_rule: >-
+        rule family="ipv4"
+        source address="{{ zerotier_source }}"
+        destination address="{{ network }}"
+        accept
+      permanent: true
+      immediate: true
+      state: enabled
+
+  - name: Ensure route to OpenShift subnet via lab gateway
+    community.general.nmcli:
+      conn_name: eth0
+      type: ethernet
+      state: present
+      routes4:
+        - "192.168.50.0/24 {{ lab_gateway }}"
+
+  - name: Reload firewalld to apply changes
+    ansible.builtin.command: firewall-cmd --reload
+    changed_when: false
+
+  - name: Ask user if they want to see ZeroTier instructions
+    when: not is_rdc | default(false)
+    register: zerotier_instructions_prompt
+    ansible.builtin.pause:
+      prompt: |
+      
+        Do you want to see the instructions for using your local system's browser to connect to web services in the classroom? 👈
+
+        Example, I'm a Mac user and I want to use Chrome to access web services like the OpenShift Web Console.
+
+        ⚠️  This is complicated ⚠️
+
+        ‼️  Answer no if you only want to use SSH ‼️
+
+        Answer mac if you want to see the MacOS instructions
+
+        Answer windows if you want to see the Windows instructions
+
+        There's no Linux option because if you're using Linux you probably know how to do this already.
+
+        (mac/windows/no)👈		👈		👈
+
+  - name: Abort if user says no to receiving further instructions
+    when: >
+      not is_rdc | default(false)
+      or (zerotier_instructions_prompt.user_input is undefined)
+      or (zerotier_instructions_prompt.user_input == 'no')
+    ansible.builtin.debug:
+      msg: |
+        ⛔️  ️                ⛔️                  ⛔️                  ⛔️                  ⛔️                  ⛔️  ️              ⛔️
+
+        You chose only to use SSH to the lab environment.
+
+        🔗  Have look at https://gitlab.com/rgdacosta/classroom_env/-/wikis/ZeroTier-Setup-instructions for more information.
+
+        ⛔️  ️                ⛔️                  ⛔️                  ⛔️                  ⛔️                  ⛔️  ️              ⛔️
+      
+  - name: Ensure ZeroTier user instructions are displayed (MacOS)
+    when: >
+      (not (is_rdc | default(false)))
+      and (zerotier_instructions_prompt.user_input | default('') == 'mac')
+    ansible.builtin.debug:
+      msg: "{{ lookup('template', 'templates/mac_local_instructions.j2') }}"
+
+  - name: Ensure ZeroTier user instructions are displayed (Windows)
+    when: >
+      (not (is_rdc | default(false)))
+      and (zerotier_instructions_prompt.user_input | default('') == 'windows')
+    ansible.builtin.debug:
+      msg: "{{ lookup('template', 'templates/windows_local_instructions.j2') }}"

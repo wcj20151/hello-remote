@@ -1,0 +1,200 @@
+- name: Check if config is for rdc
+  register: git_user_email
+  community.general.git_config_info:
+    name: user.email
+    scope: global
+
+- name: Ensure rdc fact is set
+  when: "'rgdacosta@gmail.com' in git_user_email.config_value"
+  ansible.builtin.set_fact:
+    is_rdc: true
+
+- name: Tasks block for rdc
+  become: true
+  when: is_rdc | default(false) 
+  block:
+
+    - name: Ensure zerotier repository is defined
+      ansible.builtin.yum_repository:
+        name: zerotier
+        description: ZeroTier One Repository
+        baseurl: https://download.zerotier.com/redhat/el/9
+        gpgcheck: true
+        gpgkey: https://download.zerotier.com/contact%40zerotier.com.gpg
+        enabled: true
+        state: present
+
+    - name: Ensure zerotier package is installed
+      ansible.builtin.dnf:
+        name: zerotier-one
+        state: present
+
+    - name: Ensure zerotier service is started and enabled
+      ansible.builtin.service:
+        name: zerotier-one
+        state: started
+        enabled: true 
+
+    - name: Set rdc zerotier_network_id
+      become: false
+      ansible.builtin.set_fact:
+        rdc_zerotier_network_id: 65228d8d6d195732
+      
+    - name: Ensure zerotier joins rdc network
+      args:
+        creates: /var/lib/zerotier-one/networks.d/{{ rdc_zerotier_network_id }}.conf
+      register: join_result
+      changed_when: "'200 join OK' in join_result['stdout']"
+      ansible.builtin.command: zerotier-cli join {{ rdc_zerotier_network_id }}
+
+- name: Tasks block for students
+  when: not is_rdc | default(false)
+  block:
+
+    - name: Ensure warning is displayed about signing up for a zero-tier account
+      ansible.builtin.debug:
+        msg: |
+
+          ⛔️		‼️		⚠️ 		⛔️		‼️		⚠️ 		⛔️		‼️		⚠️
+
+          You need to sign up for a free account at https://my.zerotier.com
+
+          ⛔️		‼️		⚠️ 		⛔️		‼️		⚠️ 		⛔️		‼️		⚠️
+
+    - name: Ensure prompt to validate warning is displayed
+      register: zerotier_warning_input
+      ansible.builtin.pause:
+        prompt: |
+
+          Do you understand that you need to sign up for a free account at https://my.zerotier.com to proceed? 👈		👈		👈
+
+          (yes/no) 👈		👈		👈
+
+    - name: Fail if user says no to zerotier warning
+      when: zerotier_warning_input.user_input != "yes"
+      ansible.builtin.fail:
+        msg: |
+          ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️
+
+          You did not accept the warning.
+
+          ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️
+
+    - name: Ensure zerotier repository is defined
+      become: true
+      ansible.builtin.yum_repository:
+        name: zerotier
+        description: ZeroTier One Repository
+        baseurl: https://download.zerotier.com/redhat/el/9
+        gpgcheck: true
+        gpgkey: https://download.zerotier.com/contact%40zerotier.com.gpg
+        enabled: true
+        state: present
+
+    - name: Ensure zerotier package is installed
+      become: true
+      ansible.builtin.dnf:
+        name: zerotier-one
+        state: present
+
+    - name: Ensure zerotier service is started and enabled
+      become: true
+      ansible.builtin.service:
+        name: zerotier-one
+        state: started
+        enabled: true 
+
+    - name: Prompt the user for a value for zerotier network ID
+      register: zerotier_network_id
+      ansible.builtin.pause:
+        prompt: |
+
+          Please enter the ZeroTier Network ID you wish to join 👈		👈		👈
+
+    - name: Assert that zerotier_network_id is valid
+      ansible.builtin.assert:
+        that:
+          - zerotier_network_id.user_input is defined
+          - zerotier_network_id.user_input | length > 0
+          - zerotier_network_id.user_input is match("^[0-9a-f]{16}$")
+        fail_msg: |
+
+          ⛔️		‼️		⚠️		⛔️		🤡
+
+          I gave you the instructions — so clean, so divine.
+
+          You treated them like EULAs — skipped every line.
+
+          The emojis were dancing, the warnings were strong,
+
+          Yet you’ll come crying to me when it all goes wrong.
+
+          At rgdacosta@gmail.com, I’ll pretend to care —
+
+          For every user error ... I lose another strand of hair.
+
+          ⛔️		‼️		⚠️		⛔️		🤡
+
+    - name: Ensure zerotier joins specified network
+      when: zerotier_network_id.user_input is defined
+      become: true
+      args:
+        creates: /var/lib/zerotier-one/networks.d/{{ zerotier_network_id['user_input'] }}.conf
+      register: join_result
+      changed_when: "'200 join OK' in join_result['stdout']"
+      ansible.builtin.command: zerotier-cli join {{ zerotier_network_id['user_input'] }}
+
+    - name: Display zerotier status
+      become: true
+      register: status_result
+      changed_when: false
+      ansible.builtin.command: zerotier-cli status
+
+    - name: Ensure warning about installing zerotier client is displayed
+      ansible.builtin.debug:
+        msg: |
+          ⛔️		‼️		⚠️ 		⛔️		‼️		⚠️
+
+          NOTE: You will need to install the ZeroTier client on your local Windows/Linux/Mac.
+
+          ⛔️		‼️		⚠️ 		⛔️		‼️		⚠️
+
+    - name: Display link to zerotier download page
+      ansible.builtin.debug:
+        msg: | 
+          ⛔️		‼️		⚠️ 		⛔️		‼️		⚠️ 		⛔️
+        
+          Download the ZeroTier client from https://zerotier.com/download
+
+          You need to authorize your device on the {{ zerotier_network_id['user_input'] }} network.
+
+          Head to https://my.zerotier.com and authorize your device.
+
+          Authorization results in IP address assignment.
+
+          You then would use ssh student@<ZeroTier IP Address> to connect to this lab environment.
+
+          Find the ZeroTier IP Address on the workstation system using: ip a s 
+
+          You can also find it on https://my.zerotier.com 
+
+          ⛔️		‼️		⚠️ 		⛔️		‼️		⚠️ 		⛔️
+      
+    - name: Ensure prompt to validate warning is displayed
+      register: zerotier_client_warning_input
+      ansible.builtin.pause:
+        prompt: |
+
+          Do you understand that what you need to do next? 👈		👈		👈
+
+          (yes/no) 👈		👈		👈
+
+    - name: Fail if user says no to zerotier warning
+      when: zerotier_client_warning_input.user_input != "yes"
+      ansible.builtin.fail:
+        msg: |
+          ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️
+
+          You did not accept the warning
+
+          ⛔️  ️    ⛔️      ⛔️      ⛔️      ⛔️

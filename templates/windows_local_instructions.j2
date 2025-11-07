@@ -1,0 +1,78 @@
+🚨 These instructions are not necessary if you only want to use SSH.
+
+Additional steps are needed on your **local system** (Mac or Windows) so that it can use the web consoles of services
+like:
+
+- OpenShift
+- Satellite
+- IDM
+- and more!
+
+Have look at https://gitlab.com/rgdacosta/classroom_env/-/wikis/ZeroTier-Setup-instructions for more information.
+
+👇 Follow the instructions below carefully.
+
+--------------------------------------------------------------------
+
+⚠️ Prerequisites:
+
+1️⃣ Get the IP address from your ZeroTier One app or by running the following from workstation:
+
+
+ip a s
+
+Use the IP Address associated with the zt interface.
+
+2️⃣ Open your browser and login at https://my.ziertier.com
+
+3️⃣ Select your network
+
+4️⃣ Scroll to Advanced, and below Add Routes, enter
+
+Destination: 172.25.250.0/24
+Via : REPLACE_THIS_WITH_YOUR_WORKSTATION_ZEROTIER_IPADDRESS
+
+--------------------------------------------------------------------
+🪟 **Windows Users**
+
+⚠️ I AM NOT A WINDOWS USER - THIS IS ALL THEORETICAL - PLEASE TEST AND UPDATE AS NEEDED!
+
+1️⃣ **Add persistent routes**
+Run PowerShell **as Administrator** and enter:
+
+route -p add 172.25.250.0 mask 255.255.255.0 REPLACE_THIS_WITH_YOUR_WORKSTATION_ZEROTIER_IPADDRESS
+route -p add 192.168.50.0 mask 255.255.255.0 1REPLACE_THIS_WITH_YOUR_WORKSTATION_ZEROTIER_IPADDRESS
+
+✅ These routes direct classroom and OpenShift network traffic through the workstation.
+
+2️⃣ **Add DNS for OpenShift apps**
+Edit this file:
+
+C:\Windows\System32\drivers\etc\hosts
+
+and append:
+
+172.25.250.254 console-openshift-console.apps.ocp4.example.com
+172.25.250.254 oauth-openshift.apps.ocp4.example.com
+
+💡 To handle name resolution for all example.com, use a local DNS proxy such as Acrylic DNS Proxy
+
+and forward to 172.25.250.254.
+
+3️⃣ **Verify**
+
+ping 172.25.250.254
+
+nslookup console-openshift-console.apps.ocp4.example.com
+
+start https://console-openshift-console.apps.ocp4.example.com
+
+--------------------------------------------------------------------
+✅ You’re done!
+
+You can now reach:
+
+- 🧩 Classroom network: 172.25.250.0/24
+- 🚀 OpenShift Web Console: https://console-openshift-console.apps.ocp4.example.com
+
+If DNS or routes break after a reboot, re-run these commands.

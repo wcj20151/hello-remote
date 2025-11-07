@@ -21,12 +21,15 @@ description:
 extends_documentation_fragment:
   - community.general.scaleway
   - community.general.attributes
+  - community.general.scaleway.actiongroup_scaleway
 
 attributes:
   check_mode:
     support: full
   diff_mode:
     support: none
+  action_group:
+    version_added: 11.3.0
 
 options:
   state:
@@ -46,12 +49,17 @@ options:
     choices:
       - ams1
       - EMEA-NL-EVS
+      - ams2
+      - ams3
       - par1
       - EMEA-FR-PAR1
       - par2
       - EMEA-FR-PAR2
+      - par3
       - waw1
       - EMEA-PL-WAW1
+      - waw2
+      - waw3
 
   protocol:
     type: str
@@ -116,21 +124,22 @@ EXAMPLES = r"""
 
 RETURN = r"""
 data:
-    description: This is only present when O(state=present).
-    returned: when O(state=present)
-    type: dict
-    sample: {
-        "scaleway_security_group_rule": {
-            "direction": "inbound",
-            "protocol": "TCP",
-            "ip_range": "0.0.0.0/0",
-            "dest_port_from": 80,
-            "action": "accept",
-            "position": 2,
-            "dest_port_to": null,
-            "editable": null,
-            "id": "10cb0b9a-80f6-4830-abd7-a31cd828b5e9"
-        }
+  description: This is only present when O(state=present).
+  returned: when O(state=present)
+  type: dict
+  sample:
+    {
+      "scaleway_security_group_rule": {
+        "direction": "inbound",
+        "protocol": "TCP",
+        "ip_range": "0.0.0.0/0",
+        "dest_port_from": 80,
+        "action": "accept",
+        "position": 2,
+        "dest_port_to": null,
+        "editable": null,
+        "id": "10cb0b9a-80f6-4830-abd7-a31cd828b5e9"
+      }
     }
 """
 
