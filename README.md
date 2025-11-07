@@ -1,3 +1,15 @@
+# 🚀 Getting started
+
+Requires Ansible to be installed. 
+
+```
+git clone https://gitlab.com/rgdacosta/classroom_env.git
+
+cd classroom_env
+
+ansible-playbook playbook.yml
+```
+
 ## Contributing
 
 🔗 https://gitlab.com/rgdacosta/classroom_env/-/wikis/home
@@ -13,17 +25,6 @@ Create a branch -> Create a merge request -> Assign me as a reviewer.
 - ✅ General Linux Productivity
 - ☸️  OpenShift Courses
 - 🤖 Ansible Ansible Courses 
-
-# 🚀 Getting startd
-Requires Ansible to be installed. 
-
-```
-git clone https://gitlab.com/rgdacosta/classroom_env.git
-
-cd classroom_env
-
-ansible-playbook playbook.yml
-```
 
 ---
 
