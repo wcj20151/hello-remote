@@ -1,35 +1,110 @@
+# YAML Lint configuration for Ansible + OpenShift training labs
+# Purpose: Catch structural and syntax mistakes students often make,
+# while keeping linting helpful (not noisy).
+#
+# Feedback and suggestions go to rdacosta@redhat.com
+
 extends: default
 
 rules:
-  trailing-spaces:
-    level: error
-  indentation:
-    level: warning
-    spaces: 2
-  line-length:
-    level: warning
-    max: 80
-    allow-non-breakable-words: true
-    allow-non-breakable-inline-mappings: true
-  key-duplicates:
-    level: error
-  document-start:
-    level: disabled
-  document-end:
-    level: disabled
+
+  # --- GENERAL STYLE ---
   comments:
     level: warning
     require-starting-space: true
+
+  comments-indentation:
+    level: warning
+
+  document-start:
+    level: warning
+    present: false  # allow omitting '---' for playbooks
+
+  document-end:
+    present: false  # don't require '...'
+
+  # --- INDENTATION & SPACING ---
+  indentation:
+    level: error
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  line-length:
+    level: info
+    max: 120
+    allow-non-breakable-words: true
+
+  new-line-at-end-of-file:
+    level: warning
+
+  trailing-spaces:
+    level: warning
+    allow-tabkey: false
+
   empty-lines:
     level: warning
     max: 2
-    max-start: 1
+    max-start: 0
     max-end: 1
 
-formats:
-  - colored
+  # --- KEYS & COLONS ---
+  # This section enforces YAML map key correctness:
+  # Students often mix up ':', '=', or spacing.
+  key-colons:
+    level: error
+    max-spaces-before: 0     # disallow "key : value"
+    max-spaces-after: 1      # allow "key: value" only
+    min-spaces-before: 0     # disallow "key :value"
+    min-spaces-after: 1      # disallow "key:value"
 
-ignore: |
-  - .venv
-  - build/*
+  # Prevent "key = value" confusion
+  key-duplicates:
+    level: error
+  key-ordering:
+    level: disable  # order doesn't matter in Ansible or OpenShift
+  braces:
+    level: error
+    min-spaces-inside: 0
+    max-spaces-inside: 1
 
+  # --- QUOTING ---
+  quoted-strings:
+    level: warning
+    quote-type: any
+    required: false  # only warn if inconsistent
+
+  # --- BOOLEANS ---
+  # Only allow 'true' and 'false' (not 'yes', 'no', 'on', 'off')
+  truthy:
+    level: error
+    allowed-values: ['true', 'false']
+
+  # --- DOCUMENT STRUCTURE ---
+  trailing-commas:
+    level: error
+  new-lines:
+    type: unix
+    level: warning
+
+  # --- ADVANCED ---
+  empty-values:
+    level: warning
+  hyphens:
+    level: error
+    max-spaces-after: 1
+
+  brackets:
+    level: error
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+
+  octal-values:
+    level: error
+
+  float-values:
+    level: warning
+
+  anchors: disable
+
+formats: colored

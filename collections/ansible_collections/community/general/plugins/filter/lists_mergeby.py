@@ -196,8 +196,7 @@ _value:
 """
 
 from ansible.errors import AnsibleFilterError
-from ansible.module_utils.six import string_types
-from ansible.module_utils.common._collections_compat import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from ansible.utils.vars import merge_hash
 
 from collections import defaultdict
@@ -257,7 +256,7 @@ def lists_mergeby(*terms, **kwargs):
 
     index = terms[-1]
 
-    if not isinstance(index, string_types):
+    if not isinstance(index, str):
         msg = ("First argument after the lists for community.general.lists_mergeby must be string. "
                "%s is %s")
         raise AnsibleFilterError(msg % (index, type(index)))

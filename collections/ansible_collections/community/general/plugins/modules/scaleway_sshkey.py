@@ -22,12 +22,15 @@ description:
 extends_documentation_fragment:
   - community.general.scaleway
   - community.general.attributes
+  - community.general.scaleway.actiongroup_scaleway
 
 attributes:
   check_mode:
     support: full
   diff_mode:
     support: none
+  action_group:
+    version_added: 11.3.0
 
 options:
   state:
@@ -71,13 +74,16 @@ EXAMPLES = r"""
 
 RETURN = r"""
 data:
-    description: This is only present when O(state=present).
-    returned: when O(state=present)
-    type: dict
-    sample: {
-        "ssh_public_keys": [
-            {"key": "ssh-rsa AAAA...."}
-        ]
+  description: This is only present when O(state=present).
+  returned: when O(state=present)
+  type: dict
+  sample:
+    {
+      "ssh_public_keys": [
+        {
+          "key": "ssh-rsa AAAA...."
+        }
+      ]
     }
 """
 

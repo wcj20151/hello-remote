@@ -27,7 +27,7 @@ options:
       - org
     default: null
     description:
-      - Name of the Pritunl organization to search for. If none provided, the module will return all Pritunl organizations.
+      - Name of the Pritunl organization to search for. If none provided, the module returns all Pritunl organizations.
 """
 
 EXAMPLES = r"""
@@ -41,37 +41,37 @@ EXAMPLES = r"""
 
 RETURN = r"""
 organizations:
-    description: List of Pritunl organizations.
-    returned: success
-    type: list
-    elements: dict
-    sample:
-        [
-            {
-                "auth_api": false,
-                "name": "FooOrg",
-                "auth_token": null,
-                "user_count": 0,
-                "auth_secret": null,
-                "id": "csftwlu6uhralzi2dpmhekz3",
-            },
-            {
-                "auth_api": false,
-                "name": "MyOrg",
-                "auth_token": null,
-                "user_count": 3,
-                "auth_secret": null,
-                "id": "58070daee63f3b2e6e472c36",
-            },
-            {
-                "auth_api": false,
-                "name": "BarOrg",
-                "auth_token": null,
-                "user_count": 0,
-                "auth_secret": null,
-                "id": "v1sncsxxybnsylc8gpqg85pg",
-            }
-        ]
+  description: List of Pritunl organizations.
+  returned: success
+  type: list
+  elements: dict
+  sample:
+    [
+      {
+        "auth_api": false,
+        "name": "FooOrg",
+        "auth_token": null,
+        "user_count": 0,
+        "auth_secret": null,
+        "id": "csftwlu6uhralzi2dpmhekz3"
+      },
+      {
+        "auth_api": false,
+        "name": "MyOrg",
+        "auth_token": null,
+        "user_count": 3,
+        "auth_secret": null,
+        "id": "58070daee63f3b2e6e472c36"
+      },
+      {
+        "auth_api": false,
+        "name": "BarOrg",
+        "auth_token": null,
+        "user_count": 0,
+        "auth_secret": null,
+        "id": "v1sncsxxybnsylc8gpqg85pg"
+      }
+    ]
 """
 
 from ansible.module_utils.basic import AnsibleModule
@@ -113,7 +113,7 @@ def main():
 
     argument_spec.update(
         dict(
-            organization=dict(required=False, type="str", default=None, aliases=["org"])
+            organization=dict(type="str", aliases=["org"])
         )
     )
 

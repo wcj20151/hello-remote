@@ -21,12 +21,15 @@ description:
 extends_documentation_fragment:
   - community.general.scaleway
   - community.general.attributes
+  - community.general.scaleway.actiongroup_scaleway
 
 attributes:
   check_mode:
     support: full
   diff_mode:
     support: none
+  action_group:
+    version_added: 11.3.0
 
 options:
   state:
@@ -50,12 +53,17 @@ options:
     choices:
       - ams1
       - EMEA-NL-EVS
+      - ams2
+      - ams3
       - par1
       - EMEA-FR-PAR1
       - par2
       - EMEA-FR-PAR2
+      - par3
       - waw1
       - EMEA-PL-WAW1
+      - waw2
+      - waw3
 
   name:
     description:
@@ -109,22 +117,23 @@ EXAMPLES = r"""
 
 RETURN = r"""
 data:
-    description: This is only present when O(state=present).
-    returned: when O(state=present)
-    type: dict
-    sample: {
-        "scaleway_security_group": {
-            "description": "my security group description",
-            "enable_default_security": true,
-            "id": "0168fb1f-cc46-4f69-b4be-c95d2a19bcae",
-            "inbound_default_policy": "accept",
-            "name": "security_group",
-            "organization": "43a3b6c8-916f-477b-b7ec-ff1898f5fdd9",
-            "organization_default": false,
-            "outbound_default_policy": "accept",
-            "servers": [],
-            "stateful": false
-        }
+  description: This is only present when O(state=present).
+  returned: when O(state=present)
+  type: dict
+  sample:
+    {
+      "scaleway_security_group": {
+        "description": "my security group description",
+        "enable_default_security": true,
+        "id": "0168fb1f-cc46-4f69-b4be-c95d2a19bcae",
+        "inbound_default_policy": "accept",
+        "name": "security_group",
+        "organization": "43a3b6c8-916f-477b-b7ec-ff1898f5fdd9",
+        "organization_default": false,
+        "outbound_default_policy": "accept",
+        "servers": [],
+        "stateful": false
+      }
     }
 """
 

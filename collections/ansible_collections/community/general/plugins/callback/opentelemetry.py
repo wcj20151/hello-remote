@@ -35,8 +35,8 @@ options:
       - Whether to enable this callback only if the given environment variable exists and it is set to V(true).
       - This is handy when you use Configuration as Code and want to send distributed traces if running in the CI rather when
         running Ansible locally.
-      - For such, it evaluates the given O(enable_from_environment) value as environment variable and if set to true this
-        plugin will be enabled.
+      - For such, it evaluates the given O(enable_from_environment) value as environment variable and if set to V(true) this
+        plugin is enabled.
     env:
       - name: ANSIBLE_OPENTELEMETRY_ENABLE_FROM_ENVIRONMENT
     ini:
@@ -97,7 +97,7 @@ options:
   otel_exporter_otlp_traces_protocol:
     type: str
     description:
-      - E(OTEL_EXPORTER_OTLP_TRACES_PROTOCOL) represents the the transport protocol for spans.
+      - E(OTEL_EXPORTER_OTLP_TRACES_PROTOCOL) represents the transport protocol for spans.
       - See
         U(https://opentelemetry-python.readthedocs.io/en/latest/sdk/environment_variables.html#envvar-OTEL_EXPORTER_OTLP_TRACES_PROTOCOL).
     default: grpc
@@ -137,14 +137,13 @@ import json
 import os
 import socket
 import uuid
-from time import time_ns
-
 from collections import OrderedDict
 from os.path import basename
+from time import time_ns
+from urllib.parse import urlparse
 
 from ansible.errors import AnsibleError
-from ansible.module_utils.six import raise_from
-from ansible.module_utils.six.moves.urllib.parse import urlparse
+from ansible.module_utils.ansible_release import __version__ as ansible_version
 from ansible.plugins.callback import CallbackBase
 
 try:
@@ -212,7 +211,6 @@ class HostData:
 class OpenTelemetrySource(object):
     def __init__(self, display):
         self.ansible_playbook = ""
-        self.ansible_version = None
         self.session = str(uuid.uuid4())
         self.host = socket.gethostname()
         try:
@@ -259,9 +257,6 @@ class OpenTelemetrySource(object):
             host_name = 'include'
 
         task = tasks_data[task_uuid]
-
-        if self.ansible_version is None and hasattr(result, '_task_fields') and result._task_fields['args'].get('_ansible_version'):
-            self.ansible_version = result._task_fields['args'].get('_ansible_version')
 
         task.dump = dump
         task.add_host(HostData(host_uuid, host_name, status, result))
@@ -310,8 +305,7 @@ class OpenTelemetrySource(object):
                                           start_time=parent_start_time, kind=SpanKind.SERVER) as parent:
             parent.set_status(status)
             # Populate trace metadata attributes
-            if self.ansible_version is not None:
-                parent.set_attribute("ansible.version", self.ansible_version)
+            parent.set_attribute("ansible.version", ansible_version)
             parent.set_attribute("ansible.session", self.session)
             parent.set_attribute("ansible.host.name", self.host)
             if self.ip_address is not None:
@@ -499,9 +493,9 @@ class CallbackModule(CallbackBase):
         self.otel_exporter_otlp_traces_protocol = None
 
         if OTEL_LIBRARY_IMPORT_ERROR:
-            raise_from(
-                AnsibleError('The `opentelemetry-api`, `opentelemetry-exporter-otlp` or `opentelemetry-sdk` must be installed to use this plugin'),
-                OTEL_LIBRARY_IMPORT_ERROR)
+            raise AnsibleError(
+                'The `opentelemetry-api`, `opentelemetry-exporter-otlp` or `opentelemetry-sdk` must be installed to use this plugin'
+            ) from OTEL_LIBRARY_IMPORT_ERROR
 
         self.tasks_data = OrderedDict()
 

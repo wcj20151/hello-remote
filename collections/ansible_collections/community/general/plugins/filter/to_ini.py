@@ -49,11 +49,10 @@ _value:
   type: string
 """
 
-
+from collections.abc import Mapping
+from configparser import ConfigParser
+from io import StringIO
 from ansible.errors import AnsibleFilterError
-from ansible.module_utils.common._collections_compat import Mapping
-from ansible.module_utils.six.moves import StringIO
-from ansible.module_utils.six.moves.configparser import ConfigParser
 
 
 class IniParser(ConfigParser):

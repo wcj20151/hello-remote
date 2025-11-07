@@ -77,7 +77,7 @@ options:
   storage_path:
     type: str
     description:
-      - Storage path where the mksysb will stored.
+      - Storage path where the mksysb backup is stored.
     required: true
   use_snapshot:
     description:
@@ -96,10 +96,6 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-changed:
-  description: Return changed for mksysb actions as true or false.
-  returned: always
-  type: bool
 msg:
   description: Return message regarding the action.
   returned: always
@@ -141,7 +137,6 @@ class MkSysB(ModuleHelper):
         backup_dmapi_fs=cmd_runner_fmt.as_bool("-A"),
         combined_path=cmd_runner_fmt.as_func(cmd_runner_fmt.unpack_args(lambda p, n: ["%s/%s" % (p, n)])),
     )
-    use_old_vardict = False
 
     def __init_module__(self):
         if not os.path.isdir(self.vars.storage_path):

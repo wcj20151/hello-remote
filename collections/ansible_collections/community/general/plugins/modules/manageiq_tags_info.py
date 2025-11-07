@@ -27,16 +27,29 @@ options:
     description:
       - The relevant resource type in ManageIQ.
     required: true
-    choices: ['provider', 'host', 'vm', 'blueprint', 'category', 'cluster', 'data store', 'group', 'resource pool', 'service',
-      'service template', 'template', 'tenant', 'user']
+    choices:
+      - provider
+      - host
+      - vm
+      - blueprint
+      - category
+      - cluster
+      - data store
+      - group
+      - resource pool
+      - service
+      - service template
+      - template
+      - tenant
+      - user
   resource_name:
     type: str
     description:
-      - The name of the resource at which tags will be controlled.
+      - The name of the resource at which tags are controlled.
       - Must be specified if O(resource_id) is not set. Both options are mutually exclusive.
   resource_id:
     description:
-      - The ID of the resource at which tags will be controlled.
+      - The ID of the resource at which tags are controlled.
       - Must be specified if O(resource_name) is not set. Both options are mutually exclusive.
     type: int
 """

@@ -190,17 +190,20 @@ msg:
   type: str
 
 end_state:
-    description: Representation of the authentication after module execution.
-    returned: on success
-    type: dict
-    sample: {
+  description: Representation of the authentication after module execution.
+  returned: on success
+  type: dict
+  sample:
+    {
       "alias": "Copy of first broker login",
       "authenticationExecutions": [
         {
           "alias": "review profile config",
           "authenticationConfig": {
             "alias": "review profile config",
-            "config": { "update.profile.on.first.login": "missing" },
+            "config": {
+              "update.profile.on.first.login": "missing"
+            },
             "id": "6f09e4fb-aad4-496a-b873-7fa9779df6d7"
           },
           "configurable": true,
@@ -210,7 +213,11 @@ end_state:
           "level": 0,
           "providerId": "idp-review-profile",
           "requirement": "REQUIRED",
-          "requirementChoices": [ "REQUIRED", "ALTERNATIVE", "DISABLED" ]
+          "requirementChoices": [
+            "REQUIRED",
+            "ALTERNATIVE",
+            "DISABLED"
+          ]
         }
       ],
       "builtIn": false,
@@ -308,6 +315,8 @@ def create_or_update_executions(kc, config, realm='master'):
                         }
                         # add the execution configuration
                         if new_exec["authenticationConfig"] is not None:
+                            if "authenticationConfig" in execution and "id" in execution["authenticationConfig"]:
+                                kc.delete_authentication_config(execution["authenticationConfig"]["id"], realm=realm)
                             kc.add_authenticationConfig_to_execution(updated_exec["id"], new_exec["authenticationConfig"], realm=realm)
                         for key in new_exec:
                             # remove unwanted key for the next API call
@@ -358,8 +367,8 @@ def main():
 
     module = AnsibleModule(argument_spec=argument_spec,
                            supports_check_mode=True,
-                           required_one_of=([['token', 'auth_realm', 'auth_username', 'auth_password']]),
-                           required_together=([['auth_realm', 'auth_username', 'auth_password']]),
+                           required_one_of=([['token', 'auth_realm', 'auth_username', 'auth_password', 'auth_client_id', 'auth_client_secret']]),
+                           required_together=([['auth_username', 'auth_password']]),
                            required_by={'refresh_token': 'auth_realm'},
                            )
 

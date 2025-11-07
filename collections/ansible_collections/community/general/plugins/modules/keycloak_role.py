@@ -22,9 +22,9 @@ description:
     scope tailored to your needs and a user having the expected roles.
   - The names of module options are snake_cased versions of the camelCase ones found in the Keycloak API and its documentation
     at U(https://www.keycloak.org/docs-api/8.0/rest-api/index.html).
-  - Attributes are multi-valued in the Keycloak API. All attributes are lists of individual values and will be returned that
-    way by this module. You may pass single values for attributes when calling the module, and this will be translated into
-    a list suitable for the API.
+  - Attributes are multi-valued in the Keycloak API. All attributes are lists of individual values and are returned that way
+    by this module. You may pass single values for attributes when calling the module, and this is translated into a list
+    suitable for the API.
 attributes:
   check_mode:
     support: full
@@ -37,8 +37,8 @@ options:
   state:
     description:
       - State of the role.
-      - On V(present), the role will be created if it does not yet exist, or updated with the parameters you provide.
-      - On V(absent), the role will be removed if it exists.
+      - On V(present), the role is created if it does not yet exist, or updated with the parameters you provide.
+      - On V(absent), the role is removed if it exists.
     default: 'present'
     type: str
     choices:
@@ -201,15 +201,31 @@ existing:
   description: Representation of existing role.
   returned: always
   type: dict
-  sample: {"attributes": {}, "clientRole": true, "composite": false, "containerId": "9f03eb61-a826-4771-a9fd-930e06d2d36a",
-    "description": "My client test role", "id": "561703dd-0f38-45ff-9a5a-0c978f794547", "name": "myrole"}
+  sample:
+    {
+      "attributes": {},
+      "clientRole": true,
+      "composite": false,
+      "containerId": "9f03eb61-a826-4771-a9fd-930e06d2d36a",
+      "description": "My client test role",
+      "id": "561703dd-0f38-45ff-9a5a-0c978f794547",
+      "name": "myrole"
+    }
 
 end_state:
   description: Representation of role after module execution (sample is truncated).
   returned: on success
   type: dict
-  sample: {"attributes": {}, "clientRole": true, "composite": false, "containerId": "9f03eb61-a826-4771-a9fd-930e06d2d36a",
-    "description": "My updated client test role", "id": "561703dd-0f38-45ff-9a5a-0c978f794547", "name": "myrole"}
+  sample:
+    {
+      "attributes": {},
+      "clientRole": true,
+      "composite": false,
+      "containerId": "9f03eb61-a826-4771-a9fd-930e06d2d36a",
+      "description": "My updated client test role",
+      "id": "561703dd-0f38-45ff-9a5a-0c978f794547",
+      "name": "myrole"
+    }
 """
 
 from ansible_collections.community.general.plugins.module_utils.identity.keycloak.keycloak import KeycloakAPI, camel, \
@@ -228,7 +244,7 @@ def main():
 
     composites_spec = dict(
         name=dict(type='str', required=True),
-        client_id=dict(type='str', aliases=['clientId'], required=False),
+        client_id=dict(type='str', aliases=['clientId']),
         state=dict(type='str', default='present', choices=['present', 'absent'])
     )
 
@@ -247,8 +263,8 @@ def main():
 
     module = AnsibleModule(argument_spec=argument_spec,
                            supports_check_mode=True,
-                           required_one_of=([['token', 'auth_realm', 'auth_username', 'auth_password']]),
-                           required_together=([['auth_realm', 'auth_username', 'auth_password']]),
+                           required_one_of=([['token', 'auth_realm', 'auth_username', 'auth_password', 'auth_client_id', 'auth_client_secret']]),
+                           required_together=([['auth_username', 'auth_password']]),
                            required_by={'refresh_token': 'auth_realm'},
                            )
 
@@ -345,7 +361,7 @@ def main():
 
     else:
         if state == 'present':
-            compare_exclude = []
+            compare_exclude = ['clientId']
             if 'composites' in desired_role and isinstance(desired_role['composites'], list) and len(desired_role['composites']) > 0:
                 composites = kc.get_role_composites(rolerep=before_role, clientid=clientid, realm=realm)
                 before_role['composites'] = []

@@ -4350,6 +4350,8 @@ def test_bond_connection_unchanged(mocked_generic_connection_diff_check, capfd):
         argument_spec=dict(
             ignore_unsupported_suboptions=dict(type='bool', default=False),
             autoconnect=dict(type='bool', default=True),
+            autoconnect_priority=dict(type='int'),
+            autoconnect_retries=dict(type='int'),
             state=dict(type='str', required=True, choices=['absent', 'present']),
             conn_name=dict(type='str', required=True),
             conn_reload=dict(type='bool', required=False, default=False),
@@ -4485,8 +4487,10 @@ def test_bond_connection_unchanged(mocked_generic_connection_diff_check, capfd):
             macvlan=dict(type='dict'),
             wireguard=dict(type='dict'),
             vpn=dict(type='dict'),
-            transport_mode=dict(type='str', choices=['datagram', 'connected']),
             sriov=dict(type='dict'),
+            # infiniband specific vars
+            transport_mode=dict(type='str', choices=['datagram', 'connected']),
+            infiniband_mac=dict(type='str'),
         ),
         mutually_exclusive=[['never_default4', 'gw4'],
                             ['routes4_extended', 'routes4'],

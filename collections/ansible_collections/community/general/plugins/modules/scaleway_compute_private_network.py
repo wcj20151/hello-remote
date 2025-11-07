@@ -21,12 +21,15 @@ description:
 extends_documentation_fragment:
   - community.general.scaleway
   - community.general.attributes
+  - community.general.scaleway.actiongroup_scaleway
 
 attributes:
   check_mode:
     support: full
   diff_mode:
     support: none
+  action_group:
+    version_added: 11.3.0
 
 options:
   state:
@@ -52,12 +55,17 @@ options:
     choices:
       - ams1
       - EMEA-NL-EVS
+      - ams2
+      - ams3
       - par1
       - EMEA-FR-PAR1
       - par2
       - EMEA-FR-PAR2
+      - par3
       - waw1
       - EMEA-PL-WAW1
+      - waw2
+      - waw3
 
   compute_id:
     type: str
@@ -93,26 +101,26 @@ EXAMPLES = r"""
 
 RETURN = r"""
 scaleway_compute_private_network:
-    description: Information on the VPC.
-    returned: success when O(state=present)
-    type: dict
-    sample:
-        {
-            "created_at": "2022-01-15T11:11:12.676445Z",
-            "id": "12345678-f1e6-40ec-83e5-12345d67ed89",
-            "name": "network",
-            "organization_id": "a123b4cd-ef5g-678h-90i1-jk2345678l90",
-            "project_id": "a123b4cd-ef5g-678h-90i1-jk2345678l90",
-            "tags": [
-                "tag1",
-                "tag2",
-                "tag3",
-                "tag4",
-                "tag5"
-            ],
-            "updated_at": "2022-01-15T11:12:04.624837Z",
-            "zone": "fr-par-2"
-        }
+  description: Information on the VPC.
+  returned: success when O(state=present)
+  type: dict
+  sample:
+    {
+      "created_at": "2022-01-15T11:11:12.676445Z",
+      "id": "12345678-f1e6-40ec-83e5-12345d67ed89",
+      "name": "network",
+      "organization_id": "a123b4cd-ef5g-678h-90i1-jk2345678l90",
+      "project_id": "a123b4cd-ef5g-678h-90i1-jk2345678l90",
+      "tags": [
+        "tag1",
+        "tag2",
+        "tag3",
+        "tag4",
+        "tag5"
+      ],
+      "updated_at": "2022-01-15T11:12:04.624837Z",
+      "zone": "fr-par-2"
+    }
 """
 
 from ansible_collections.community.general.plugins.module_utils.scaleway import SCALEWAY_LOCATION, scaleway_argument_spec, Scaleway

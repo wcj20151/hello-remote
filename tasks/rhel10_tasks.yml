@@ -1,0 +1,57 @@
+- name: Ensure wayland-utils is installed
+  become: true
+  ansible.builtin.dnf:
+    name: wayland-utils
+    state: present
+
+- name: Ensure resolution is obtained
+  register: rhel10_resolution
+  changed_when: false
+  ansible.builtin.shell: wayland-info | grep 'width'
+
+- name: Ensure ptyxis preferences are set
+  become: false
+  loop: "{{ ptyxis_settings }}"
+  community.general.dconf:
+    key: "{{ item['key'] }}"
+    value: "{{ item['value'] }}"
+
+- name: Ensure bootloader role is included
+  ansible.builtin.include_role:
+    name: rhel-system-roles.bootloader
+    apply:
+      become: true
+- name: Display warning to user
+  register: user_input
+  ansible.builtin.pause:
+    prompt: |
+
+      ⛔️            ‼️            🚨            ⛔️            ⚠️
+
+      A reboot is required to apply the bootloader changes in order to set your resolution.
+
+      ⛔️            ‼️            🚨            ⛔️            ⚠️
+
+      Would you like the playbook to automatically reboot your system? 👈   👈   👈
+
+      (yes/no) 👈   👈   👈
+
+- name: Display message if user says no 
+  when: user_input.user_input != "yes"
+  ansible.builtin.debug:
+    msg: | 
+      
+      ⛔️  ️          ⛔️            ⛔️            ⛔️            ⛔️            ⛔️
+      
+      You need to manually reboot your system to apply the bootloader changes.
+
+      ⛔️  ️          ⛔️            ⛔️            ⛔️            ⛔️            ⛔️
+
+- name: Mandatory reboot to change the resolution RHEL10
+  become: true
+  when:
+    - ansible_facts['distribution_major_version'] == "10"
+    - "'1920 px' not in rhel10_resolution['stdout']"
+    - user_input.user_input == "yes"
+  ansible.builtin.command: 
+    cmd: reboot

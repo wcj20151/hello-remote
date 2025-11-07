@@ -53,7 +53,7 @@ options:
       - User to authenticate with the Jenkins server.
   validate_certs:
     description:
-      - If set to V(false), the SSL certificates will not be validated.
+      - If set to V(false), the SSL certificates are not validated.
       - This should only set to V(false) used on personally controlled sites using self-signed certificates.
     default: true
     type: bool
@@ -135,7 +135,7 @@ jobs:
         "fullname": "test-folder/test-job",
         "url": "http://localhost:8080/job/test-job/",
         "color": "blue"
-      },
+      }
     ]
 """
 

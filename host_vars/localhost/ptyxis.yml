@@ -1,0 +1,25 @@
+ptyxis_settings:
+  - { key: "/org/gnome/Ptyxis/audible-bell", value: "false" }
+  - { key: "/org/gnome/Ptyxis/cursor-blink-mode", value: "'system'" }
+  - { key: "/org/gnome/Ptyxis/cursor-shape", value: "'block'" }
+  - { key: "/org/gnome/Ptyxis/default-columns", value: "uint32 80" }
+  - { key: "/org/gnome/Ptyxis/default-profile-uuid", value: "'ae0fb7481d132791eeeafe7668516a95'" }
+  - { key: "/org/gnome/Ptyxis/default-rows", value: "uint32 24" }
+  - { key: "/org/gnome/Ptyxis/disable-padding", value: "false" }
+  - { key: "/org/gnome/Ptyxis/enable-a11y", value: "false" }
+  - { key: "/org/gnome/Ptyxis/font-name", value: "'Red Hat Mono Medium 20 @wght=500'" }
+  - { key: "/org/gnome/Ptyxis/interface-style", value: "'dark'" }
+  - { key: "/org/gnome/Ptyxis/new-tab-position", value: "'end'" }
+  - { key: "/org/gnome/Ptyxis/profile-uuids", value: "['ae0fb7481d132791eeeafe7668516a95']" }
+  - { key: "/org/gnome/Ptyxis/restore-session", value: "true" }
+  - { key: "/org/gnome/Ptyxis/restore-window-size", value: "true" }
+  - { key: "/org/gnome/Ptyxis/scrollbar-policy", value: "'always'" }
+  - { key: "/org/gnome/Ptyxis/tab-middle-click", value: "'close'" }
+  - { key: "/org/gnome/Ptyxis/text-blink-mode", value: "'always'" }
+  - { key: "/org/gnome/Ptyxis/toast-on-copy-clipboard", value: "true" }
+  - { key: "/org/gnome/Ptyxis/use-system-font", value: "false" }
+  - { key: "/org/gnome/Ptyxis/visual-bell", value: "true" }
+  - { key: "/org/gnome/Ptyxis/visual-process-leader", value: "true" }
+  - { key: "/org/gnome/Ptyxis/window-size", value: "(uint32 118, uint32 25)" }
+  - { key: "/org/gnome/Ptyxis/disable-alt-screen", value: true }
+  - { key: "/org/gnome/Ptyxis/visible-process-leader", value: true }

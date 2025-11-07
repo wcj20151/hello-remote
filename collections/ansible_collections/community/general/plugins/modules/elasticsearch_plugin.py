@@ -66,7 +66,7 @@ options:
     type: bool
   plugin_bin:
     description:
-      - Location of the plugin binary. If this file is not found, the default plugin binaries will be used.
+      - Location of the plugin binary. If this file is not found, the default plugin binaries are used.
     type: path
   plugin_dir:
     description:
@@ -83,7 +83,7 @@ options:
     type: str
   version:
     description:
-      - Version of the plugin to be installed. If plugin exists with previous version, it will NOT be updated.
+      - Version of the plugin to be installed. If plugin exists with previous version, it is NOT updated.
     type: str
 """
 
@@ -238,8 +238,8 @@ def get_plugin_bin(module, plugin_bin=None):
 
         # Get separate lists of dirs and binary names from the full paths to the
         # plugin binaries.
-        plugin_dirs = list(set([os.path.dirname(x) for x in bin_paths]))
-        plugin_bins = list(set([os.path.basename(x) for x in bin_paths]))
+        plugin_dirs = list(set(os.path.dirname(x) for x in bin_paths))
+        plugin_bins = list(set(os.path.basename(x) for x in bin_paths))
 
         # Check for the binary names in the default system paths as well as the path
         # specified in the module arguments.
@@ -259,15 +259,15 @@ def main():
         argument_spec=dict(
             name=dict(required=True),
             state=dict(default="present", choices=list(PACKAGE_STATE_MAP.keys())),
-            src=dict(default=None),
-            url=dict(default=None),
+            src=dict(),
+            url=dict(),
             timeout=dict(default="1m"),
             force=dict(type='bool', default=False),
             plugin_bin=dict(type="path"),
             plugin_dir=dict(default="/usr/share/elasticsearch/plugins/", type="path"),
-            proxy_host=dict(default=None),
-            proxy_port=dict(default=None),
-            version=dict(default=None)
+            proxy_host=dict(),
+            proxy_port=dict(),
+            version=dict()
         ),
         mutually_exclusive=[("src", "url")],
         supports_check_mode=True

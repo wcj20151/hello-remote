@@ -1,0 +1,17 @@
+- name: Ensure git email is set 
+  community.general.git_config:
+    name: user.email
+    scope: global
+    value: rgdacosta@gmail.com
+
+- name: Ensure git name is set
+  community.general.git_config:
+    name: user.name
+    scope: global
+    value: Ricardo da Costa
+
+- name: Ensure git credentials cache is set
+  community.general.git_config:
+    name: credential.helper
+    scope: global
+    value: "cache --timeout=10800"

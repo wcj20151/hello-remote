@@ -1,25 +1,16 @@
+---
+bootloader_settings:
+  - kernel: ALL
+    options:
+      - name: video=1920x1080
+        state: present
+
 ansible_python_interpreter: /usr/bin/python3
 ansible_become_password: student
-
-rpm_packages:
-  - "https://gitlab.com/gitlab-org/cli/-/releases/v1.47.0/downloads/glab_1.47.0_linux_amd64.rpm"
-  - sqlite
-
-python_packages:
-  - yamllint
-  - ansible-lint
 
 system_dir_list:
   - /usr/share/vim/vimfiles/pack/vendor/start
   - /usr/share/vim/vimfiles/pack/vendor/opt
-
-vim_plugins_list:
-  - https://github.com/Yggdroot/indentLine.git
-  - https://github.com/pedrohdz/vim-yaml-folds.git
-  - https://github.com/dense-analysis/ale.git
-  - https://tpope.io/vim/commentary.git
-  - https://github.com/vim-airline/vim-airline.git
-  - https://github.com/pearofducks/ansible-vim.git
 
 config_files:
 
@@ -53,6 +44,28 @@ config_files:
     dest: ~/.ansible-navigator.yml
     perms: '0644'
 
+
 regularfont_uuid: F69A6B60-AD40-4530-84E1-F8260A26B40C
 mediumfont_uuid: 76A4B99C-AFAC-4DE5-B0B2-C433303F1699
 largefont_uuid: F28FF536-5DA1-4C8B-BE71-B38F5B51653F
+
+classroom_env_motd: |
+  #!/bin/bash
+  if [ -t 1 ] && [ -z "$SSH_CONNECTION" ]; then
+  cat <<'EOF'
+  *******************************************************************
+  *                                                                 *
+  *   I now have a wiki to showcase the features of this project!   *
+  *                                                                 *
+  *   https://gitlab.com/rgdacosta/classroom_env/-/wikis/home       *
+  *                                                                 *
+  *                                                                 *
+  *   rdacosta@redhat.com                                           *
+  *                                                                 *
+  *   To get rid of this message use:                               *
+  *                                                                 *
+  *   sudo rm -f /etc/profile.d/classroom_env.sh                    *
+  *                                                                 *
+  *******************************************************************
+  EOF
+  fi

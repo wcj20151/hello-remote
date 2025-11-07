@@ -1,0 +1,8 @@
+- name: Ensure resolution is obtained
+  register: rhel9_resolution
+  changed_when: false
+  ansible.builtin.command: xrandr
+
+- name: Ensure resolution is set
+  when: "'current 1920 x 1080' not in rhel9_resolution['stdout']"
+  ansible.builtin.command: xrandr --size 1920x1080

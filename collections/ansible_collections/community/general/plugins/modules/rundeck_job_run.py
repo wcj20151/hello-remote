@@ -62,7 +62,7 @@ options:
     type: int
     description:
       - Job execution wait timeout in seconds.
-      - If the timeout is reached, the job will be aborted.
+      - If the timeout is reached, the job is aborted.
       - Keep in mind that there is a sleep based on O(wait_execution_delay) after each job status check.
     default: 120
   abort_on_timeout:
@@ -133,48 +133,49 @@ EXAMPLES = r"""
 
 RETURN = r"""
 execution_info:
-    description: Rundeck job execution metadata.
-    returned: always
-    type: dict
-    sample: {
-        "msg": "Job execution succeeded!",
-        "execution_info": {
-            "id": 1,
-            "href": "https://rundeck.example.org/api/39/execution/1",
-            "permalink": "https://rundeck.example.org/project/myproject/execution/show/1",
-            "status": "succeeded",
-            "project": "myproject",
-            "executionType": "user",
-            "user": "admin",
-            "date-started": {
-                "unixtime": 1633449020784,
-                "date": "2021-10-05T15:50:20Z"
-            },
-            "date-ended": {
-                "unixtime": 1633449026358,
-                "date": "2021-10-05T15:50:26Z"
-            },
-            "job": {
-                "id": "697af0c4-72d3-4c15-86a3-b5bfe3c6cb6a",
-                "averageDuration": 4917,
-                "name": "Test",
-                "group": "",
-                "project": "myproject",
-                "description": "",
-                "options": {
-                    "exit_code": "0"
-                },
-                "href": "https://rundeck.example.org/api/39/job/697af0c4-72d3-4c15-86a3-b5bfe3c6cb6a",
-                "permalink": "https://rundeck.example.org/project/myproject/job/show/697af0c4-72d3-4c15-86a3-b5bfe3c6cb6a"
-            },
-            "description": "sleep 5 && echo 'Test!' && exit ${option.exit_code}",
-            "argstring": "-exit_code 0",
-            "serverUUID": "5b9a1438-fa3a-457e-b254-8f3d70338068",
-            "successfulNodes": [
-                "localhost"
-            ],
-            "output": "Test!"
-        }
+  description: Rundeck job execution metadata.
+  returned: always
+  type: dict
+  sample:
+    {
+      "msg": "Job execution succeeded!",
+      "execution_info": {
+        "id": 1,
+        "href": "https://rundeck.example.org/api/39/execution/1",
+        "permalink": "https://rundeck.example.org/project/myproject/execution/show/1",
+        "status": "succeeded",
+        "project": "myproject",
+        "executionType": "user",
+        "user": "admin",
+        "date-started": {
+          "unixtime": 1633449020784,
+          "date": "2021-10-05T15:50:20Z"
+        },
+        "date-ended": {
+          "unixtime": 1633449026358,
+          "date": "2021-10-05T15:50:26Z"
+        },
+        "job": {
+          "id": "697af0c4-72d3-4c15-86a3-b5bfe3c6cb6a",
+          "averageDuration": 4917,
+          "name": "Test",
+          "group": "",
+          "project": "myproject",
+          "description": "",
+          "options": {
+            "exit_code": "0"
+          },
+          "href": "https://rundeck.example.org/api/39/job/697af0c4-72d3-4c15-86a3-b5bfe3c6cb6a",
+          "permalink": "https://rundeck.example.org/project/myproject/job/show/697af0c4-72d3-4c15-86a3-b5bfe3c6cb6a"
+        },
+        "description": "sleep 5 && echo 'Test!' && exit ${option.exit_code}",
+        "argstring": "-exit_code 0",
+        "serverUUID": "5b9a1438-fa3a-457e-b254-8f3d70338068",
+        "successfulNodes": [
+          "localhost"
+        ],
+        "output": "Test!"
+      }
     }
 """
 

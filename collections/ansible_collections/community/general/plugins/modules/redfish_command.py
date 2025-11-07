@@ -18,6 +18,7 @@ description:
   - Manages system power ex. on, off, graceful and forced reboot.
 extends_documentation_fragment:
   - community.general.attributes
+  - community.general.redfish
 attributes:
   check_mode:
     support: none
@@ -228,8 +229,8 @@ options:
     description:
       - Custom OEM properties for HTTP Multipart Push updates.
       - If set, then O(update_custom_oem_header) is required too.
-      - The properties will be passed raw without any validation or conversion by Ansible. This means the content can be a
-        file, a string, or any other data. If the content is a dict that should be converted to JSON, then the content must
+      - The properties are passed raw without any validation or conversion by Ansible. This means the content can be a file,
+        a string, or any other data. If the content is a dictionary that should be converted to JSON, then the content must
         be converted to JSON before passing it to this module using the P(ansible.builtin.to_json#filter) filter.
     type: raw
     version_added: '10.1.0'
@@ -324,16 +325,11 @@ options:
     default: 120
     version_added: 9.1.0
   ciphers:
-    required: false
-    description:
-      - SSL/TLS Ciphers to use for the request.
-      - When a list is provided, all ciphers are joined in order with V(:).
-      - See the L(OpenSSL Cipher List Format,https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html#CIPHER-LIST-FORMAT)
-        for more details.
-      - The available ciphers is dependent on the Python and OpenSSL/LibreSSL versions.
-    type: list
-    elements: str
     version_added: 9.2.0
+  validate_certs:
+    version_added: 10.6.0
+  ca_path:
+    version_added: 10.6.0
 
 author:
   - "Jose Delarosa (@jose-delarosa)"
@@ -834,19 +830,20 @@ return_values:
   returned: on success
   type: dict
   version_added: 6.1.0
-  sample: {
-    "update_status": {
-      "handle": "/redfish/v1/TaskService/TaskMonitors/735",
-      "messages": [],
-      "resets_requested": [],
-      "ret": true,
-      "status": "New"
+  sample:
+    {
+      "update_status": {
+        "handle": "/redfish/v1/TaskService/TaskMonitors/735",
+        "messages": [],
+        "resets_requested": [],
+        "ret": true,
+        "status": "New"
+      }
     }
-  }
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.community.general.plugins.module_utils.redfish_utils import RedfishUtils
+from ansible_collections.community.general.plugins.module_utils.redfish_utils import RedfishUtils, REDFISH_COMMON_ARGUMENT_SPEC
 from ansible.module_utils.common.text.converters import to_native
 
 
@@ -873,67 +870,68 @@ CATEGORY_COMMANDS_ALL = {
 def main():
     result = {}
     return_values = {}
-    module = AnsibleModule(
-        argument_spec=dict(
-            category=dict(required=True),
-            command=dict(required=True, type='list', elements='str'),
-            baseuri=dict(required=True),
-            username=dict(),
-            password=dict(no_log=True),
-            auth_token=dict(no_log=True),
-            session_uri=dict(),
-            id=dict(aliases=["account_id"]),
-            new_username=dict(aliases=["account_username"]),
-            new_password=dict(aliases=["account_password"], no_log=True),
-            roleid=dict(aliases=["account_roleid"]),
-            account_types=dict(type='list', elements='str', aliases=["account_accounttypes"]),
-            oem_account_types=dict(type='list', elements='str', aliases=["account_oemaccounttypes"]),
-            update_username=dict(type='str', aliases=["account_updatename"]),
-            account_properties=dict(type='dict', default={}),
-            bootdevice=dict(),
-            timeout=dict(type='int', default=60),
-            uefi_target=dict(),
-            boot_next=dict(),
-            boot_override_mode=dict(choices=['Legacy', 'UEFI']),
-            resource_id=dict(),
-            update_image_uri=dict(),
-            update_image_file=dict(type='path'),
-            update_protocol=dict(),
-            update_targets=dict(type='list', elements='str', default=[]),
-            update_oem_params=dict(type='dict'),
-            update_custom_oem_header=dict(type='str'),
-            update_custom_oem_mime_type=dict(type='str'),
-            update_custom_oem_params=dict(type='raw'),
-            update_creds=dict(
-                type='dict',
-                options=dict(
-                    username=dict(),
-                    password=dict(no_log=True)
-                )
-            ),
-            update_apply_time=dict(choices=['Immediate', 'OnReset', 'AtMaintenanceWindowStart',
-                                            'InMaintenanceWindowOnReset', 'OnStartUpdateRequest']),
-            update_handle=dict(),
-            virtual_media=dict(
-                type='dict',
-                options=dict(
-                    media_types=dict(type='list', elements='str', default=[]),
-                    image_url=dict(),
-                    inserted=dict(type='bool', default=True),
-                    write_protected=dict(type='bool', default=True),
-                    username=dict(),
-                    password=dict(no_log=True),
-                    transfer_protocol_type=dict(),
-                    transfer_method=dict(),
-                )
-            ),
-            strip_etag_quotes=dict(type='bool', default=False),
-            reset_to_defaults_mode=dict(choices=['ResetAll', 'PreserveNetworkAndUsers', 'PreserveNetwork']),
-            bios_attributes=dict(type="dict"),
-            wait=dict(type='bool', default=False),
-            wait_timeout=dict(type='int', default=120),
-            ciphers=dict(type='list', elements='str'),
+    argument_spec = dict(
+        category=dict(required=True),
+        command=dict(required=True, type='list', elements='str'),
+        baseuri=dict(required=True),
+        username=dict(),
+        password=dict(no_log=True),
+        auth_token=dict(no_log=True),
+        session_uri=dict(),
+        id=dict(aliases=["account_id"]),
+        new_username=dict(aliases=["account_username"]),
+        new_password=dict(aliases=["account_password"], no_log=True),
+        roleid=dict(aliases=["account_roleid"]),
+        account_types=dict(type='list', elements='str', aliases=["account_accounttypes"]),
+        oem_account_types=dict(type='list', elements='str', aliases=["account_oemaccounttypes"]),
+        update_username=dict(type='str', aliases=["account_updatename"]),
+        account_properties=dict(type='dict', default={}),
+        bootdevice=dict(),
+        timeout=dict(type='int', default=60),
+        uefi_target=dict(),
+        boot_next=dict(),
+        boot_override_mode=dict(choices=['Legacy', 'UEFI']),
+        resource_id=dict(),
+        update_image_uri=dict(),
+        update_image_file=dict(type='path'),
+        update_protocol=dict(),
+        update_targets=dict(type='list', elements='str', default=[]),
+        update_oem_params=dict(type='dict'),
+        update_custom_oem_header=dict(type='str'),
+        update_custom_oem_mime_type=dict(type='str'),
+        update_custom_oem_params=dict(type='raw'),
+        update_creds=dict(
+            type='dict',
+            options=dict(
+                username=dict(),
+                password=dict(no_log=True)
+            )
         ),
+        update_apply_time=dict(choices=['Immediate', 'OnReset', 'AtMaintenanceWindowStart',
+                                        'InMaintenanceWindowOnReset', 'OnStartUpdateRequest']),
+        update_handle=dict(),
+        virtual_media=dict(
+            type='dict',
+            options=dict(
+                media_types=dict(type='list', elements='str', default=[]),
+                image_url=dict(),
+                inserted=dict(type='bool', default=True),
+                write_protected=dict(type='bool', default=True),
+                username=dict(),
+                password=dict(no_log=True),
+                transfer_protocol_type=dict(),
+                transfer_method=dict(),
+            )
+        ),
+        strip_etag_quotes=dict(type='bool', default=False),
+        reset_to_defaults_mode=dict(choices=['ResetAll', 'PreserveNetworkAndUsers', 'PreserveNetwork']),
+        bios_attributes=dict(type="dict"),
+        wait=dict(type='bool', default=False),
+        wait_timeout=dict(type='int', default=120),
+    )
+    argument_spec.update(REDFISH_COMMON_ARGUMENT_SPEC)
+    module = AnsibleModule(
+        argument_spec,
         required_together=[
             ('username', 'password'),
             ('update_custom_oem_header', 'update_custom_oem_params'),
@@ -1006,14 +1004,10 @@ def main():
     # BIOS Attributes options
     bios_attributes = module.params['bios_attributes']
 
-    # ciphers
-    ciphers = module.params['ciphers']
-
     # Build root URI
     root_uri = "https://" + module.params['baseuri']
     rf_utils = RedfishUtils(creds, root_uri, timeout, module,
-                            resource_id=resource_id, data_modification=True, strip_etag_quotes=strip_etag_quotes,
-                            ciphers=ciphers)
+                            resource_id=resource_id, data_modification=True, strip_etag_quotes=strip_etag_quotes)
 
     # Check that Category is valid
     if category not in CATEGORY_COMMANDS_ALL:
@@ -1117,7 +1111,7 @@ def main():
             module.fail_json(msg=to_native(result['msg']))
 
         for command in command_list:
-            # standardize on the Power* commands, but allow the the legacy
+            # standardize on the Power* commands, but allow the legacy
             # GracefulRestart command
             if command == 'GracefulRestart':
                 command = 'PowerGracefulRestart'

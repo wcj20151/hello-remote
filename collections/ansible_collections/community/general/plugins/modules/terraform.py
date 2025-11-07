@@ -58,19 +58,19 @@ options:
   purge_workspace:
     description:
       - Only works with state = absent.
-      - If true, the workspace will be deleted after the "terraform destroy" action.
-      - The 'default' workspace will not be deleted.
+      - If V(true), the O(workspace) is deleted after the C(terraform destroy) action.
+      - If O(workspace=default) then it is not deleted.
     default: false
     type: bool
   plan_file:
     description:
-      - The path to an existing Terraform plan file to apply. If this is not specified, Ansible will build a new TF plan and
-        execute it. Note that this option is required if 'state' has the 'planned' value.
+      - The path to an existing Terraform plan file to apply. If this is not specified, Ansible builds a new TF plan and execute
+        it. Note that this option is required if O(state=planned).
     type: path
   state_file:
     description:
       - The path to an existing Terraform state file to use when building plan. If this is not specified, the default C(terraform.tfstate)
-        will be used.
+        is used.
       - This option is ignored when plan is specified.
     type: path
   variables_files:
@@ -91,7 +91,7 @@ options:
       - Ansible dictionaries are mapped to terraform objects.
       - Ansible lists are mapped to terraform lists.
       - Ansible booleans are mapped to terraform booleans.
-      - B(Note) passwords passed as variables will be visible in the log output. Make sure to use C(no_log=true) in production!.
+      - B(Note) passwords passed as variables are visible in the log output. Make sure to use C(no_log=true) in production!.
     type: dict
   complex_vars:
     description:
@@ -104,7 +104,7 @@ options:
     version_added: 5.7.0
   targets:
     description:
-      - A list of specific resources to target in this plan/application. The resources selected here will also auto-include
+      - A list of specific resources to target in this plan/application. The resources selected here are also auto-include
         any dependencies.
     type: list
     elements: str
@@ -120,7 +120,7 @@ options:
     type: int
   force_init:
     description:
-      - To avoid duplicating infra, if a state file cannot be found this will force a C(terraform init). Generally, this should
+      - To avoid duplicating infra, if a state file cannot be found this forces a C(terraform init). Generally, this should
         be turned off unless you intend to provision an entirely new Terraform deployment.
     default: false
     type: bool
@@ -165,6 +165,13 @@ options:
       - Restrict concurrent operations when Terraform applies the plan.
     type: int
     version_added: '3.8.0'
+  no_color:
+    description:
+      - If V(true), suppress color codes in output from Terraform commands.
+      - If V(false), allows Terraform to use color codes in its output.
+    type: bool
+    default: true
+    version_added: 11.0.0
 notes:
   - To just run a C(terraform plan), use check mode.
 requirements: ["terraform"]
@@ -176,6 +183,12 @@ EXAMPLES = r"""
   community.general.terraform:
     project_path: '{{ project_dir }}'
     state: present
+
+- name: Deploy with color output enabled
+  community.general.terraform:
+    project_path: '{{ project_dir }}'
+    state: present
+    no_color: false
 
 - name: Define the backend configuration at init
   community.general.terraform:
@@ -259,11 +272,6 @@ outputs:
       type: str
       returned: always
       description: The value of the output as interpolated by Terraform.
-stdout:
-  type: str
-  description: Full C(terraform) command stdout, in case you want to display it or examine the event log.
-  returned: always
-  sample: ''
 command:
   type: str
   description: Full C(terraform) command built by this module, in case you want to re-run the command outside the module or
@@ -291,17 +299,20 @@ def get_version(bin_path):
     return terraform_version
 
 
-def preflight_validation(bin_path, project_path, version, variables_args=None, plan_file=None):
+def preflight_validation(bin_path, project_path, version, variables_args=None, plan_file=None, no_color=True):
     if project_path is None or '/' not in project_path:
         module.fail_json(msg="Path for Terraform project can not be None or ''.")
     if not os.path.exists(bin_path):
         module.fail_json(msg="Path for Terraform binary '{0}' doesn't exist on this host - check the path and try again please.".format(bin_path))
     if not os.path.isdir(project_path):
         module.fail_json(msg="Path for Terraform project '{0}' doesn't exist on this host - check the path and try again please.".format(project_path))
+    cmd = [bin_path, 'validate']
+    if no_color:
+        cmd.append('-no-color')
     if LooseVersion(version) < LooseVersion('0.15.0'):
-        module.run_command([bin_path, 'validate', '-no-color'] + variables_args, check_rc=True, cwd=project_path)
+        module.run_command(cmd + variables_args, check_rc=True, cwd=project_path)
     else:
-        module.run_command([bin_path, 'validate', '-no-color'], check_rc=True, cwd=project_path)
+        module.run_command(cmd, check_rc=True, cwd=project_path)
 
 
 def _state_args(state_file):
@@ -312,8 +323,10 @@ def _state_args(state_file):
     return ['-state', state_file]
 
 
-def init_plugins(bin_path, project_path, backend_config, backend_config_files, init_reconfigure, provider_upgrade, plugin_paths, workspace):
-    command = [bin_path, 'init', '-input=false', '-no-color']
+def init_plugins(bin_path, project_path, backend_config, backend_config_files, init_reconfigure, provider_upgrade, plugin_paths, workspace, no_color=True):
+    command = [bin_path, 'init', '-input=false']
+    if no_color:
+        command.append('-no-color')
     if backend_config:
         for key, val in backend_config.items():
             command.extend([
@@ -333,9 +346,12 @@ def init_plugins(bin_path, project_path, backend_config, backend_config_files, i
     rc, out, err = module.run_command(command, check_rc=True, cwd=project_path, environ_update={"TF_WORKSPACE": workspace})
 
 
-def get_workspace_context(bin_path, project_path):
+def get_workspace_context(bin_path, project_path, no_color=True):
     workspace_ctx = {"current": "default", "all": []}
-    command = [bin_path, 'workspace', 'list', '-no-color']
+    command = [bin_path, 'workspace', 'list']
+    if no_color:
+        command.append('-no-color')
+
     rc, out, err = module.run_command(command, cwd=project_path)
     if rc != 0:
         module.warn("Failed to list Terraform workspaces:\n{0}".format(err))
@@ -351,25 +367,27 @@ def get_workspace_context(bin_path, project_path):
     return workspace_ctx
 
 
-def _workspace_cmd(bin_path, project_path, action, workspace):
-    command = [bin_path, 'workspace', action, workspace, '-no-color']
+def _workspace_cmd(bin_path, project_path, action, workspace, no_color=True):
+    command = [bin_path, 'workspace', action, workspace]
+    if no_color:
+        command.append('-no-color')
     rc, out, err = module.run_command(command, check_rc=True, cwd=project_path)
     return rc, out, err
 
 
-def create_workspace(bin_path, project_path, workspace):
-    _workspace_cmd(bin_path, project_path, 'new', workspace)
+def create_workspace(bin_path, project_path, workspace, no_color=True):
+    _workspace_cmd(bin_path, project_path, 'new', workspace, no_color)
 
 
-def select_workspace(bin_path, project_path, workspace):
-    _workspace_cmd(bin_path, project_path, 'select', workspace)
+def select_workspace(bin_path, project_path, workspace, no_color=True):
+    _workspace_cmd(bin_path, project_path, 'select', workspace, no_color)
 
 
-def remove_workspace(bin_path, project_path, workspace):
-    _workspace_cmd(bin_path, project_path, 'delete', workspace)
+def remove_workspace(bin_path, project_path, workspace, no_color=True):
+    _workspace_cmd(bin_path, project_path, 'delete', workspace, no_color)
 
 
-def build_plan(command, project_path, variables_args, state_file, targets, state, args, plan_path=None):
+def build_plan(command, project_path, variables_args, state_file, targets, state, args, plan_path=None, no_color=True):
     if plan_path is None:
         f, plan_path = tempfile.mkstemp(suffix='.tfplan')
 
@@ -391,7 +409,10 @@ def build_plan(command, project_path, variables_args, state_file, targets, state
         for a in args:
             plan_command.append(a)
 
-    plan_command.extend(['-input=false', '-no-color', '-detailed-exitcode', '-out', plan_path])
+    plan_options = ['-input=false', '-detailed-exitcode', '-out', plan_path]
+    if no_color:
+        plan_options.insert(0, '-no-color')
+    plan_command.extend(plan_options)
 
     for t in targets:
         plan_command.extend(['-target', t])
@@ -486,7 +507,7 @@ def main():
             state_file=dict(type='path'),
             targets=dict(type='list', elements='str', default=[]),
             lock=dict(type='bool', default=True),
-            lock_timeout=dict(type='int',),
+            lock_timeout=dict(type='int'),
             force_init=dict(type='bool', default=False),
             backend_config=dict(type='dict'),
             backend_config_files=dict(type='list', elements='path'),
@@ -495,6 +516,7 @@ def main():
             check_destroy=dict(type='bool', default=False),
             parallelism=dict(type='int'),
             provider_upgrade=dict(type='bool', default=False),
+            no_color=dict(type='bool', default=True),
         ),
         required_if=[('state', 'planned', ['plan_file'])],
         supports_check_mode=True,
@@ -518,6 +540,7 @@ def main():
     overwrite_init = module.params.get('overwrite_init')
     check_destroy = module.params.get('check_destroy')
     provider_upgrade = module.params.get('provider_upgrade')
+    no_color = module.params.get('no_color')
 
     if bin_path is not None:
         command = [bin_path]
@@ -527,22 +550,30 @@ def main():
     checked_version = get_version(command[0])
 
     if LooseVersion(checked_version) < LooseVersion('0.15.0'):
-        DESTROY_ARGS = ('destroy', '-no-color', '-force')
-        APPLY_ARGS = ('apply', '-no-color', '-input=false', '-auto-approve=true')
+        if no_color:
+            DESTROY_ARGS = ('destroy', '-no-color', '-force')
+            APPLY_ARGS = ('apply', '-no-color', '-input=false', '-auto-approve=true')
+        else:
+            DESTROY_ARGS = ('destroy', '-force')
+            APPLY_ARGS = ('apply', '-input=false', '-auto-approve=true')
     else:
-        DESTROY_ARGS = ('destroy', '-no-color', '-auto-approve')
-        APPLY_ARGS = ('apply', '-no-color', '-input=false', '-auto-approve')
+        if no_color:
+            DESTROY_ARGS = ('destroy', '-no-color', '-auto-approve')
+            APPLY_ARGS = ('apply', '-no-color', '-input=false', '-auto-approve')
+        else:
+            DESTROY_ARGS = ('destroy', '-auto-approve')
+            APPLY_ARGS = ('apply', '-input=false', '-auto-approve')
 
     if force_init:
         if overwrite_init or not os.path.isfile(os.path.join(project_path, ".terraform", "terraform.tfstate")):
-            init_plugins(command[0], project_path, backend_config, backend_config_files, init_reconfigure, provider_upgrade, plugin_paths, workspace)
+            init_plugins(command[0], project_path, backend_config, backend_config_files, init_reconfigure, provider_upgrade, plugin_paths, workspace, no_color)
 
-    workspace_ctx = get_workspace_context(command[0], project_path)
+    workspace_ctx = get_workspace_context(command[0], project_path, no_color)
     if workspace_ctx["current"] != workspace:
         if workspace not in workspace_ctx["all"]:
-            create_workspace(command[0], project_path, workspace)
+            create_workspace(command[0], project_path, workspace, no_color)
         else:
-            select_workspace(command[0], project_path, workspace)
+            select_workspace(command[0], project_path, workspace, no_color)
 
     if state == 'present':
         command.extend(APPLY_ARGS)
@@ -627,7 +658,7 @@ def main():
         for f in variables_files:
             variables_args.extend(['-var-file', f])
 
-    preflight_validation(command[0], project_path, checked_version, variables_args)
+    preflight_validation(command[0], project_path, checked_version, variables_args, plan_file, no_color)
 
     if module.params.get('lock') is not None:
         if module.params.get('lock'):
@@ -654,7 +685,7 @@ def main():
             module.fail_json(msg='Could not find plan_file "{0}", check the path and try again.'.format(plan_file))
     else:
         plan_file, needs_application, out, err, command = build_plan(command, project_path, variables_args, state_file,
-                                                                     module.params.get('targets'), state, APPLY_ARGS, plan_file)
+                                                                     module.params.get('targets'), state, APPLY_ARGS, plan_file, no_color)
         if state == 'present' and check_destroy and '- destroy' in out:
             module.fail_json(msg="Aborting command because it would destroy some resources. "
                                  "Consider switching the 'check_destroy' to false to suppress this error")
@@ -665,13 +696,13 @@ def main():
         if state == 'absent':
             plan_absent_args = ['-destroy']
             plan_file, needs_application, out, err, command = build_plan(command, project_path, variables_args, state_file,
-                                                                         module.params.get('targets'), state, plan_absent_args, plan_file)
+                                                                         module.params.get('targets'), state, plan_absent_args, plan_file, no_color)
         diff_command = [command[0], 'show', '-json', plan_file]
         rc, diff_output, err = module.run_command(diff_command, check_rc=False, cwd=project_path)
         changed, result_diff = get_diff(diff_output)
         if rc != 0:
             if workspace_ctx["current"] != workspace:
-                select_workspace(command[0], project_path, workspace_ctx["current"])
+                select_workspace(command[0], project_path, workspace_ctx["current"], no_color)
             module.fail_json(msg=err.rstrip(), rc=rc, stdout=out,
                              stdout_lines=out.splitlines(), stderr=err,
                              stderr_lines=err.splitlines(),
@@ -681,7 +712,7 @@ def main():
         rc, out, err = module.run_command(command, check_rc=False, cwd=project_path)
         if rc != 0:
             if workspace_ctx["current"] != workspace:
-                select_workspace(command[0], project_path, workspace_ctx["current"])
+                select_workspace(command[0], project_path, workspace_ctx["current"], no_color)
             module.fail_json(msg=err.rstrip(), rc=rc, stdout=out,
                              stdout_lines=out.splitlines(), stderr=err,
                              stderr_lines=err.splitlines(),
@@ -690,7 +721,11 @@ def main():
         if ' 0 added, 0 changed' not in out and not state == "absent" or ' 0 destroyed' not in out:
             changed = True
 
-    outputs_command = [command[0], 'output', '-no-color', '-json'] + _state_args(state_file)
+    if no_color:
+        outputs_command = [command[0], 'output', '-no-color', '-json'] + _state_args(state_file)
+    else:
+        outputs_command = [command[0], 'output', '-json'] + _state_args(state_file)
+
     rc, outputs_text, outputs_err = module.run_command(outputs_command, cwd=project_path)
     outputs = {}
     if rc == 1:
@@ -705,9 +740,9 @@ def main():
 
     # Restore the Terraform workspace found when running the module
     if workspace_ctx["current"] != workspace:
-        select_workspace(command[0], project_path, workspace_ctx["current"])
+        select_workspace(command[0], project_path, workspace_ctx["current"], no_color)
     if state == 'absent' and workspace != 'default' and purge_workspace is True:
-        remove_workspace(command[0], project_path, workspace)
+        remove_workspace(command[0], project_path, workspace, no_color)
 
     result = {
         'state': state,
