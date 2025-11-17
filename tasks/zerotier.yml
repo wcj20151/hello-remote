@@ -116,7 +116,6 @@
         that:
           - zerotier_network_id.user_input is defined
           - zerotier_network_id.user_input | length > 0
-          - zerotier_network_id.user_input is match("^[0-9a-f]{16}$")
         fail_msg: |
 
           ⛔️		‼️		⚠️		⛔️		🤡
